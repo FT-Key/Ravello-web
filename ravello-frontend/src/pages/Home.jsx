@@ -5,7 +5,7 @@ export default function Home() {
   const [message, setMessage] = useState("Cargando...");
 
   useEffect(() => {
-    axios.get("/api/hello")
+    axios.get("/hello")
       .then(res => setMessage(res.data.message))
       .catch(() => setMessage("Error al conectar con el backend"));
   }, []);
