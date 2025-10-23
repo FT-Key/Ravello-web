@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Bootstrap (opcional, si lo importás aquí) */
-@import "bootstrap/dist/css/bootstrap.min.css";
-
 :root {
     /* ---------------------------------- */
     /* Colores Principales (Identidad Ravello) */
