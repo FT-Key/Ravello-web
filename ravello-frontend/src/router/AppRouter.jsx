@@ -10,6 +10,8 @@ import CheckoutPage from "../pages/Checkout/CheckoutPage";
 import DashboardPage from "../pages/Admin/DashboardPage";
 import PackagesAdminPage from "../pages/Admin/PackagesAdminPage";
 import PackageForm from "../pages/Admin/PackageForm";
+import Navbar from "../components/common/Navbar";
+import Footer from "../components/common/Footer";
 import { useUserStore } from "../stores/useUserStore";
 
 export default function AppRouter() {
@@ -29,6 +31,7 @@ export default function AppRouter() {
 
   return (
     <BrowserRouter>
+      <Navbar />
       <Routes>
         {/* Páginas públicas */}
         <Route path="/" element={<HomePage />} />
@@ -51,6 +54,7 @@ export default function AppRouter() {
         {/* Ruta catch-all */}
         <Route path="*" element={<h1>404 Not Found</h1>} />
       </Routes>
-    </BrowserRouter>
+      <Footer />
+    </BrowserRouter >
   );
 }

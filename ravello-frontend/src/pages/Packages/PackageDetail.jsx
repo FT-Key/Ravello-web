@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+/* import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getPackageById } from "../../services/packageService";
 import { useUserStore } from "../../stores/useUserStore";
@@ -31,3 +31,14 @@ const PackageDetail = () => {
 };
 
 export default PackageDetail;
+ */
+
+import React from 'react'
+
+function PackageDetail() {
+  return (
+    <div>PackageDetail</div>
+  )
+}
+
+export default PackageDetail

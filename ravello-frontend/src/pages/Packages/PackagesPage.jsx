@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+/* import React, { useEffect, useState } from "react";
 import { Card } from "../../components/ui/Card";
 import { getPackages } from "../../services/packageService";
 
@@ -22,3 +22,13 @@ const PackagesPage = () => {
 };
 
 export default PackagesPage;
+ */
+import React from 'react'
+
+function PackagesPage() {
+  return (
+    <div>PackagesPage</div>
+  )
+}
+
+export default PackagesPage

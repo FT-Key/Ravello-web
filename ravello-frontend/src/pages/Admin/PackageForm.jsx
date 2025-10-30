@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+/* import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { createPackage, updatePackage, getPackageById } from "../../services/packageService";
 import { storage } from "../../config/firebaseConfig";
@@ -43,3 +43,14 @@ const PackageForm = () => {
 };
 
 export default PackageForm;
+ */
+
+import React from 'react'
+
+function PackageForm() {
+  return (
+    <div>PackageForm</div>
+  )
+}
+
+export default PackageForm

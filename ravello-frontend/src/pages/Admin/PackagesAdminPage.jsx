@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+/* import React, { useEffect, useState } from "react";
 import { getPackages } from "../../services/packageService";
 import { Link } from "react-router-dom";
 
@@ -24,3 +24,13 @@ const PackagesAdminPage = () => {
 };
 
 export default PackagesAdminPage;
+ */
+import React from 'react'
+
+function PackagesAdminPage() {
+  return (
+    <div>PackagesAdminPage</div>
+  )
+}
+
+export default PackagesAdminPage
