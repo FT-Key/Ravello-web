@@ -1,29 +1,30 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import HomePage from "../pages/Home/HomePage";
-import LoginPage from "../pages/Login/LoginPage";
-import RegisterPage from "../pages/Register/RegisterPage";
-import PackagesPage from "../pages/Packages/PackagesPage";
-import PackageDetail from "../pages/Packages/PackageDetail";
-import CartPage from "../pages/Cart/CartPage";
-import FavoritesPage from "../pages/Favorites/FavoritesPage";
-import CheckoutPage from "../pages/Checkout/CheckoutPage";
+import PackagesListPage from "../pages/Packages/PackagesListPage";
+import PackageDetailPage from "../pages/Packages/PackageDetailPage";
+import AboutPage from "../pages/About/AboutPage";
+import ContactPage from "../pages/Contact/ContactPage";
+import ReviewsPage from "../pages/Reviews/ReviewsPage";
+import LoginPage from "../pages/Auth/LoginPage";
+import RegisterPage from "../pages/Auth/RegisterPage";
 import DashboardPage from "../pages/Admin/DashboardPage";
-import PackagesAdminPage from "../pages/Admin/PackagesAdminPage";
-import PackageForm from "../pages/Admin/PackageForm";
+import ManagePackagesPage from "../pages/Admin/ManagePackagesPage";
+import ManageReviewsPage from "../pages/Admin/ManageReviewsPage";
+import ManageContactsPage from "../pages/Admin/ManageContactsPage";
+import ManageUsersPage from "../pages/Admin/ManageUsersPage";
+
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
-import { useUserStore } from "../stores/useUserStore";
+import { useUserStore } from "../stores/useUserStore"; // si usás Zustand o similar
 
 export default function AppRouter() {
   const user = useUserStore((state) => state.user);
 
-  // Ruta privada para admin
   const AdminRoute = ({ children }) => {
-    if (!user || user.role !== "admin") return <Navigate to="/login" />;
+    /* if (!user || user.role !== "admin") return <Navigate to="/login" />; */
     return children;
   };
 
-  // Ruta privada para usuarios logueados
   const PrivateRoute = ({ children }) => {
     if (!user) return <Navigate to="/login" />;
     return children;
@@ -35,26 +36,28 @@ export default function AppRouter() {
       <Routes>
         {/* Páginas públicas */}
         <Route path="/" element={<HomePage />} />
+        <Route path="/paquetes" element={<PackagesListPage />} />
+        <Route path="/paquetes/:id" element={<PackageDetailPage />} />
+        <Route path="/sobre-nosotros" element={<AboutPage />} />
+        <Route path="/opiniones" element={<ReviewsPage />} />
+        <Route path="/contacto" element={<ContactPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/packages" element={<PackagesPage />} />
-        <Route path="/packages/:id" element={<PackageDetail />} />
+        <Route path="/registro" element={<RegisterPage />} />
 
         {/* Páginas privadas */}
-        <Route path="/cart" element={<PrivateRoute><CartPage /></PrivateRoute>} />
-        <Route path="/favorites" element={<PrivateRoute><FavoritesPage /></PrivateRoute>} />
-        <Route path="/checkout" element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
+        <Route path="/perfil" element={<PrivateRoute><h1>Perfil del usuario</h1></PrivateRoute>} />
 
         {/* Admin */}
         <Route path="/admin" element={<AdminRoute><DashboardPage /></AdminRoute>} />
-        <Route path="/admin/packages" element={<AdminRoute><PackagesAdminPage /></AdminRoute>} />
-        <Route path="/admin/packages/new" element={<AdminRoute><PackageForm /></AdminRoute>} />
-        <Route path="/admin/packages/edit/:id" element={<AdminRoute><PackageForm /></AdminRoute>} />
+        <Route path="/admin/paquetes" element={<AdminRoute><ManagePackagesPage /></AdminRoute>} />
+        <Route path="/admin/reseñas" element={<AdminRoute><ManageReviewsPage /></AdminRoute>} />
+        <Route path="/admin/contactos" element={<AdminRoute><ManageContactsPage /></AdminRoute>} />
+        <Route path="/admin/usuarios" element={<AdminRoute><ManageUsersPage /></AdminRoute>} />
 
-        {/* Ruta catch-all */}
-        <Route path="*" element={<h1>404 Not Found</h1>} />
+        {/* Ruta 404 */}
+        <Route path="*" element={<h1 style={{ textAlign: "center", marginTop: "2rem" }}>404 - Página no encontrada</h1>} />
       </Routes>
       <Footer />
-    </BrowserRouter >
+    </BrowserRouter>
   );
 }
