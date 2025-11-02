@@ -50,7 +50,7 @@ export default function AppRouter() {
         {/* Admin */}
         <Route path="/admin" element={<AdminRoute><DashboardPage /></AdminRoute>} />
         <Route path="/admin/paquetes" element={<AdminRoute><ManagePackagesPage /></AdminRoute>} />
-        <Route path="/admin/reseñas" element={<AdminRoute><ManageReviewsPage /></AdminRoute>} />
+        <Route path="/admin/resenias" element={<AdminRoute><ManageReviewsPage /></AdminRoute>} />
         <Route path="/admin/contactos" element={<AdminRoute><ManageContactsPage /></AdminRoute>} />
         <Route path="/admin/usuarios" element={<AdminRoute><ManageUsersPage /></AdminRoute>} />
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import DataTable from "../../components/admin/DataTable";
 import { useUserStore } from "../../stores/useUserStore";
+import { toast } from "react-hot-toast";
 
 export default function ManageUsersPage() {
   const { user } = useUserStore();
@@ -9,20 +10,33 @@ export default function ManageUsersPage() {
   useEffect(() => {
     fetch("/api/users")
       .then((res) => res.json())
-      .then((data) => setUsers(data));
+      .then((data) => setUsers(data))
+      .catch(() => toast.error("Error cargando usuarios"));
   }, []);
 
   const handleEdit = (u) => {
-    if (u._id === user._id) return alert("No puedes editarte a ti mismo aquí.");
-    // abrir modal o redirigir a formulario
+    if (u._id === user._id) {
+      toast.error("No puedes editarte a ti mismo");
+      return;
+    }
+    toast("Función editar aún no implementada", { icon: "✏️" });
   };
 
-  const handleDelete = (u) => {
-    if (u._id === user._id || u.esPrincipal)
-      return alert("No puedes eliminar este usuario.");
+  const handleDelete = async (u) => {
+    if (u._id === user._id || u.esPrincipal) {
+      toast.error("No puedes eliminar este usuario");
+      return;
+    }
     if (!confirm(`¿Eliminar usuario ${u.nombre}?`)) return;
-    fetch(`/api/users/${u._id}`, { method: "DELETE" })
-      .then(() => setUsers((prev) => prev.filter((x) => x._id !== u._id)));
+
+    try {
+      const res = await fetch(`/api/users/${u._id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Error eliminando usuario");
+      setUsers((prev) => prev.filter((x) => x._id !== u._id));
+      toast.success(`Usuario "${u.nombre}" eliminado`);
+    } catch {
+      toast.error("Ocurrió un error al eliminar el usuario");
+    }
   };
 
   const columns = [

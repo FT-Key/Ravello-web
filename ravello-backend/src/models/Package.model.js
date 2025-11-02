@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import coordinatorSubSchema from './CoordinatorSubSchema.js';
 
 const transferSchema = new mongoose.Schema({
   tipo: { type: String, enum: ['vuelo', 'bus', 'tren', 'barco', 'otro'], required: true },
@@ -40,21 +41,25 @@ const packageSchema = new mongoose.Schema(
     nombre: { type: String, required: true },
     descripcion: String,
     tipo: { type: String, enum: ['nacional', 'internacional'], required: true },
+
     traslado: [transferSchema],
     hospedaje: hospedajeSchema,
     actividades: [actividadSchema],
-    coordinadores: [String],
+
+    // 👇 Coordinadores: puede tener referencias a usuarios o datos manuales
+    coordinadores: [coordinatorSubSchema],
+
     descuentoNinos: { type: Number, default: 0 },
     precioBase: { type: Number, required: true },
-    moneda: { type: String, default: 'USD' },
+    moneda: { type: String, default: 'ARS' },
     montoSenia: { type: Number, required: true },
     plazoPagoTotalDias: { type: Number, default: 7 },
+
     fechas: {
       salida: Date,
       regreso: Date
     },
 
-    // 👇 Nueva estructura de imágenes
     imagenPrincipal: { type: String, required: true }, // portada / thumbnail
     imagenes: [String], // galería adicional
 
