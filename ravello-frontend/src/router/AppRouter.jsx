@@ -1,4 +1,6 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useUserStore } from "../stores/useUserStore";
+
 import HomePage from "../pages/Home/HomePage";
 import PackagesListPage from "../pages/Packages/PackagesListPage";
 import PackageDetailPage from "../pages/Packages/PackageDetailPage";
@@ -15,10 +17,12 @@ import ManageUsersPage from "../pages/Admin/ManageUsersPage";
 
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
-import { useUserStore } from "../stores/useUserStore"; // si usás Zustand o similar
 
-export default function AppRouter() {
+function AppRouterInner() {
+  const location = useLocation();
   const user = useUserStore((state) => state.user);
+
+  const isHome = location.pathname === "/";
 
   const AdminRoute = ({ children }) => {
     /* if (!user || user.role !== "admin") return <Navigate to="/login" />; */
@@ -31,8 +35,9 @@ export default function AppRouter() {
   };
 
   return (
-    <BrowserRouter>
-      <Navbar />
+    <>
+      <Navbar position={isHome ? "fixed" : "sticky"} />
+
       <Routes>
         {/* Páginas públicas */}
         <Route path="/" element={<HomePage />} />
@@ -55,9 +60,25 @@ export default function AppRouter() {
         <Route path="/admin/usuarios" element={<AdminRoute><ManageUsersPage /></AdminRoute>} />
 
         {/* Ruta 404 */}
-        <Route path="*" element={<h1 style={{ textAlign: "center", marginTop: "2rem" }}>404 - Página no encontrada</h1>} />
+        <Route
+          path="*"
+          element={
+            <h1 style={{ textAlign: "center", marginTop: "2rem" }}>
+              404 - Página no encontrada
+            </h1>
+          }
+        />
       </Routes>
+
       <Footer />
+    </>
+  );
+}
+
+export default function AppRouter() {
+  return (
+    <BrowserRouter>
+      <AppRouterInner />
     </BrowserRouter>
   );
 }
