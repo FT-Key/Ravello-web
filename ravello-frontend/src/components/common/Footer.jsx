@@ -7,11 +7,8 @@ import {
   Award,
   Clock,
   CreditCard,
-  Facebook,
-  Instagram,
-  Twitter,
-  Linkedin,
 } from "lucide-react";
+import { FaFacebook, FaInstagram, FaTwitter, FaLinkedin } from "react-icons/fa";
 
 const Footer = () => {
   const destinations = [
@@ -91,39 +88,11 @@ const Footer = () => {
             {/* Columna 1: Logo y descripción */}
             <div className="lg:col-span-2">
               <div className="flex items-center gap-2 mb-4">
-                <svg width="40" height="40" viewBox="0 0 50 50">
-                  <defs>
-                    <linearGradient
-                      id="footerLogoGradient"
-                      x1="0%"
-                      y1="0%"
-                      x2="100%"
-                      y2="100%"
-                    >
-                      <stop
-                        offset="0%"
-                        style={{ stopColor: "#34B0D9", stopOpacity: 1 }}
-                      />
-                      <stop
-                        offset="100%"
-                        style={{ stopColor: "#E33D35", stopOpacity: 1 }}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    d="M25 10 L35 25 L45 22 L25 30 L5 22 L15 25 Z"
-                    fill="url(#footerLogoGradient)"
-                  />
-                  <circle
-                    cx="25"
-                    cy="25"
-                    r="18"
-                    fill="none"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeDasharray="4 4"
-                  />
-                </svg>
+                <img
+                  src="./ravello-mini-logo.svg"
+                  alt="Logo"
+                  className="w-11 h-11"
+                />
                 <h3 className="text-2xl font-bold">Ravello</h3>
               </div>
               <p className="text-sm opacity-90 leading-relaxed mb-4">
@@ -139,28 +108,28 @@ const Footer = () => {
                   className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition-all hover:scale-110"
                   aria-label="Facebook"
                 >
-                  <Facebook size={20} color="black" />
+                  <FaFacebook size={20} color="black" />
                 </a>
                 <a
                   href="#"
                   className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition-all hover:scale-110"
                   aria-label="Instagram"
                 >
-                  <Instagram size={20} color="black" />
+                  <FaInstagram size={20} color="black" />
                 </a>
                 <a
                   href="#"
                   className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition-all hover:scale-110"
                   aria-label="Twitter"
                 >
-                  <Twitter size={20} color="black" />
+                  <FaTwitter size={20} color="black" />
                 </a>
                 <a
                   href="#"
                   className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition-all hover:scale-110"
                   aria-label="LinkedIn"
                 >
-                  <Linkedin size={20} color="black" />
+                  <FaLinkedin size={20} color="black" />
                 </a>
               </div>
             </div>

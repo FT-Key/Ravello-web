@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-  Menu, X, Phone, Mail, Facebook, Instagram, Twitter, Globe, ChevronDown
+  Menu, X, Phone, Mail, Globe, ChevronDown
 } from "lucide-react";
+import { FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
 
 const Navbar = ({ position = "sticky" }) => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -67,13 +68,13 @@ const Navbar = ({ position = "sticky" }) => {
                 </button>
                 <div className="flex gap-3">
                   <a href="#" className="text-white hover:text-secondary-cyan transition-colors" aria-label="Facebook">
-                    <Facebook size={16} />
+                    <FaFacebook size={16} />
                   </a>
                   <a href="#" className="text-white hover:text-secondary-cyan transition-colors" aria-label="Instagram">
-                    <Instagram size={16} />
+                    <FaInstagram size={16} />
                   </a>
                   <a href="#" className="text-white hover:text-secondary-cyan transition-colors" aria-label="Twitter">
-                    <Twitter size={16} />
+                    <FaTwitter size={16} />
                   </a>
                 </div>
               </div>

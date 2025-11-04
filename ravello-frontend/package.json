@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.0.4",
+    "aos": "^2.3.4",
     "axios": "^1.12.2",
     "bootstrap": "^5.3.8",
     "flowbite": "^3.1.2",
