@@ -13,6 +13,7 @@ import {
   Users
 } from 'lucide-react';
 import './home.css';
+import FeaturedDestinations from '../../components/Home/FeaturedDestinations';
 
 // ==================== HERO SECTION ====================
 const HeroSection = () => {
@@ -55,95 +56,6 @@ const HeroSection = () => {
         </div>
       </div>
     </div>
-  );
-};
-
-// ==================== DESTINATION CARD ====================
-const DestinationCard = ({ image, destination, country, price, rating, featured, delay }) => {
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <div data-aos="zoom-in" data-aos-delay={delay} data-aos-once="true">
-      <div
-        className={`rounded-2xl overflow-hidden shadow-lg transition-all duration-300 h-full bg-white ${isHovered ? '-translate-y-2 shadow-2xl' : 'translate-y-0'
-          }`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <div className="relative overflow-hidden h-64">
-          <div
-            className={`w-full h-full bg-cover bg-center transition-transform duration-500 ${isHovered ? 'scale-110' : 'scale-100'
-              }`}
-            style={{ backgroundImage: `url(${image})` }}
-          />
-
-          {featured && (
-            <div className="absolute top-4 right-4 bg-primary-red px-3 py-1 rounded-full text-white text-sm font-semibold">
-              ¡Oferta!
-            </div>
-          )}
-
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-transparent to-transparent p-4">
-            <div className="flex items-center text-white text-sm">
-              <Star size={16} fill="gold" color="gold" className="mr-1" />
-              <span className="font-semibold">{rating}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6">
-          <h3 className="text-xl font-bold mb-1 text-dark">{destination}</h3>
-          <p className="text-sm flex items-center text-light">
-            <MapPin size={14} className="mr-1" />
-            {country}
-          </p>
-          <div className="mt-6 pt-4 border-t border-subtle flex items-center justify-between">
-            <div>
-              <p className="text-sm mb-1 text-light">Desde</p>
-              <p className="text-2xl font-bold text-primary-blue">
-                ${price.toLocaleString()}
-              </p>
-            </div>
-            <button className="bg-primary-blue rounded-full px-6 py-2 font-semibold border-0 text-white transition-transform hover:scale-105">
-              Ver más
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ==================== FEATURED DESTINATIONS ====================
-const FeaturedDestinations = () => {
-  const destinations = [
-    { image: 'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?w=600', destination: 'Santorini', country: 'Grecia', price: 850000, rating: 4.9, featured: true },
-    { image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600', destination: 'París', country: 'Francia', price: 920000, rating: 4.8, featured: false },
-    { image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600', destination: 'Alpes Suizos', country: 'Suiza', price: 1100000, rating: 5.0, featured: true },
-    { image: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=600', destination: 'Bariloche', country: 'Argentina', price: 380000, rating: 4.7, featured: false },
-    { image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600', destination: 'Dubai', country: 'Emiratos Árabes', price: 1250000, rating: 4.9, featured: true },
-    { image: 'https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?w=600', destination: 'Bangkok', country: 'Tailandia', price: 780000, rating: 4.6, featured: false }
-  ];
-
-  return (
-    <section className="py-20 bg-background-white">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-12" data-aos="fade-up">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-primary-blue">
-            Destinos destacados
-          </h2>
-          <p className="text-lg text-light">
-            Los lugares más increíbles te esperan
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {destinations.map((dest, idx) => (
-            <DestinationCard key={idx} {...dest} delay={idx * 100} />
-          ))}
-        </div>
-      </div>
-    </section>
   );
 };
 

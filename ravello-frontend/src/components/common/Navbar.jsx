@@ -42,7 +42,7 @@ const Navbar = ({ position = "sticky" }) => {
     transition-all duration-500 
     ${getNavbarBackground()}
     ${!isScrolled && position !== "fixed"
-            ? "bg-[url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1600')] bg-cover bg-bottom"
+            ? "bg-[url('./navbar/nav-bg.jpg')] bg-cover bg-bottom"
             : ""}
   `}
       >
