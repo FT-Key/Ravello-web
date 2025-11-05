@@ -37,7 +37,15 @@ const Navbar = ({ position = "sticky" }) => {
     <nav
       className={`${position} top-0 left-0 right-0 z-50 min-h-[115px] transition-all duration-500`}
     >
-      <div className={`transition-all duration-500 ${getNavbarBackground()}`}>
+      <div
+        className={`
+    transition-all duration-500 
+    ${getNavbarBackground()}
+    ${!isScrolled && position !== "fixed"
+            ? "bg-[url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1600')] bg-cover bg-bottom"
+            : ""}
+  `}
+      >
         {/* --- Barra superior (solo visible cuando no hay scroll) --- */}
         <div
           className={`transition-all duration-500 overflow-hidden ${isScrolled ? "max-h-0 opacity-0" : "max-h-20 opacity-100"
