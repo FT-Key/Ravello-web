@@ -35,7 +35,7 @@ const seedData = async () => {
     console.log("📦 Cargando paquetes...");
 
     const paquetes = await Promise.all(
-      destinations.map((d) =>
+      destinations.map((d, i) =>
         Package.create({
           nombre: `Viaje a ${d.destination}`,
           descripcion: `Explorá ${d.destination}, uno de los destinos más hermosos de ${d.country}.`,
@@ -94,6 +94,15 @@ const seedData = async () => {
           imagenPrincipal: d.image,
           imagenes: [d.image],
           publicado: true,
+
+          // 👇 NUEVO: asignamos etiquetas
+          etiquetas: (() => {
+            const tags = [];
+            tags.push("nuevo"); // todos nuevos por defecto
+            if (d.price < 700000) tags.push("oferta"); // ejemplo de oferta según precio
+            if ([0, 2, 4, 6].includes(i)) tags.push("mas vendido"); // algunos más vendidos simulados
+            return tags;
+          })(),
         })
       )
     );

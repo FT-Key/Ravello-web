@@ -6,7 +6,7 @@ export const getActiveFeatured = async () => {
     .populate({
       path: 'items.package',
       model: 'Package', // Asegura que usa el modelo correcto
-      select: 'nombre descripcion precioBase imagenPrincipal fechas.tipo' // solo lo necesario
+      select: 'nombre descripcion precioBase imagenPrincipal fechas.tipo etiquetas' // solo lo necesario
     })
     .sort({ createdAt: -1 })
     .lean();

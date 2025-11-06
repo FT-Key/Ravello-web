@@ -63,7 +63,14 @@ const packageSchema = new mongoose.Schema(
     imagenPrincipal: { type: String, required: true }, // portada / thumbnail
     imagenes: [String], // galería adicional
 
-    publicado: { type: Boolean, default: true }
+    publicado: { type: Boolean, default: true },
+
+    etiquetas: [
+      {
+        type: String,
+        enum: ['oferta', 'nuevo', 'mas vendido', 'recomendado', 'exclusivo']
+      }
+    ],
   },
   { timestamps: true }
 );

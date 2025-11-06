@@ -1,29 +1,29 @@
 import React, { useState } from "react";
 import { MapPin, Star } from "lucide-react";
+import PackageTags from "./PackageTags"; // Componente de etiquetas
 
-const DestinationCard = ({ image, destination, country, price, rating, featured }) => {
+const DestinationCard = ({ image, destination, country, price, rating, etiquetas = [] }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
     <div data-aos="zoom-in" data-aos-once="true">
       <div
-        className={`rounded-2xl overflow-hidden shadow-lg transition-all duration-300 h-full bg-white ${isHovered ? "-translate-y-2 shadow-2xl" : "translate-y-0"
-          }`}
+        className={`rounded-2xl overflow-hidden shadow-lg transition-all duration-300 h-full bg-white ${
+          isHovered ? "-translate-y-2 shadow-2xl" : "translate-y-0"
+        }`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         <div className="relative overflow-hidden h-64">
           <div
-            className={`w-full h-full bg-cover bg-center transition-transform duration-500 ${isHovered ? "scale-110" : "scale-100"
-              }`}
+            className={`w-full h-full bg-cover bg-center transition-transform duration-500 ${
+              isHovered ? "scale-110" : "scale-100"
+            }`}
             style={{ backgroundImage: `url(${image})` }}
           />
 
-          {featured && (
-            <div className="absolute top-4 right-4 bg-primary-red px-3 py-1 rounded-full text-white text-sm font-semibold">
-              ¡Oferta!
-            </div>
-          )}
+          {/* 👈 Componente de etiquetas */}
+          {etiquetas && etiquetas.length > 0 && <PackageTags etiquetas={etiquetas} />}
 
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-transparent to-transparent p-4">
             <div className="flex items-center text-white text-sm">
@@ -42,7 +42,9 @@ const DestinationCard = ({ image, destination, country, price, rating, featured 
           <div className="mt-6 pt-4 border-t border-subtle flex items-center justify-between">
             <div>
               <p className="text-sm mb-1 text-light">Desde</p>
-              <p className="text-2xl font-bold text-primary-blue">${price.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-primary-blue">
+                ${price.toLocaleString()}
+              </p>
             </div>
             <button className="bg-primary-blue rounded-full px-6 py-2 font-semibold border-0 text-white transition-transform hover:scale-105">
               Ver más

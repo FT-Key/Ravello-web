@@ -57,7 +57,7 @@ const FeaturedDestinations = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {items.slice(0, 6).map(({ package: pkg, etiqueta }, idx) => {
+          {items.slice(0, 6).map(({ package: pkg }, idx) => {
             if (!pkg) return null;
 
             return (
@@ -67,8 +67,8 @@ const FeaturedDestinations = () => {
                 destination={pkg.nombre}
                 country={pkg.tipo === "internacional" ? "Internacional" : "Nacional"}
                 price={pkg.precioBase}
-                rating={5} // si no tenés rating real aún
-                featured={!!etiqueta}
+                rating={5} // temporal, reemplazar si hay rating real
+                etiquetas={pkg.etiquetas || []} // 👈 pasamos las etiquetas reales del paquete
                 delay={idx * 100}
               />
             );
