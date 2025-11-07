@@ -45,3 +45,12 @@ export const deletePackage = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+export const getPromotions = async (req, res) => {
+  try {
+    const promos = await packageService.getPromotions();
+    res.json(promos);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

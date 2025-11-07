@@ -1,122 +1,135 @@
 import React, { useState, useMemo } from "react";
+import { Edit3, Trash2, Search } from "lucide-react";
 
-export default function DataTable({ columns, data, onEdit, onDelete, itemsPerPage = 10 }) {
-  const [query, setQuery] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
-  const [page, setPage] = useState(1);
+export default function DataTable({ columns, data, onEdit, onDelete }) {
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
-  // --- FILTRAR ---
+  // 🔍 Filtrado por búsqueda
   const filteredData = useMemo(() => {
-    return data.filter((row) =>
-      Object.values(row)
-        .join(" ")
-        .toLowerCase()
-        .includes(query.toLowerCase())
+    if (!search.trim()) return data;
+    return data.filter((pkg) =>
+      Object.values(pkg).some((v) =>
+        String(v).toLowerCase().includes(search.toLowerCase())
+      )
     );
-  }, [data, query]);
+  }, [search, data]);
 
-  // --- ORDENAR ---
-  const sortedData = useMemo(() => {
-    if (!sortConfig.key) return filteredData;
-    return [...filteredData].sort((a, b) => {
-      const aVal = a[sortConfig.key];
-      const bVal = b[sortConfig.key];
-      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
-      return 0;
-    });
-  }, [filteredData, sortConfig]);
+  // 📄 Paginación
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-  // --- PAGINACIÓN ---
-  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
-  const paginatedData = sortedData.slice((page - 1) * itemsPerPage, page * itemsPerPage);
-
-  const handleSort = (key) => {
-    setSortConfig((prev) => ({
-      key,
-      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
-    }));
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
   };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md">
-      <div className="flex justify-between mb-3">
-        <input
-          type="text"
-          placeholder="Buscar..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-2 w-1/3"
-        />
-      </div>
-
-      <table className="w-full border-collapse text-sm text-gray-700">
-        <thead>
-          <tr className="bg-gray-100">
-            {columns.map((col) => (
-              <th
-                key={col.key}
-                onClick={() => col.sortable && handleSort(col.key)}
-                className={`p-2 text-left cursor-pointer select-none ${
-                  col.sortable ? "hover:text-blue-500" : ""
-                }`}
-              >
-                {col.label}
-                {sortConfig.key === col.key && (sortConfig.direction === "asc" ? " ↑" : " ↓")}
-              </th>
-            ))}
-            <th className="p-2 text-center">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {paginatedData.map((row) => (
-            <tr key={row._id} className="border-b hover:bg-gray-50">
-              {columns.map((col) => (
-                <td key={col.key} className="p-2">
-                  {col.render ? col.render(row[col.key], row) : row[col.key]}
-                </td>
-              ))}
-              <td className="p-2 flex justify-center gap-2">
-                <button
-                  onClick={() => onEdit(row)}
-                  className="text-blue-600 hover:underline"
-                >
-                  Editar
-                </button>
-                <button
-                  onClick={() => onDelete(row)}
-                  className="text-red-600 hover:underline"
-                >
-                  Eliminar
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* Paginación */}
-      <div className="flex justify-between items-center mt-4">
-        <span>
-          Página {page} de {totalPages}
-        </span>
-        <div className="flex gap-2">
-          <button
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Anterior
-          </button>
-          <button
-            disabled={page === totalPages}
-            onClick={() => setPage(page + 1)}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Siguiente
-          </button>
+    <div className="bg-white rounded-lg shadow p-4">
+      {/* 🔍 Barra de búsqueda */}
+      <div className="flex justify-between mb-4 items-center">
+        <div className="relative w-64">
+          <Search
+            size={18}
+            className="absolute left-3 top-2.5 text-gray-400"
+          />
+          <input
+            type="text"
+            placeholder="Buscar paquete..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-blue-200"
+          />
         </div>
       </div>
+
+      {/* 📋 Tabla */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left text-gray-700 border border-gray-200">
+          <thead className="text-xs uppercase bg-gray-50 border-b">
+            <tr>
+              {columns.map((col) => (
+                <th key={col.key} className="px-6 py-3 font-semibold">
+                  {col.label}
+                </th>
+              ))}
+              <th className="px-6 py-3 font-semibold">Acciones</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {paginatedData.length > 0 ? (
+              paginatedData.map((row) => (
+                <tr
+                  key={row._id}
+                  className="bg-white border-b hover:bg-gray-50 transition"
+                >
+                  {columns.map((col) => (
+                    <td key={col.key} className="px-6 py-3">
+                      {col.render
+                        ? col.render(row[col.key], row)
+                        : row[col.key]}
+                    </td>
+                  ))}
+                  <td className="px-6 py-3 flex gap-2">
+                    <button
+                      onClick={() => onEdit(row)}
+                      className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                    >
+                      <Edit3 size={16} /> Editar
+                    </button>
+                    <button
+                      onClick={() => onDelete(row)}
+                      className="flex items-center gap-1 text-red-600 hover:text-red-800"
+                    >
+                      <Trash2 size={16} /> Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={columns.length + 1}
+                  className="text-center py-6 text-gray-500"
+                >
+                  No se encontraron resultados
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 📄 Paginación */}
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-4 gap-2">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            ← Anterior
+          </button>
+          <span className="px-2 py-1 text-sm text-gray-700">
+            Página {currentPage} de {totalPages}
+          </span>
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Siguiente →
+          </button>
+        </div>
+      )}
     </div>
   );
 }
