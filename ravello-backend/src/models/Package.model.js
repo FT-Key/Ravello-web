@@ -97,14 +97,15 @@ const packageSchema = new mongoose.Schema(
     imagenPrincipal: { type: String, required: true },
     imagenes: [String],
 
-    publicado: { type: Boolean, default: true },
-
     etiquetas: [
       {
         type: String,
         enum: ['oferta', 'nuevo', 'mas vendido', 'recomendado', 'exclusivo']
       }
     ],
+
+    activo: { type: Boolean, default: true },
+    visibleEnWeb: { type: Boolean, default: true }
   },
   { timestamps: true }
 );

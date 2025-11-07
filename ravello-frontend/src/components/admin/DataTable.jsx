@@ -73,11 +73,23 @@ export default function DataTable({ columns, data, onEdit, onDelete }) {
                 >
                   {columns.map((col) => (
                     <td key={col.key} className="px-6 py-3">
-                      {col.render
-                        ? col.render(row[col.key], row)
-                        : row[col.key]}
+                      {col.key === "visibleEnWeb" ? (
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${row.visibleEnWeb
+                              ? "bg-green-100 text-green-700"
+                              : "bg-gray-200 text-gray-600"
+                            }`}
+                        >
+                          {row.visibleEnWeb ? "Visible" : "Oculto"}
+                        </span>
+                      ) : col.render ? (
+                        col.render(row[col.key], row)
+                      ) : (
+                        row[col.key]
+                      )}
                     </td>
                   ))}
+
                   <td className="px-6 py-3 flex gap-2">
                     <button
                       onClick={() => onEdit(row)}

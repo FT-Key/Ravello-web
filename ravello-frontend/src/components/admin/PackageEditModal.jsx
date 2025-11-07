@@ -13,8 +13,9 @@ export default function PackageModal({ open, onClose, pkg, onSaved }) {
     plazoPagoTotalDias: 7,
     fechas: { salida: "", regreso: "" },
     imagenPrincipal: "",
-    publicado: true,
     etiquetas: [],
+    activo: true,
+    visibleEnWeb: true,
   });
 
   const [errors, setErrors] = useState({});
@@ -248,14 +249,26 @@ export default function PackageModal({ open, onClose, pkg, onSaved }) {
             {errors.imagenPrincipal && <p className="text-red-500 text-sm">{errors.imagenPrincipal}</p>}
           </div>
 
-          {/* Publicado */}
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={form.publicado}
-              onChange={(e) => handleChange("publicado", e.target.checked)}
-            />
-            <label>Publicado</label>
+          {/* Estado del paquete */}
+          <div className="flex flex-col gap-2">
+            <label className="block font-medium">Estado del paquete</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={form.activo}
+                onChange={(e) => handleChange("activo", e.target.checked)}
+              />
+              <label>Activo (paquete disponible)</label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={form.visibleEnWeb}
+                onChange={(e) => handleChange("visibleEnWeb", e.target.checked)}
+              />
+              <label>Visible en la web</label>
+            </div>
           </div>
 
           {/* Etiquetas */}
@@ -268,8 +281,8 @@ export default function PackageModal({ open, onClose, pkg, onSaved }) {
                   type="button"
                   onClick={() => handleEtiquetaToggle(etq)}
                   className={`px-3 py-1 rounded-full border text-sm ${form.etiquetas.includes(etq)
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "border-gray-400 text-gray-700 hover:bg-gray-100"
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "border-gray-400 text-gray-700 hover:bg-gray-100"
                     }`}
                 >
                   {etq}

@@ -15,7 +15,11 @@ export default function ManagePackagesPage() {
   const [modalOpen, setModalOpen] = useState(false);
 
   const [query, setQuery] = useState("");
-  const [filters, setFilters] = useState({ tipo: "", publicado: "" });
+  const [filters, setFilters] = useState({
+    tipo: "",
+    visibleEnWeb: "",
+    activo: "",
+  });
 
   // 📦 Cargar paquetes desde API
   const loadPackages = async () => {
@@ -55,16 +59,22 @@ export default function ManagePackagesPage() {
       result = result.filter((p) => p.tipo === filters.tipo);
     }
 
-    // Filtro por estado de publicación
-    if (filters.publicado) {
-      const isPublished = filters.publicado === "true";
-      result = result.filter((p) => p.publicado === isPublished);
+    // Filtro por visibilidad
+    if (filters.visibleEnWeb) {
+      const visible = filters.visibleEnWeb === "true";
+      result = result.filter((p) => p.visibleEnWeb === visible);
+    }
+
+    // Filtro por activo / dado de baja
+    if (filters.activo) {
+      const activo = filters.activo === "true";
+      result = result.filter((p) => p.activo === activo);
     }
 
     setFiltered(result);
   }, [packages, query, filters]);
 
-  // 🧩 Handlers de eventos
+  // 🧩 Handlers
   const handleFilterChange = (key, value) =>
     setFilters((prev) => ({ ...prev, [key]: value }));
 
@@ -92,8 +102,8 @@ export default function ManagePackagesPage() {
   };
 
   const handleDelete = async (pkg) => {
-    if (pkg.publicado) {
-      toast.error("No puedes eliminar un paquete publicado. Despublicalo primero.");
+    if (pkg.visibleEnWeb) {
+      toast.error("No puedes eliminar un paquete visible en la web. Ocúltalo primero.");
       return;
     }
     if (!confirm(`¿Eliminar el paquete "${pkg.nombre}"?`)) return;
@@ -122,8 +132,8 @@ export default function ManagePackagesPage() {
           `${row.moneda || "ARS"} ${Number(val || 0).toLocaleString()}`,
       },
       {
-        key: "publicado",
-        label: "Publicado",
+        key: "visibleEnWeb",
+        label: "Visible en web",
         render: (val) => (
           <span
             className={`px-2 py-1 text-xs rounded ${val
@@ -132,6 +142,20 @@ export default function ManagePackagesPage() {
               }`}
           >
             {val ? "Sí" : "No"}
+          </span>
+        ),
+      },
+      {
+        key: "activo",
+        label: "Activo",
+        render: (val) => (
+          <span
+            className={`px-2 py-1 text-xs rounded ${val
+                ? "bg-blue-100 text-blue-700"
+                : "bg-red-100 text-red-700"
+              }`}
+          >
+            {val ? "Activo" : "Dado de baja"}
           </span>
         ),
       },
@@ -185,7 +209,7 @@ export default function ManagePackagesPage() {
         />
       )}
 
-      {/* Modal de edición / creación */}
+      {/* Modal */}
       <PackageEditModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
