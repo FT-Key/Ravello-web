@@ -214,7 +214,7 @@ export default function ManagePackagesPage() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         pkg={editing}
-        onSave={handleSaved}
+        onSaved={handleSaved}
       />
     </div>
   );

@@ -25,7 +25,8 @@ export const getPromotions = async () => {
   try {
     // Buscar paquetes relevantes (solo 10 para rendimiento)
     const packages = await Package.find({
-      publicado: true,
+      activo: true,
+      visibleEnWeb: true,
       etiquetas: { $in: ['oferta', 'nuevo', 'mas vendido', 'recomendado', 'exclusivo'] },
     })
       .select('nombre descripcionCorta imagenPrincipal etiquetas') // solo los campos que necesitás

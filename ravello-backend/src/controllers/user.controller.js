@@ -1,5 +1,6 @@
-import { userService } from '../services/index.js';
+import { userService } from "../services/index.js";
 
+// === OBTENER TODOS LOS USUARIOS ===
 export const getUsers = async (req, res) => {
   try {
     const users = await userService.getAllUsers();
@@ -9,6 +10,18 @@ export const getUsers = async (req, res) => {
   }
 };
 
+// === OBTENER UN USUARIO POR ID ===
+export const getUserById = async (req, res) => {
+  try {
+    const user = await userService.getUserById(req.params.id);
+    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// === CREAR USUARIO ===
 export const createUser = async (req, res) => {
   try {
     const user = await userService.createUser(req.body);
@@ -18,10 +31,23 @@ export const createUser = async (req, res) => {
   }
 };
 
+// === ACTUALIZAR USUARIO ===
+export const updateUser = async (req, res) => {
+  try {
+    const user = await userService.updateUser(req.params.id, req.body);
+    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
+    res.json(user);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// === ELIMINAR USUARIO ===
 export const deleteUser = async (req, res) => {
   try {
-    await userService.deleteUser(req.params.id);
-    res.json({ message: 'Usuario eliminado' });
+    const user = await userService.deleteUser(req.params.id);
+    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
+    res.json({ message: "Usuario eliminado correctamente" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

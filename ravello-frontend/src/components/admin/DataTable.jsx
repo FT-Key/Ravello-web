@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Edit3, Trash2, Search } from "lucide-react";
+import Pagination from "../common/Pagination";
 
 export default function DataTable({ columns, data, onEdit, onDelete }) {
   const [search, setSearch] = useState("");
@@ -9,37 +10,29 @@ export default function DataTable({ columns, data, onEdit, onDelete }) {
   // 🔍 Filtrado por búsqueda
   const filteredData = useMemo(() => {
     if (!search.trim()) return data;
-    return data.filter((pkg) =>
-      Object.values(pkg).some((v) =>
-        String(v).toLowerCase().includes(search.toLowerCase())
+    return data.filter((row) =>
+      Object.values(row).some((value) =>
+        String(value).toLowerCase().includes(search.toLowerCase())
       )
     );
   }, [search, data]);
 
   // 📄 Paginación
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const handlePageChange = (page) => {
-    if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
-  };
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredData.slice(start, start + itemsPerPage);
+  }, [filteredData, currentPage]);
 
   return (
     <div className="bg-white rounded-lg shadow p-4">
       {/* 🔍 Barra de búsqueda */}
       <div className="flex justify-between mb-4 items-center">
         <div className="relative w-64">
-          <Search
-            size={18}
-            className="absolute left-3 top-2.5 text-gray-400"
-          />
+          <Search size={18} className="absolute left-3 top-2.5 text-gray-400" />
           <input
             type="text"
-            placeholder="Buscar paquete..."
+            placeholder="Buscar..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -60,7 +53,9 @@ export default function DataTable({ columns, data, onEdit, onDelete }) {
                   {col.label}
                 </th>
               ))}
-              <th className="px-6 py-3 font-semibold">Acciones</th>
+              {(onEdit || onDelete) && (
+                <th className="px-6 py-3 font-semibold">Acciones</th>
+              )}
             </tr>
           </thead>
 
@@ -73,43 +68,40 @@ export default function DataTable({ columns, data, onEdit, onDelete }) {
                 >
                   {columns.map((col) => (
                     <td key={col.key} className="px-6 py-3">
-                      {col.key === "visibleEnWeb" ? (
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${row.visibleEnWeb
-                              ? "bg-green-100 text-green-700"
-                              : "bg-gray-200 text-gray-600"
-                            }`}
-                        >
-                          {row.visibleEnWeb ? "Visible" : "Oculto"}
-                        </span>
-                      ) : col.render ? (
+                      {col.render ? (
                         col.render(row[col.key], row)
                       ) : (
-                        row[col.key]
+                        String(row[col.key] ?? "")
                       )}
                     </td>
                   ))}
 
-                  <td className="px-6 py-3 flex gap-2">
-                    <button
-                      onClick={() => onEdit(row)}
-                      className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
-                    >
-                      <Edit3 size={16} /> Editar
-                    </button>
-                    <button
-                      onClick={() => onDelete(row)}
-                      className="flex items-center gap-1 text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 size={16} /> Eliminar
-                    </button>
-                  </td>
+                  {(onEdit || onDelete) && (
+                    <td className="px-6 py-3 flex gap-2">
+                      {onEdit && (
+                        <button
+                          onClick={() => onEdit(row)}
+                          className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                        >
+                          <Edit3 size={16} /> Editar
+                        </button>
+                      )}
+                      {onDelete && (
+                        <button
+                          onClick={() => onDelete(row)}
+                          className="flex items-center gap-1 text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 size={16} /> Eliminar
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))
             ) : (
               <tr>
                 <td
-                  colSpan={columns.length + 1}
+                  colSpan={columns.length + (onEdit || onDelete ? 1 : 0)}
                   className="text-center py-6 text-gray-500"
                 >
                   No se encontraron resultados
@@ -121,27 +113,11 @@ export default function DataTable({ columns, data, onEdit, onDelete }) {
       </div>
 
       {/* 📄 Paginación */}
-      {totalPages > 1 && (
-        <div className="flex justify-center mt-4 gap-2">
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            ← Anterior
-          </button>
-          <span className="px-2 py-1 text-sm text-gray-700">
-            Página {currentPage} de {totalPages}
-          </span>
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Siguiente →
-          </button>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

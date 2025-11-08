@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from "react";
 import {
   Search,
   MapPin,
@@ -10,11 +10,12 @@ import {
   Umbrella,
   Building,
   Heart,
-  Users
-} from 'lucide-react';
-import './home.css';
-import FeaturedDestinations from '../../components/Home/FeaturedDestinations';
-import PromotionsSection from '../../components/Home/PromotionsSection';
+  Users,
+} from "lucide-react";
+import "./home.css";
+import FeaturedDestinations from "../../components/Home/FeaturedDestinations";
+import PromotionsSection from "../../components/Home/PromotionsSection";
+import TestimonialsSection from "../../components/Home/TestimonialsSection"; // 👈 Nuevo import
 
 // ==================== HERO SECTION ====================
 const HeroSection = () => {
@@ -63,10 +64,34 @@ const HeroSection = () => {
 // ==================== EXPERIENCES SECTION ====================
 const ExperiencesSection = () => {
   const experiences = [
-    { icon: Umbrella, title: 'Playas paradisíacas', description: 'Arena blanca, agua cristalina', bgClass: 'icon-bg-cyan', colorClass: 'text-secondary-cyan' },
-    { icon: Mountain, title: 'Aventura y trekking', description: 'Montañas y naturaleza extrema', bgClass: 'icon-bg-blue', colorClass: 'text-primary-blue' },
-    { icon: Building, title: 'Cultura e historia', description: 'Ciudades con siglos de arte', bgClass: 'icon-bg-red', colorClass: 'text-primary-red' },
-    { icon: Heart, title: 'Relax y bienestar', description: 'Spas y retiros de lujo', bgClass: 'icon-bg-green', colorClass: 'text-green-600' }
+    {
+      icon: Umbrella,
+      title: "Playas paradisíacas",
+      description: "Arena blanca, agua cristalina",
+      bgClass: "icon-bg-cyan",
+      colorClass: "text-secondary-cyan",
+    },
+    {
+      icon: Mountain,
+      title: "Aventura y trekking",
+      description: "Montañas y naturaleza extrema",
+      bgClass: "icon-bg-blue",
+      colorClass: "text-primary-blue",
+    },
+    {
+      icon: Building,
+      title: "Cultura e historia",
+      description: "Ciudades con siglos de arte",
+      bgClass: "icon-bg-red",
+      colorClass: "text-primary-red",
+    },
+    {
+      icon: Heart,
+      title: "Relax y bienestar",
+      description: "Spas y retiros de lujo",
+      bgClass: "icon-bg-green",
+      colorClass: "text-green-600",
+    },
   ];
 
   return (
@@ -81,7 +106,10 @@ const ExperiencesSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" data-aos="zoom-in-up">
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          data-aos="zoom-in-up"
+        >
           {experiences.map((exp, idx) => {
             const IconComponent = exp.icon;
             return (
@@ -91,10 +119,14 @@ const ExperiencesSection = () => {
                 data-aos-delay={idx * 150}
                 className="text-center p-6 rounded-3xl h-full bg-white experience-card cursor-pointer hover:shadow-xl"
               >
-                <div className={`w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center ${exp.bgClass}`}>
+                <div
+                  className={`w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center ${exp.bgClass}`}
+                >
                   <IconComponent size={40} className={exp.colorClass} />
                 </div>
-                <h3 className="text-xl font-bold mb-2 text-dark">{exp.title}</h3>
+                <h3 className="text-xl font-bold mb-2 text-dark">
+                  {exp.title}
+                </h3>
                 <p className="text-light">{exp.description}</p>
               </div>
             );
@@ -108,10 +140,27 @@ const ExperiencesSection = () => {
 // ==================== WHY RAVELLO ====================
 const WhyRavello = () => {
   const features = [
-    { icon: Users, title: 'Asesoramiento personalizado', description: 'Expertos en viajes te ayudan en cada paso' },
-    { icon: DollarSign, title: 'Mejores precios garantizados', description: 'Encontrás algo más barato? Te devolvemos la diferencia' },
-    { icon: Clock, title: 'Atención 24/7', description: 'Soporte en cualquier momento de tu viaje' },
-    { icon: Plane, title: '+100 destinos internacionales', description: 'Los mejores lugares del mundo al alcance' }
+    {
+      icon: Users,
+      title: "Asesoramiento personalizado",
+      description: "Expertos en viajes te ayudan en cada paso",
+    },
+    {
+      icon: DollarSign,
+      title: "Mejores precios garantizados",
+      description:
+        "Encontrás algo más barato? Te devolvemos la diferencia",
+    },
+    {
+      icon: Clock,
+      title: "Atención 24/7",
+      description: "Soporte en cualquier momento de tu viaje",
+    },
+    {
+      icon: Plane,
+      title: "+100 destinos internacionales",
+      description: "Los mejores lugares del mundo al alcance",
+    },
   ];
 
   return (
@@ -126,11 +175,19 @@ const WhyRavello = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8" data-aos="zoom-in-up">
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+          data-aos="zoom-in-up"
+        >
           {features.map((feature, idx) => {
             const IconComponent = feature.icon;
             return (
-              <div key={idx} data-aos="fade-up" data-aos-delay={idx * 150} className="text-center text-white">
+              <div
+                key={idx}
+                data-aos="fade-up"
+                data-aos-delay={idx * 150}
+                className="text-center text-white"
+              >
                 <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center bg-white">
                   <IconComponent size={40} className="text-primary-blue" />
                 </div>
@@ -139,59 +196,6 @@ const WhyRavello = () => {
               </div>
             );
           })}
-        </div>
-      </div>
-    </section>
-  );
-};
-
-// ==================== TESTIMONIALS ====================
-const TestimonialsSection = () => {
-  const testimonials = [
-    { name: 'María González', location: 'Buenos Aires', text: 'Increíble experiencia en Grecia. Todo superó nuestras expectativas, la atención fue impecable.', rating: 5, avatar: 'MG' },
-    { name: 'Carlos Ramírez', location: 'Córdoba', text: 'Viajamos a Europa con Ravello y fue perfecto. Los precios son realmente competitivos.', rating: 5, avatar: 'CR' },
-    { name: 'Laura Fernández', location: 'Mendoza', text: 'Excelente servicio, nos asesoraron en todo momento. Ya estamos planeando el próximo viaje!', rating: 5, avatar: 'LF' }
-  ];
-
-  return (
-    <section className="py-20 bg-background-white">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-12" data-aos="fade-up">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-primary-blue">
-            Lo que dicen nuestros viajeros
-          </h2>
-          <p className="text-lg text-light">
-            Miles de clientes satisfechos
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.map((test, idx) => (
-            <div
-              key={idx}
-              data-aos="fade-up"
-              data-aos-delay={idx * 200}
-              className="rounded-2xl shadow-lg p-6 h-full bg-background-light"
-            >
-              <div className="flex items-center mb-4">
-                <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold mr-4 bg-primary-blue">
-                  {test.avatar}
-                </div>
-                <div>
-                  <h4 className="font-bold mb-1 text-dark">{test.name}</h4>
-                  <p className="text-sm text-light">{test.location}</p>
-                </div>
-              </div>
-
-              <div className="flex mb-3">
-                {[...Array(test.rating)].map((_, i) => (
-                  <Star key={i} size={18} fill="gold" color="gold" />
-                ))}
-              </div>
-
-              <p className="text-light">"{test.text}"</p>
-            </div>
-          ))}
         </div>
       </div>
     </section>
@@ -242,7 +246,7 @@ export default function Home() {
       <PromotionsSection />
       <ExperiencesSection />
       <WhyRavello />
-      <TestimonialsSection />
+      <TestimonialsSection /> {/* 👈 Usa ahora el componente dinámico */}
       <NewsletterSection />
     </div>
   );
