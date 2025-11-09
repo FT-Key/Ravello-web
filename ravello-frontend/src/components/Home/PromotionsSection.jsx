@@ -9,23 +9,27 @@ const PromotionsSection = () => {
   useEffect(() => {
     const fetchPromotions = async () => {
       try {
-        const res = await fetch("/api/packages/promotions");
+        // ✅ Construir correctamente la URL con parámetros de consulta
+        const params = new URLSearchParams({ limit: 2, sort: "random" });
+        const url = `/api/packages/promotions?${params.toString()}`;
+
+        console.log("[PromotionsSection] 🔍 Fetching:", url);
+
+        const res = await fetch(url);
         if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
 
         const data = await res.json();
 
-        // Siempre incluir “Más vendido” y, si hay otra etiqueta, elegir una al azar.
-        const processed = data.map(pkg => {
+        // Siempre incluir “Más vendido” y, si hay otra etiqueta, elegir una al azar
+        const processed = data?.items?.map((pkg) => {
           const etiquetas = pkg.etiquetas || [];
           let etiquetasFinales = [];
 
-          // Prioridad a “Más vendido”
           if (etiquetas.includes("Más vendido")) {
             etiquetasFinales.push("Más vendido");
           }
 
-          // Si hay más de una etiqueta, elegir otra aleatoria distinta
-          const otras = etiquetas.filter(e => e !== "Más vendido");
+          const otras = etiquetas.filter((e) => e !== "Más vendido");
           if (otras.length > 0) {
             const random = otras[Math.floor(Math.random() * otras.length)];
             etiquetasFinales.push(random);
@@ -36,7 +40,7 @@ const PromotionsSection = () => {
 
         setPromos(processed);
       } catch (err) {
-        console.error("Error al cargar promociones:", err);
+        console.error("[PromotionsSection] ❌ Error al cargar promociones:", err);
         setError("No se pudieron cargar las promociones.");
       }
     };
@@ -54,7 +58,6 @@ const PromotionsSection = () => {
 
   if (promos.length === 0) return null;
 
-  // 🎯 Función para obtener el badge según la etiqueta
   const getBadgeInfo = (tag) => {
     if (!tag) return null;
 
@@ -75,7 +78,6 @@ const PromotionsSection = () => {
     }
   };
 
-  // 🎨 Lógica para elegir etiquetas distintas entre las 2 primeras promos
   const getDisplayedTags = () => {
     if (promos.length < 2) return promos;
 
@@ -83,30 +85,24 @@ const PromotionsSection = () => {
     const firstTags = first.etiquetas || [];
     const secondTags = second.etiquetas || [];
 
-    // Elegimos una etiqueta aleatoria de la primera
     const tag1 = firstTags.length
       ? firstTags[Math.floor(Math.random() * firstTags.length)]
       : null;
 
     let tag2 = null;
-
     if (secondTags.length > 1) {
-      // Buscar una etiqueta distinta a la primera
-      const diferentes = secondTags.filter(t => t !== tag1);
-      if (diferentes.length > 0) {
-        tag2 = diferentes[Math.floor(Math.random() * diferentes.length)];
-      } else {
-        tag2 = secondTags[0]; // todas iguales, usamos la misma
-      }
+      const diferentes = secondTags.filter((t) => t !== tag1);
+      tag2 = diferentes.length
+        ? diferentes[Math.floor(Math.random() * diferentes.length)]
+        : secondTags[0];
     } else {
       tag2 = secondTags[0] || null;
     }
 
-    // devolvemos nuevos paquetes con la etiqueta seleccionada
     return [
       { ...first, etiquetaSeleccionada: tag1 },
       { ...second, etiquetaSeleccionada: tag2 },
-      ...rest
+      ...rest,
     ];
   };
 
@@ -130,11 +126,11 @@ const PromotionsSection = () => {
 
             return (
               <div
-                key={pkg.id}
+                key={pkg._id || pkg.id}
                 data-aos={i === 0 ? "fade-right" : "fade-left"}
                 data-aos-delay={100 * (i + 1)}
                 className="cursor-pointer"
-                onClick={() => navigate(`/packages/${pkg.id}`)}
+                onClick={() => navigate(`/packages/${pkg._id || pkg.id}`)}
               >
                 <div
                   className="rounded-3xl overflow-hidden shadow-xl relative h-80"

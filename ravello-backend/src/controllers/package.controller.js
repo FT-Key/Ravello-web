@@ -48,9 +48,21 @@ export const deletePackage = async (req, res) => {
 
 export const getPromotions = async (req, res) => {
   try {
-    const promos = await packageService.getPromotions();
-    res.json(promos);
+    const { queryOptions, searchFilter, pagination } = req;
+
+    const filters = {
+      activo: true,
+      visibleEnWeb: true,
+      etiquetas: { $in: ['oferta'] },
+      ...queryOptions.filters,
+      ...searchFilter,
+    };
+
+    const data = await packageService.getPromotions(filters, queryOptions.sort, pagination);
+
+    res.json(data);
   } catch (err) {
+    console.error("❌ Error en getPromotions:", err);
     res.status(500).json({ error: err.message });
   }
 };
