@@ -33,7 +33,7 @@ export const getPromotions = async (filters, sort, pagination) => {
     Package.countDocuments(filters),
   ]);
 
-  console.log(`📦 Paquetes encontrados: ${items.length}`);
+  console.log(`📦 Paquetes encontrados: ${items.length}`, items);
   return {
     items,
     pagination: {

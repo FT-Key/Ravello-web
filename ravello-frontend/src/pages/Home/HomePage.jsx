@@ -16,6 +16,7 @@ import "./home.css";
 import FeaturedDestinations from "../../components/Home/FeaturedDestinations";
 import PromotionsSection from "../../components/Home/PromotionsSection";
 import TestimonialsSection from "../../components/Home/TestimonialsSection"; // 👈 Nuevo import
+import NewsletterSection from "../../components/Home/NewsletterSection";
 
 // ==================== HERO SECTION ====================
 const HeroSection = () => {
@@ -201,41 +202,6 @@ const WhyRavello = () => {
     </section>
   );
 };
-
-// ==================== NEWSLETTER ====================
-const NewsletterSection = () => (
-  <section className="py-20 bg-secondary-sand">
-    <div className="max-w-7xl mx-auto px-4">
-      <div className="max-w-3xl mx-auto text-center" data-aos="zoom-in">
-        <h2 className="text-4xl md:text-5xl font-bold mb-4 text-primary-blue">
-          Recibí nuestras mejores ofertas
-        </h2>
-        <p className="text-lg mb-8 text-light">
-          Suscribite y no te pierdas ninguna promoción exclusiva
-        </p>
-
-        <div
-          className="bg-white rounded-full shadow-xl p-2 flex items-center max-w-2xl mx-auto"
-          data-aos="fade-up"
-          data-aos-delay="200"
-        >
-          <input
-            type="email"
-            placeholder="Tu correo electrónico"
-            className="flex-1 px-6 py-3 outline-none rounded-l-full text-dark"
-          />
-          <button className="bg-primary-red rounded-full px-8 py-3 font-semibold text-white border-0 transition-transform hover:scale-105">
-            Suscribirse
-          </button>
-        </div>
-
-        <p className="text-sm mt-4 text-light">
-          No spam. Solo las mejores ofertas para tu próximo viaje.
-        </p>
-      </div>
-    </div>
-  </section>
-);
 
 // ==================== MAIN HOME COMPONENT ====================
 export default function Home() {

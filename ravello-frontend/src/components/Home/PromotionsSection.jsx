@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import clientAxios from "../../api/axiosConfig"; // ✅ usa tu cliente axios
 
-const PromotionsSection = () => {
+export default function PromotionsSection() {
   const [promos, setPromos] = useState([]);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -9,25 +10,16 @@ const PromotionsSection = () => {
   useEffect(() => {
     const fetchPromotions = async () => {
       try {
-        // ✅ Construir correctamente la URL con parámetros de consulta
-        const params = new URLSearchParams({ limit: 2, sort: "random" });
-        const url = `/api/packages/promotions?${params.toString()}`;
+        // ✅ Llamada al nuevo modelo "featured-promotions"
+        const { data } = await clientAxios.get("/featured-promotions");
+        if (!data || !data.packages || data.packages.length === 0)
+          throw new Error("Sin promociones destacadas");
 
-        console.log("[PromotionsSection] 🔍 Fetching:", url);
-
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-
-        const data = await res.json();
-
-        // Siempre incluir “Más vendido” y, si hay otra etiqueta, elegir una al azar
-        const processed = data?.items?.map((pkg) => {
+        const processed = data.packages.map((pkg) => {
           const etiquetas = pkg.etiquetas || [];
           let etiquetasFinales = [];
 
-          if (etiquetas.includes("Más vendido")) {
-            etiquetasFinales.push("Más vendido");
-          }
+          if (etiquetas.includes("Más vendido")) etiquetasFinales.push("Más vendido");
 
           const otras = etiquetas.filter((e) => e !== "Más vendido");
           if (otras.length > 0) {
@@ -41,7 +33,7 @@ const PromotionsSection = () => {
         setPromos(processed);
       } catch (err) {
         console.error("[PromotionsSection] ❌ Error al cargar promociones:", err);
-        setError("No se pudieron cargar las promociones.");
+        setError("No se pudieron cargar las promociones destacadas.");
       }
     };
 
@@ -66,47 +58,17 @@ const PromotionsSection = () => {
       case "mas vendido":
         return { label: "🔥 Más vendido", color: "bg-orange-500" };
       case "nuevo":
-        return { label: "¡Nueva ruta!", color: "bg-state-warning" };
+        return { label: "¡Nueva ruta!", color: "bg-yellow-500" };
       case "recomendado":
         return { label: "Recomendado", color: "bg-blue-600" };
       case "exclusivo":
         return { label: "Exclusivo", color: "bg-purple-600" };
       case "oferta":
-        return { label: "¡OFERTA!", color: "bg-primary-red" };
+        return { label: "¡OFERTA!", color: "bg-red-600" };
       default:
         return { label: tag, color: "bg-gray-600" };
     }
   };
-
-  const getDisplayedTags = () => {
-    if (promos.length < 2) return promos;
-
-    const [first, second, ...rest] = promos;
-    const firstTags = first.etiquetas || [];
-    const secondTags = second.etiquetas || [];
-
-    const tag1 = firstTags.length
-      ? firstTags[Math.floor(Math.random() * firstTags.length)]
-      : null;
-
-    let tag2 = null;
-    if (secondTags.length > 1) {
-      const diferentes = secondTags.filter((t) => t !== tag1);
-      tag2 = diferentes.length
-        ? diferentes[Math.floor(Math.random() * diferentes.length)]
-        : secondTags[0];
-    } else {
-      tag2 = secondTags[0] || null;
-    }
-
-    return [
-      { ...first, etiquetaSeleccionada: tag1 },
-      { ...second, etiquetaSeleccionada: tag2 },
-      ...rest,
-    ];
-  };
-
-  const promosToShow = getDisplayedTags();
 
   return (
     <section className="py-20 bg-secondary-sand">
@@ -115,20 +77,19 @@ const PromotionsSection = () => {
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-primary-blue">
             Ofertas imperdibles
           </h2>
-          <p className="text-lg text-light">
+          <p className="text-lg text-gray-600">
             Aprovechá los mejores precios de temporada
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {promosToShow.map((pkg, i) => {
-            const badge = getBadgeInfo(pkg.etiquetaSeleccionada);
+          {promos.map((pkg, i) => {
+            const badge = getBadgeInfo(pkg.etiquetas?.[0]);
 
             return (
               <div
                 key={pkg._id || pkg.id}
                 data-aos={i === 0 ? "fade-right" : "fade-left"}
-                data-aos-delay={100 * (i + 1)}
                 className="cursor-pointer"
                 onClick={() => navigate(`/packages/${pkg._id || pkg.id}`)}
               >
@@ -163,6 +124,4 @@ const PromotionsSection = () => {
       </div>
     </section>
   );
-};
-
-export default PromotionsSection;
+}

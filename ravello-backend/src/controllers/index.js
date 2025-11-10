@@ -4,6 +4,8 @@ import * as contactController from './contactMessage.controller.js';
 import * as userController from './user.controller.js';
 import * as featuredController from './featured.controller.js';
 import * as offerController from './offer.controller.js';
+import * as featuredPromotionsController from './featuredPromotions.controller.js';
+import * as newsletterController from './newsletter.controller.js';
 
 export {
   packageController,
@@ -11,5 +13,7 @@ export {
   contactController,
   userController,
   featuredController,
-  offerController
+  offerController,
+  featuredPromotionsController,
+  newsletterController,
 };

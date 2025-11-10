@@ -4,6 +4,8 @@ import * as contactService from './contactMessage.service.js';
 import * as userService from './user.service.js';
 import * as featuredService from './featured.service.js';
 import * as offerService from './offer.service.js';
+import * as featuredPromotionsService from './featuredPromotions.service.js';
+import * as newsletterService from './newsletter.service.js';
 
 export {
   packageService,
@@ -12,4 +14,6 @@ export {
   userService,
   featuredService,
   offerService,
+  featuredPromotionsService,
+  newsletterService,
 };

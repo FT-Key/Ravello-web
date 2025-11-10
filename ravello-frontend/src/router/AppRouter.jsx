@@ -14,9 +14,12 @@ import ManagePackagesPage from "../pages/Admin/ManagePackagesPage";
 import ManageReviewsPage from "../pages/Admin/ManageReviewsPage";
 import ManageContactsPage from "../pages/Admin/ManageContactsPage";
 import ManageUsersPage from "../pages/Admin/ManageUsersPage";
+import ManageFeaturedPromotions from "../pages/Admin/ManageFeaturedPromotions";
+import UnsubscribePage from "../pages/Newsletter/Unsubscribe"; // o el path donde lo pongas
 
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
+import ManageNewsletterPage from "../pages/Admin/ManageNewsletterPage";
 
 function AppRouterInner() {
   const location = useLocation();
@@ -48,6 +51,7 @@ function AppRouterInner() {
         <Route path="/contacto" element={<ContactPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/registro" element={<RegisterPage />} />
+        <Route path="/unsubscribe" element={<UnsubscribePage />} />
 
         {/* Páginas privadas */}
         <Route path="/perfil" element={<PrivateRoute><h1>Perfil del usuario</h1></PrivateRoute>} />
@@ -58,6 +62,8 @@ function AppRouterInner() {
         <Route path="/admin/resenias" element={<AdminRoute><ManageReviewsPage /></AdminRoute>} />
         <Route path="/admin/contactos" element={<AdminRoute><ManageContactsPage /></AdminRoute>} />
         <Route path="/admin/usuarios" element={<AdminRoute><ManageUsersPage /></AdminRoute>} />
+        <Route path="/admin/boletin" element={<AdminRoute><ManageNewsletterPage /></AdminRoute>} />
+        <Route path="/admin/ofertas-imperdibles" element={<AdminRoute><ManageFeaturedPromotions /></AdminRoute>} />
 
         {/* Ruta 404 */}
         <Route
