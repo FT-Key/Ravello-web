@@ -1,11 +1,21 @@
-import express from 'express';
-import { contactController } from '../controllers/index.js';
+import express from "express";
+import { contactController } from "../controllers/index.js";
 
 const router = express.Router();
 
-router.get('/', contactController.getMessages);
-router.post('/', contactController.createMessage);
-router.put('/:id/read', contactController.markAsRead);
-router.delete('/:id', contactController.deleteMessage);
+// Crear nuevo mensaje
+router.post("/", contactController.createMessage);
+
+// Obtener todos los mensajes
+router.get("/", contactController.getMessages);
+
+// Obtener uno por ID
+router.get("/:id", contactController.getMessage);
+
+// Marcar como leído
+router.patch("/:id/read", contactController.markAsRead);
+
+// Eliminar mensaje
+router.delete("/:id", contactController.deleteMessage);
 
 export default router;

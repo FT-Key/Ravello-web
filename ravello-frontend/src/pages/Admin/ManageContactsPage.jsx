@@ -2,10 +2,13 @@ import React, { useEffect, useState } from "react";
 import DataTable from "../../components/admin/DataTable";
 import { toast } from "react-hot-toast";
 import { useUserStore } from "../../stores/useUserStore";
+import ContactEditModal from "../../components/admin/ContactEditModal";
 
 export default function ManageContactsPage() {
   const { user } = useUserStore(); // por si luego agregas permisos por rol
   const [contacts, setContacts] = useState([]);
+  const [selectedContact, setSelectedContact] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // --- Cargar mensajes ---
   useEffect(() => {
@@ -18,24 +21,17 @@ export default function ManageContactsPage() {
       });
   }, []);
 
-  // --- Marcar como leído ---
-  const handleMarkRead = async (msg) => {
-    try {
-      await fetch(`/api/contacts/${msg._id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leido: !msg.leido })
-      });
-      setContacts((prev) =>
-        prev.map((x) =>
-          x._id === msg._id ? { ...x, leido: !x.leido } : x
-        )
-      );
-      toast.success(`Mensaje marcado como ${msg.leido ? "no leído" : "leído"}`);
-    } catch (err) {
-      console.error("Error actualizando mensaje:", err);
-      toast.error("No se pudo actualizar el mensaje");
-    }
+  // --- Abrir modal de edición ---
+  const openEditModal = (contact) => {
+    setSelectedContact(contact);
+    setIsModalOpen(true);
+  };
+
+  // --- Guardar cambios desde el modal ---
+  const handleSaveContact = (updated) => {
+    setContacts((prev) =>
+      prev.map((c) => (c._id === updated._id ? updated : c))
+    );
   };
 
   // --- Eliminar mensaje ---
@@ -67,9 +63,8 @@ export default function ManageContactsPage() {
       label: "Leído",
       render: (val) => (
         <span
-          className={`px-2 py-1 text-xs rounded ${
-            val ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-700"
-          }`}
+          className={`px-2 py-1 text-xs rounded ${val ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-700"
+            }`}
         >
           {val ? "Sí" : "No"}
         </span>
@@ -92,8 +87,16 @@ export default function ManageContactsPage() {
       <DataTable
         columns={columns}
         data={contacts}
-        onEdit={handleMarkRead} // reutilizamos para marcar leído/no leído
+        onEdit={openEditModal} // Abrir modal para marcar leído
         onDelete={handleDelete}
+      />
+
+      {/* Modal de edición */}
+      <ContactEditModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        contact={selectedContact}
+        onSave={handleSaveContact}
       />
     </div>
   );
