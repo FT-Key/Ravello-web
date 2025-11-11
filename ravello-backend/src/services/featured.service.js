@@ -1,19 +1,37 @@
-// services/featuredService.js
 import { Featured } from '../models/index.js';
 
-export const getActiveFeatured = async () => {
-  return await Featured.findOne({ activo: true })
+export const getActiveFeatured = async ({ filters = {}, sort = '-createdAt', pagination = { page: 1, limit: 12, skip: 0 } } = {}) => {
+  const { limit, skip } = pagination;
+
+  const featured = await Featured.findOne({ activo: true, ...filters })
     .populate({
       path: 'items.package',
-      model: 'Package', // Asegura que usa el modelo correcto
-      select: 'nombre descripcion precioBase imagenPrincipal fechas.tipo etiquetas' // solo lo necesario
+      model: 'Package',
+      select: 'nombre descripcion precioBase imagenPrincipal fechas.tipo etiquetas',
     })
-    .sort({ createdAt: -1 })
+    .sort(sort)
+    .skip(skip)
+    .limit(limit)
     .lean();
+
+  return featured;
 };
 
-export const getAllFeatured = async () => {
-  return await Featured.find().populate('items.package').sort({ createdAt: -1 }).lean();
+export const getAllFeatured = async ({ filters = {}, sort = '-createdAt', pagination = { page: 1, limit: 12, skip: 0 } } = {}) => {
+  const { limit, skip } = pagination;
+
+  const featured = await Featured.find(filters)
+    .populate({
+      path: 'items.package',
+      model: 'Package',
+      select: 'nombre descripcion precioBase imagenPrincipal fechas.tipo etiquetas',
+    })
+    .sort(sort)
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  return featured;
 };
 
 export const createFeatured = async (data) => {
@@ -23,7 +41,11 @@ export const createFeatured = async (data) => {
 
 export const updateFeatured = async (id, data) => {
   return await Featured.findByIdAndUpdate(id, data, { new: true })
-    .populate('items.package')
+    .populate({
+      path: 'items.package',
+      model: 'Package',
+      select: 'nombre descripcion precioBase imagenPrincipal fechas.tipo etiquetas',
+    })
     .lean();
 };
 

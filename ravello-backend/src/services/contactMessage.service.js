@@ -1,9 +1,8 @@
-import { ContactMessage } from "../models/index.js";
 import transporter from "../config/email.js";
+import { ContactMessage } from "../models/index.js";
 
 /** Crear un nuevo mensaje y enviar emails */
 export async function createMessage(data, meta = {}) {
-  // 1️⃣ Guardar en base de datos
   const message = await ContactMessage.create({
     ...data,
     ip: meta.ip,
@@ -15,7 +14,7 @@ export async function createMessage(data, meta = {}) {
     user: "No enviado",
   };
 
-  // 2️⃣ Enviar correo de notificación al admin
+  // 📧 Correo al administrador
   try {
     await transporter.sendMail({
       from: `"Formulario de Contacto" <${process.env.EMAIL_USER}>`,
@@ -42,7 +41,7 @@ Recibido el: ${new Date().toLocaleString()}
     emailStatus.admin = "Error al enviar";
   }
 
-  // 3️⃣ Enviar correo de confirmación al usuario
+  // 📬 Correo al usuario
   try {
     await transporter.sendMail({
       from: `"Soporte ${process.env.SITE_NAME || "Ravello Web"}" <${process.env.EMAIL_USER}>`,
@@ -67,16 +66,30 @@ Recibido el: ${new Date().toLocaleString()}
     emailStatus.user = "Error al enviar";
   }
 
-  // 4️⃣ Retornar resultado al controlador
   return { message, emailStatus };
 }
 
-/** Obtener todos los mensajes */
-export async function getAllMessages() {
-  return await ContactMessage.find().sort({ createdAt: -1 });
+/** Obtener mensajes con filtros y paginación */
+export async function getAllMessages(filter = {}, options = {}) {
+  const { sort = "-createdAt", page = 1, limit = 10 } = options;
+  const skip = (page - 1) * limit;
+
+  const total = await ContactMessage.countDocuments(filter);
+  const data = await ContactMessage.find(filter)
+    .sort(sort)
+    .skip(skip)
+    .limit(limit);
+
+  return {
+    total,
+    page,
+    limit,
+    pages: Math.ceil(total / limit),
+    items: data,
+  };
 }
 
-/** Obtener mensaje por ID */
+/** Obtener uno por ID */
 export async function getMessageById(id) {
   return await ContactMessage.findById(id);
 }

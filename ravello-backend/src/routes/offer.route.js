@@ -1,24 +1,45 @@
-import express from 'express';
-import { offerController } from '../controllers/index.js';
+import express from "express";
+import { offerController } from "../controllers/index.js";
+import {
+  paginationMiddleware,
+  queryMiddleware,
+  searchMiddleware,
+  validateRequest
+} from "../middlewares/index.js";
+import { createOfferSchema, updateOfferSchema } from "../validations/index.js";
 
 const router = express.Router();
 
-// Obtener todas las ofertas
-router.get('/', offerController.getAll);
+// 📦 Obtener todas las ofertas con búsqueda, filtros y paginación
+router.get(
+  "/",
+  queryMiddleware,
+  searchMiddleware,
+  paginationMiddleware,
+  offerController.getAll
+);
 
-// Obtener ofertas activas (vigentes)
-router.get('/activas', offerController.getActive);
+// 🌟 Obtener ofertas activas
+router.get("/activas", offerController.getActive);
 
-// Obtener una oferta por ID
-router.get('/:id', offerController.getById);
+// 🔍 Obtener oferta por ID
+router.get("/:id", offerController.getById);
 
-// Crear nueva oferta
-router.post('/', offerController.create);
+// ➕ Crear nueva oferta
+router.post(
+  "/",
+  validateRequest(createOfferSchema),
+  offerController.create
+);
 
-// Actualizar oferta
-router.put('/:id', offerController.update);
+// ✏️ Actualizar oferta
+router.put(
+  "/:id",
+  validateRequest(updateOfferSchema),
+  offerController.update
+);
 
-// Eliminar oferta
-router.delete('/:id', offerController.remove);
+// 🗑️ Eliminar oferta
+router.delete("/:id", offerController.remove);
 
 export default router;

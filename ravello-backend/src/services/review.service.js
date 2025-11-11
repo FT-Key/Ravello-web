@@ -1,15 +1,26 @@
 import { Review } from "../models/index.js";
 
-export const getAllReviews = async (filter = {}) => {
-  const query = {};
+export const getAllReviews = async (filters = {}, pagination = { page:1, limit:10 }, sort = { createdAt: -1 }) => {
+  const { page = 1, limit = 10 } = pagination;
+  const skip = (page - 1) * limit;
 
-  if (filter.tipo) query.tipo = filter.tipo;
-  if (filter.paquete) query.paquete = filter.paquete;
-  if (filter.estadoModeracion) query.estadoModeracion = filter.estadoModeracion;
+  const [items, total] = await Promise.all([
+    Review.find(filters)
+      .populate("paquete", "nombre")
+      .sort(sort)
+      .skip(skip)
+      .limit(limit),
+    Review.countDocuments(filters)
+  ]);
 
-  return await Review.find(query)
-    .populate("paquete", "nombre")
-    .sort({ createdAt: -1 });
+  return {
+    items,
+    pagination: {
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+    },
+  };
 };
 
 export const getReviewById = async (id) => {
@@ -29,7 +40,6 @@ export const deleteReview = async (id) => {
   return await Review.findByIdAndDelete(id);
 };
 
-// ✅ Aprobar o rechazar reseña
 export const moderarReview = async (id, estado) => {
   const review = await Review.findById(id);
   if (!review) return null;

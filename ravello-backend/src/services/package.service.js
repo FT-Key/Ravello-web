@@ -1,7 +1,21 @@
-import { Package, Offer } from '../models/index.js';
+import { Package } from '../models/index.js';
 
-export const getAllPackages = async () => {
-  return await Package.find().sort({ createdAt: -1 });
+export const getPackages = async (filters = {}, sort = '-createdAt', pagination = { page: 1, limit: 12, skip: 0 }) => {
+  const { limit, skip, page } = pagination;
+
+  const [items, total] = await Promise.all([
+    Package.find(filters).sort(sort).skip(skip).limit(limit),
+    Package.countDocuments(filters),
+  ]);
+
+  return {
+    items,
+    pagination: {
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+    },
+  };
 };
 
 export const getPackageById = async (id) => {
@@ -22,23 +36,18 @@ export const deletePackage = async (id) => {
 };
 
 export const getPromotions = async (filters, sort, pagination) => {
-  console.log("🟦 [SERVICE] getPromotions() iniciado");
-  console.log("🔍 Filtros recibidos:", filters);
-  console.log("⚙️ Opciones recibidas:", pagination, "Sort:", sort);
-
-  const { limit, skip } = pagination;
+  const { limit, skip, page } = pagination;
 
   const [items, total] = await Promise.all([
     Package.find(filters).sort(sort).skip(skip).limit(limit),
     Package.countDocuments(filters),
   ]);
 
-  console.log(`📦 Paquetes encontrados: ${items.length}`, items);
   return {
     items,
     pagination: {
       total,
-      page: pagination.page,
+      page,
       pages: Math.ceil(total / limit),
     },
   };

@@ -1,21 +1,46 @@
 import express from "express";
 import { contactController } from "../controllers/index.js";
+import {
+  validateRequest,
+  paginationMiddleware,
+  queryMiddleware,
+  searchMiddleware,
+  errorHandler,
+} from "../middlewares/index.js";
+import {
+  createContactValidation,
+  updateReadValidation,
+} from "../validations/index.js";
 
 const router = express.Router();
 
-// Crear nuevo mensaje
-router.post("/", contactController.createMessage);
+/** 📬 Obtener mensajes con paginación, filtros y búsqueda */
+router.get(
+  "/",
+  paginationMiddleware,
+  queryMiddleware,
+  searchMiddleware,
+  contactController.getMessages
+);
 
-// Obtener todos los mensajes
-router.get("/", contactController.getMessages);
+/** 📨 Crear mensaje de contacto (envía correos) */
+router.post(
+  "/",
+  validateRequest(createContactValidation),
+  contactController.createMessage
+);
 
-// Obtener uno por ID
-router.get("/:id", contactController.getMessage);
+/** ✅ Marcar mensaje como leído */
+router.patch(
+  "/:id/read",
+  validateRequest(updateReadValidation),
+  contactController.markAsRead
+);
 
-// Marcar como leído
-router.patch("/:id/read", contactController.markAsRead);
-
-// Eliminar mensaje
+/** 🗑️ Eliminar mensaje */
 router.delete("/:id", contactController.deleteMessage);
+
+/** 🧱 Manejo centralizado de errores */
+router.use(errorHandler);
 
 export default router;

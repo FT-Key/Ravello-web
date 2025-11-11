@@ -1,34 +1,40 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { Star } from "lucide-react";
 import clientAxios from "../../api/axiosConfig";
 import Pagination from "../common/Pagination";
 
 export default function TestimonialsSection() {
   const [reviews, setReviews] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, pages: 1 });
   const itemsPerPage = 3;
 
+  const fetchReviews = async (page = 1) => {
+    try {
+      const { data } = await clientAxios.get("/reviews", {
+        params: {
+          tipo: "empresa",
+          estadoModeracion: "aprobada",
+          page,              // 👈 Cambiado
+          limit: itemsPerPage, // 👈 Cambiado
+        },
+      });
+
+      // El backend devuelve: { items, pagination }
+      setReviews(data.items || []);
+      setPagination(data.pagination || { page: 1, pages: 1 });
+    } catch (err) {
+      console.error("❌ Error al cargar reseñas:", err);
+    }
+  };
+
   useEffect(() => {
-    const fetchReviews = async () => {
-      try {
-        // Solo traemos reseñas aprobadas de tipo empresa
-        const { data } = await clientAxios.get(
-          "/reviews?tipo=empresa&estadoModeracion=aprobada"
-        );
-        setReviews(data);
-      } catch (err) {
-        console.error("Error al cargar reseñas:", err);
-      }
-    };
-    fetchReviews();
+    fetchReviews(1);
   }, []);
 
-  const totalPages = Math.ceil(reviews.length / itemsPerPage);
-
-  const paginatedReviews = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return reviews.slice(start, start + itemsPerPage);
-  }, [reviews, currentPage]);
+  const handlePageChange = (page) => {
+    setPagination((prev) => ({ ...prev, page }));
+    fetchReviews(page);
+  };
 
   return (
     <section className="py-20 bg-background-white">
@@ -47,7 +53,7 @@ export default function TestimonialsSection() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {paginatedReviews.map((r, idx) => (
+              {reviews.map((r, idx) => (
                 <div
                   key={r._id || idx}
                   data-aos="fade-up"
@@ -80,9 +86,9 @@ export default function TestimonialsSection() {
             </div>
 
             <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
+              currentPage={pagination.page}
+              totalPages={pagination.pages}
+              onPageChange={handlePageChange}
             />
           </>
         )}

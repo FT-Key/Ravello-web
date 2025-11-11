@@ -1,9 +1,14 @@
-// controllers/featuredController.js
 import { featuredService } from '../services/index.js';
 
 export const getActiveFeatured = async (req, res) => {
   try {
-    const featured = await featuredService.getActiveFeatured();
+    const { queryOptions, searchFilter, pagination } = req;
+
+    let featured = await featuredService.getActiveFeatured({
+      filters: searchFilter,
+      sort: queryOptions.sort,
+      pagination
+    });
 
     if (!featured)
       return res.status(404).json({ message: 'No hay sección de destacados activa' });
@@ -13,17 +18,24 @@ export const getActiveFeatured = async (req, res) => {
 
     res.json(featured);
   } catch (error) {
-    console.error('Error al obtener los destacados activos:', error);
+    console.error('❌ Error al obtener los destacados activos:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
 
 export const getAllFeatured = async (req, res) => {
   try {
-    const featured = await featuredService.getAllFeatured();
+    const { queryOptions, searchFilter, pagination } = req;
+
+    const featured = await featuredService.getAllFeatured({
+      filters: searchFilter,
+      sort: queryOptions.sort,
+      pagination
+    });
+
     res.json(featured);
   } catch (error) {
-    console.error('Error al obtener todas las secciones de destacados:', error);
+    console.error('❌ Error al obtener todas las secciones de destacados:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
@@ -33,7 +45,7 @@ export const createFeatured = async (req, res) => {
     const featured = await featuredService.createFeatured(req.body);
     res.status(201).json(featured);
   } catch (error) {
-    console.error('Error al crear la sección de destacados:', error);
+    console.error('❌ Error al crear la sección de destacados:', error);
     res.status(400).json({ message: 'Error al crear la sección', error });
   }
 };
@@ -48,7 +60,7 @@ export const updateFeatured = async (req, res) => {
 
     res.json(updated);
   } catch (error) {
-    console.error('Error al actualizar la sección de destacados:', error);
+    console.error('❌ Error al actualizar la sección de destacados:', error);
     res.status(400).json({ message: 'Error al actualizar la sección', error });
   }
 };
@@ -63,7 +75,7 @@ export const deleteFeatured = async (req, res) => {
 
     res.json({ message: 'Sección de destacados eliminada correctamente' });
   } catch (error) {
-    console.error('Error al eliminar la sección de destacados:', error);
+    console.error('❌ Error al eliminar la sección de destacados:', error);
     res.status(500).json({ message: 'Error al eliminar la sección' });
   }
 };

@@ -1,17 +1,26 @@
-import mongoose from "mongoose";
-import { FeaturedPromotion, Package } from "../models/index.js";
+import mongoose from 'mongoose';
+import { FeaturedPromotion, Package } from '../models/index.js';
 
-// Obtener promoción activa
-export const getActive = async () => {
-  return await FeaturedPromotion.findOne({ activo: true }).populate('packages').lean();
-}
+export const getActive = async ({ filters = {}, sort = '-createdAt', pagination = { page: 1, limit: 12, skip: 0 } } = {}) => {
+  const { limit, skip } = pagination;
 
-// Crear nueva promoción destacada (desactiva las anteriores)
+  const promo = await FeaturedPromotion.findOne({ activo: true, ...filters })
+    .populate({
+      path: 'packages',
+      model: 'Package',
+      select: 'nombre descripcion precioBase imagenPrincipal fechas.tipo etiquetas',
+    })
+    .sort(sort)
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  return promo;
+};
+
 export const createOrReplace = async ({ packages, titulo, descripcion }) => {
-  console.log("🟢 [Service] Datos recibidos:", { packages, titulo, descripcion });
-
   if (!packages || packages.length !== 2) {
-    throw new Error("Debes seleccionar exactamente 2 paquetes.");
+    throw new Error('Debes seleccionar exactamente 2 paquetes.');
   }
 
   const objectIds = packages.map((id) => {
@@ -25,21 +34,19 @@ export const createOrReplace = async ({ packages, titulo, descripcion }) => {
   // Verificar que los paquetes existan
   const existing = await Package.find({ _id: { $in: objectIds } });
   if (existing.length !== 2) {
-    throw new Error("Uno o más paquetes seleccionados no existen.");
+    throw new Error('Uno o más paquetes seleccionados no existen.');
   }
 
   // Buscar si ya existe un FeaturedPromotion
   let current = await FeaturedPromotion.findOne();
 
   if (current) {
-    console.log("♻️ [Service] Actualizando promoción existente:", current._id);
     current.packages = objectIds;
     current.titulo = titulo;
     current.descripcion = descripcion;
     current.activo = true;
     await current.save();
   } else {
-    console.log("✨ [Service] Creando nueva promoción destacada...");
     current = await FeaturedPromotion.create({
       packages: objectIds,
       titulo,
@@ -48,12 +55,9 @@ export const createOrReplace = async ({ packages, titulo, descripcion }) => {
     });
   }
 
-  const populated = await current.populate("packages");
-  console.log("🎯 [Service] Promoción final poblada:", populated);
-  return populated;
+  return await current.populate('packages');
 };
 
-// Eliminar promoción por ID
 export const deleteById = async (id) => {
   return await FeaturedPromotion.findByIdAndDelete(id);
-}
+};

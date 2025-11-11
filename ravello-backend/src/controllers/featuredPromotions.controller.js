@@ -2,13 +2,20 @@ import { featuredPromotionsService } from '../services/index.js';
 
 export const getActive = async (req, res) => {
   try {
-    const promo = await featuredPromotionsService.getActive();
+    const { queryOptions, searchFilter, pagination } = req;
+
+    let promo = await featuredPromotionsService.getActive({
+      filters: searchFilter,
+      sort: queryOptions.sort,
+      pagination
+    });
+
     res.json(promo || { packages: [] });
   } catch (err) {
     console.error('[FeaturedPromotions] Error en getActive:', err);
     res.status(500).json({ error: err.message });
   }
-}
+};
 
 export const createOrReplace = async (req, res) => {
   try {
@@ -20,15 +27,14 @@ export const createOrReplace = async (req, res) => {
     });
     res.json(promo);
   } catch (err) {
-    console.error("[FeaturedPromotions] Error en createOrReplace:", err.message);
+    console.error('[FeaturedPromotions] Error en createOrReplace:', err.message);
     res.status(400).json({
       error: err.message,
-      code: err.code || "UNKNOWN_ERROR",
+      code: err.code || 'UNKNOWN_ERROR',
     });
   }
 };
 
-// DELETE /api/featured-promotions/:id
 export const deleteById = async (req, res) => {
   try {
     await featuredPromotionsService.deleteById(req.params.id);
@@ -37,5 +43,4 @@ export const deleteById = async (req, res) => {
     console.error('[FeaturedPromotions] Error en deleteById:', err);
     res.status(500).json({ error: err.message });
   }
-}
-
+};
