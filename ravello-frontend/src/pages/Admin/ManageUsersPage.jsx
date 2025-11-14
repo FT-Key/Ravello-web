@@ -14,32 +14,42 @@ export default function ManageUsersPage() {
   const [editUser, setEditUser] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
 
+  // --------------------------
+  // 🔥 FIX: consumir /users paginado
+  // --------------------------
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const { data } = await clientAxios.get("/users");
-        setUsers(data);
-      } catch {
+        const res = await clientAxios.get("/users");
+
+        console.log(res)
+        const payload = res.data;
+
+        // El backend devuelve:
+        // { total, page, limit, data: [...] }
+        const usersArray = Array.isArray(payload?.data)
+          ? payload.data
+          : Array.isArray(payload)
+          ? payload
+          : [];
+
+        setUsers(usersArray);
+      } catch (err) {
+        console.error("Error cargando usuarios:", err);
         toast.error("Error cargando usuarios");
       }
     };
+
     fetchUsers();
   }, []);
+  // --------------------------
 
   const handleEdit = (u) => {
-    // if (u._id === user?._id) {
-    //   toast.error("No puedes editarte a ti mismo");
-    //   return;
-    // }
     setEditUser(u);
     setModalOpen(true);
   };
 
   const handleDelete = async (u) => {
-    // if (u._id === user?._id || u.esPrincipal) {
-    //   toast.error("No puedes eliminar este usuario");
-    //   return;
-    // }
     if (!confirm(`¿Eliminar usuario ${u.nombre}?`)) return;
 
     try {
@@ -73,9 +83,12 @@ export default function ManageUsersPage() {
       !query ||
       u.nombre?.toLowerCase().includes(query.toLowerCase()) ||
       u.email?.toLowerCase().includes(query.toLowerCase());
+
     const matchesRol = !filters.rol || u.rol === filters.rol;
+
     const matchesActivo =
       filters.activo === "" ? true : String(u.activo) === filters.activo;
+
     return matchesQuery && matchesRol && matchesActivo;
   });
 

@@ -4,6 +4,7 @@ import PackageEditModal from "../../components/admin/PackageEditModal";
 import PackageFilterBar from "../../components/admin/PackageFilterBar";
 import { useUserStore } from "../../stores/useUserStore";
 import { toast } from "react-hot-toast";
+import clientAxios from "../../api/axiosConfig";
 
 export default function ManagePackagesPage() {
   const { user } = useUserStore();
@@ -21,17 +22,40 @@ export default function ManagePackagesPage() {
     activo: "",
   });
 
-  // 📦 Cargar paquetes desde API
+  // -------------------------------
+  // 🔥 Extractor tipo "usuarios"
+  // -------------------------------
+  const extractArray = (payload) => {
+    if (!payload) return [];
+
+    if (Array.isArray(payload)) return payload; // lista plana
+
+    if (Array.isArray(payload.data)) return payload.data; // paginada estilo {data:[]}
+
+    // variantes tipo { packages: [] }
+    if (Array.isArray(payload.packages)) return payload.packages;
+    if (Array.isArray(payload.items)) return payload.items;
+    if (Array.isArray(payload.results)) return payload.results;
+
+    return [];
+  };
+
+  // -------------------------------
+  // 📦 Cargar paquetes
+  // -------------------------------
   const loadPackages = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/packages");
-      if (!res.ok) throw new Error("Error al cargar paquetes");
-      const data = await res.json();
-      setPackages(Array.isArray(data) ? data : []);
-      setFiltered(Array.isArray(data) ? data : []);
+
+      const params = new URLSearchParams(filters);
+      const res = await clientAxios.get(`/packages?${params}`);
+
+      const arr = extractArray(res.data);
+
+      setPackages(arr);
+      setFiltered(arr);
     } catch (err) {
-      console.error(err);
+      console.error("Error cargando paquetes:", err);
       toast.error("Error cargando paquetes");
     } finally {
       setLoading(false);
@@ -40,9 +64,11 @@ export default function ManagePackagesPage() {
 
   useEffect(() => {
     loadPackages();
-  }, []);
+  }, [filters]);
 
-  // 🔍 Aplicar búsqueda y filtros
+  // -------------------------------
+  // 🔍 Búsqueda y filtros
+  // -------------------------------
   useEffect(() => {
     let result = [...packages];
 
@@ -54,27 +80,12 @@ export default function ManagePackagesPage() {
       );
     }
 
-    // Filtro por tipo
-    if (filters.tipo) {
-      result = result.filter((p) => p.tipo === filters.tipo);
-    }
-
-    // Filtro por visibilidad
-    if (filters.visibleEnWeb) {
-      const visible = filters.visibleEnWeb === "true";
-      result = result.filter((p) => p.visibleEnWeb === visible);
-    }
-
-    // Filtro por activo / dado de baja
-    if (filters.activo) {
-      const activo = filters.activo === "true";
-      result = result.filter((p) => p.activo === activo);
-    }
-
     setFiltered(result);
-  }, [packages, query, filters]);
+  }, [packages, query]);
 
-  // 🧩 Handlers
+  // -------------------------------
+  // Handlers
+  // -------------------------------
   const handleFilterChange = (key, value) =>
     setFilters((prev) => ({ ...prev, [key]: value }));
 
@@ -98,6 +109,7 @@ export default function ManagePackagesPage() {
       }
       return [saved, ...prev];
     });
+
     toast.success("Paquete guardado correctamente");
   };
 
@@ -109,8 +121,7 @@ export default function ManagePackagesPage() {
     if (!confirm(`¿Eliminar el paquete "${pkg.nombre}"?`)) return;
 
     try {
-      const res = await fetch(`/api/packages/${pkg._id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Error eliminando paquete");
+      await clientAxios.delete(`/packages/${pkg._id}`);
       setPackages((prev) => prev.filter((x) => x._id !== pkg._id));
       toast.success(`Paquete "${pkg.nombre}" eliminado`);
     } catch (err) {
@@ -119,7 +130,9 @@ export default function ManagePackagesPage() {
     }
   };
 
-  // 📊 Columnas de la tabla
+  // -------------------------------
+  // 📊 Columnas tabla
+  // -------------------------------
   const columns = useMemo(
     () => [
       { key: "nombre", label: "Nombre", sortable: true },
@@ -136,10 +149,11 @@ export default function ManagePackagesPage() {
         label: "Visible en web",
         render: (val) => (
           <span
-            className={`px-2 py-1 text-xs rounded ${val
+            className={`px-2 py-1 text-xs rounded ${
+              val
                 ? "bg-green-100 text-green-700"
                 : "bg-gray-200 text-gray-700"
-              }`}
+            }`}
           >
             {val ? "Sí" : "No"}
           </span>
@@ -150,10 +164,11 @@ export default function ManagePackagesPage() {
         label: "Activo",
         render: (val) => (
           <span
-            className={`px-2 py-1 text-xs rounded ${val
+            className={`px-2 py-1 text-xs rounded ${
+              val
                 ? "bg-blue-100 text-blue-700"
                 : "bg-red-100 text-red-700"
-              }`}
+            }`}
           >
             {val ? "Activo" : "Dado de baja"}
           </span>
@@ -164,16 +179,16 @@ export default function ManagePackagesPage() {
         label: "Fechas",
         render: (val) =>
           val?.salida && val?.regreso
-            ? `${new Date(val.salida).toLocaleDateString()} → ${new Date(
-              val.regreso
-            ).toLocaleDateString()}`
+            ? `${new Date(val.salida).toLocaleDateString()} → ${new Date(val.regreso).toLocaleDateString()}`
             : "No definidas",
       },
     ],
     []
   );
 
-  // 🧱 Render principal
+  // -------------------------------
+  // Render
+  // -------------------------------
   return (
     <div className="p-6">
       {/* Header */}

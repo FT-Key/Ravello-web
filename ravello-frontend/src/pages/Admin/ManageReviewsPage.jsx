@@ -12,30 +12,49 @@ export default function ManageReviewsPage() {
   const [editReview, setEditReview] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const fetchReviews = async () => {
-    try {
-      const params = new URLSearchParams(filters);
-      const { data } = await clientAxios.get(`/reviews?${params}`);
-      setReviews(data);
-    } catch {
-      toast.error("Error cargando reseñas");
-    }
-  };
-
+  // ---------------------------------------------------
+  // 🔥 FIX: consumir /reviews paginado o como array plano
+  // ---------------------------------------------------
   useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const params = new URLSearchParams(filters);
+
+        const res = await clientAxios.get(`/reviews?${params}`);
+
+        const payload = res.data;
+
+        // backend puede devolver:
+        // 1) { total, page, limit, data: [...] }
+        // 2) un array plano directamente [...]
+        const reviewsArray = Array.isArray(payload?.data)
+          ? payload.data
+          : Array.isArray(payload)
+          ? payload
+          : [];
+
+        setReviews(reviewsArray);
+      } catch (err) {
+        console.error("Error cargando reseñas:", err);
+        toast.error("Error cargando reseñas");
+      }
+    };
+
     fetchReviews();
   }, [filters]);
+  // ---------------------------------------------------
 
-  const handleEdit = (r) => {
-    setEditReview(r);
+  const handleEdit = (review) => {
+    setEditReview(review);
     setModalOpen(true);
   };
 
-  const handleDelete = async (r) => {
-    if (!confirm(`¿Eliminar reseña de ${r.nombre}?`)) return;
+  const handleDelete = async (review) => {
+    if (!confirm(`¿Eliminar reseña de ${review.nombre}?`)) return;
+
     try {
-      await clientAxios.delete(`/reviews/${r._id}`);
-      setReviews((prev) => prev.filter((x) => x._id !== r._id));
+      await clientAxios.delete(`/reviews/${review._id}`);
+      setReviews((prev) => prev.filter((x) => x._id !== review._id));
       toast.success("Reseña eliminada correctamente");
     } catch {
       toast.error("Error al eliminar reseña");
@@ -44,10 +63,17 @@ export default function ManageReviewsPage() {
 
   const handleSave = async (data) => {
     try {
-      const res = await clientAxios.put(`/reviews/${editReview._id}`, data);
-      setReviews((prev) =>
-        prev.map((r) => (r._id === editReview._id ? res.data : r))
+      const res = await clientAxios.put(
+        `/reviews/${editReview._id}`,
+        data
       );
+
+      setReviews((prev) =>
+        prev.map((r) =>
+          r._id === editReview._id ? res.data : r
+        )
+      );
+
       toast.success("Reseña actualizada correctamente");
       setModalOpen(false);
     } catch {
@@ -58,9 +84,11 @@ export default function ManageReviewsPage() {
   const handleModerate = async (id, estado) => {
     try {
       const res = await clientAxios.patch(`/reviews/${id}/moderar`, { estado });
+
       setReviews((prev) =>
         prev.map((r) => (r._id === id ? res.data : r))
       );
+
       toast.success(`Reseña ${estado}`);
     } catch {
       toast.error("Error al moderar reseña");
@@ -76,10 +104,10 @@ export default function ManageReviewsPage() {
       !query ||
       r.nombre?.toLowerCase().includes(query.toLowerCase()) ||
       r.comentario?.toLowerCase().includes(query.toLowerCase());
+
     return matchesQuery;
   });
 
-  // 🔧 columnas adaptadas al esquema real
   const columns = [
     { key: "nombre", label: "Autor" },
     { key: "tipo", label: "Tipo" },
@@ -92,7 +120,8 @@ export default function ManageReviewsPage() {
     {
       key: "comentario",
       label: "Comentario",
-      render: (val) => val?.slice(0, 50) + (val?.length > 50 ? "..." : ""),
+      render: (val) =>
+        val?.slice(0, 50) + (val?.length > 50 ? "..." : ""),
     },
     {
       key: "calificacion",
