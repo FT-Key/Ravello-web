@@ -94,8 +94,16 @@ const packageSchema = new mongoose.Schema(
       regreso: Date
     },
 
-    imagenPrincipal: { type: String, required: true },
-    imagenes: [String],
+    imagenPrincipal: {
+      url: { type: String, required: true },
+      path: { type: String, required: true } // ruta en el bucket para poder borrar después
+    },
+    imagenes: [
+      {
+        url: String,
+        path: String
+      }
+    ],
 
     etiquetas: [
       {

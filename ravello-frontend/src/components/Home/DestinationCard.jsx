@@ -1,29 +1,46 @@
 import React, { useState } from "react";
 import { MapPin, Star } from "lucide-react";
-import PackageTags from "./PackageTags"; // Componente de etiquetas
+import { useNavigate } from "react-router-dom";
+import PackageTags from "./PackageTags";
 
-const DestinationCard = ({ image, destination, country, price, rating, etiquetas = [] }) => {
+const DestinationCard = ({
+  image,
+  destination,
+  country,
+  price,
+  rating,
+  etiquetas = [],
+  id,
+}) => {
   const [isHovered, setIsHovered] = useState(false);
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/paquetes/${id}`);
+  };
 
   return (
-    <div data-aos="zoom-in" data-aos-once="true">
+    <div
+      data-aos="zoom-in"
+      data-aos-once="true"
+      className="cursor-default"
+    >
       <div
-        className={`rounded-2xl overflow-hidden shadow-lg transition-all duration-300 h-full bg-white ${
-          isHovered ? "-translate-y-2 shadow-2xl" : "translate-y-0"
-        }`}
+        className={`rounded-2xl overflow-hidden shadow-lg transition-all duration-300 h-full bg-white ${isHovered ? "-translate-y-2 shadow-2xl" : "translate-y-0"
+          }`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         <div className="relative overflow-hidden h-64">
           <div
-            className={`w-full h-full bg-cover bg-center transition-transform duration-500 ${
-              isHovered ? "scale-110" : "scale-100"
-            }`}
+            className={`w-full h-full bg-cover bg-center transition-transform duration-500 ${isHovered ? "scale-110" : "scale-100"
+              }`}
             style={{ backgroundImage: `url(${image})` }}
           />
 
-          {/* 👈 Componente de etiquetas */}
-          {etiquetas && etiquetas.length > 0 && <PackageTags etiquetas={etiquetas} />}
+          {etiquetas && etiquetas.length > 0 && (
+            <PackageTags etiquetas={etiquetas} />
+          )}
 
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-transparent to-transparent p-4">
             <div className="flex items-center text-white text-sm">
@@ -46,7 +63,7 @@ const DestinationCard = ({ image, destination, country, price, rating, etiquetas
                 ${price.toLocaleString()}
               </p>
             </div>
-            <button className="bg-primary-blue rounded-full px-6 py-2 font-semibold border-0 text-white transition-transform hover:scale-105">
+            <button onClick={handleClick} className="cursor-pointer bg-primary-blue rounded-full px-6 py-2 font-semibold border-0 text-white transition-transform hover:scale-105">
               Ver más
             </button>
           </div>

@@ -63,12 +63,13 @@ const FeaturedDestinations = () => {
             return (
               <DestinationCard
                 key={pkg._id}
+                id={pkg._id}   // ← agregado
                 image={pkg.imagenPrincipal}
                 destination={pkg.nombre}
                 country={pkg.tipo === "internacional" ? "Internacional" : "Nacional"}
                 price={pkg.precioBase}
-                rating={5} // temporal, reemplazar si hay rating real
-                etiquetas={pkg.etiquetas || []} // 👈 pasamos las etiquetas reales del paquete
+                rating={5}
+                etiquetas={pkg.etiquetas || []}
                 delay={idx * 100}
               />
             );

@@ -1,60 +1,70 @@
-import { packageService } from '../services/index.js';
+// controllers/packages.controller.js
+import { packageService } from "../services/package.service.js";
 
 export const getPackages = async (req, res) => {
   try {
     const { queryOptions, searchFilter, pagination } = req;
-
-    const filters = {
-      ...queryOptions.filters,
-      ...searchFilter,
-    };
-
-    const data = await packageService.getPackages(filters, queryOptions.sort, pagination);
+    const data = await packageService.getPackagesController(queryOptions, searchFilter, pagination);
     res.json(data);
   } catch (err) {
-    console.error('❌ Error en getPackages:', err);
+    console.error("❌ Error en getPackages:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
 export const getPackage = async (req, res) => {
   try {
-    const pack = await packageService.getPackageById(req.params.id);
-    if (!pack) return res.status(404).json({ message: 'Paquete no encontrado' });
-    res.json(pack);
+    const data = await packageService.getPackageByIdController(req.params.id);
+    res.json(data);
   } catch (err) {
-    console.error('❌ Error en getPackage:', err);
-    res.status(500).json({ error: err.message });
+    console.error("❌ Error en getPackage:", err);
+    res.status(err.status || 500).json({ error: err.message });
   }
 };
 
 export const createPackage = async (req, res) => {
   try {
-    const pack = await packageService.createPackage(req.body);
-    res.status(201).json(pack);
+    const result = await packageService.createPackageController(req.body, req.files);
+    res.status(201).json(result);
   } catch (err) {
-    console.error('❌ Error en createPackage:', err);
-    res.status(400).json({ error: err.message });
+    console.error("❌ Error en createPackage:", err);
+    res.status(500).json({ error: err.message });
   }
 };
 
 export const updatePackage = async (req, res) => {
+  console.log("📌 [CONTROLLER] --> Entró a updatePackage()");
+  console.log("📌 Params recibidos:", req.params);
+  console.log("📌 Body recibido:", req.body);
+  console.log("📌 Files recibidos:", Object.keys(req.files || {}));
+
+  if (req.files) {
+    console.log("📌 imagenPrincipal:", req.files.imagenPrincipal?.length || 0);
+    console.log("📌 imagenes:", req.files.imagenes?.length || 0);
+  }
+
   try {
-    const pack = await packageService.updatePackage(req.params.id, req.body);
-    if (!pack) return res.status(404).json({ message: 'Paquete no encontrado' });
-    res.json(pack);
+    const result = await packageService.updatePackageController(
+      req.params.id,
+      req.body,
+      req.files
+    );
+
+    console.log("✅ [CONTROLLER] updatePackage finalizó OK");
+    res.json(result);
   } catch (err) {
-    console.error('❌ Error en updatePackage:', err);
-    res.status(400).json({ error: err.message });
+    console.error("❌ [CONTROLLER] Error en updatePackage:", err);
+    res.status(500).json({ error: err.message });
   }
 };
 
+
 export const deletePackage = async (req, res) => {
   try {
-    await packageService.deletePackage(req.params.id);
-    res.json({ message: 'Paquete eliminado' });
+    const result = await packageService.deletePackageController(req.params.id);
+    res.json(result);
   } catch (err) {
-    console.error('❌ Error en deletePackage:', err);
+    console.error("❌ Error en deletePackage:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -62,27 +72,18 @@ export const deletePackage = async (req, res) => {
 export const getPromotions = async (req, res) => {
   try {
     const { queryOptions, searchFilter, pagination } = req;
-
-    const filters = {
-      activo: true,
-      visibleEnWeb: true,
-      etiquetas: { $in: ['oferta'] },
-      ...queryOptions.filters,
-      ...searchFilter,
-    };
-
-    const data = await packageService.getPromotions(filters, queryOptions.sort, pagination);
-    res.json(data);
+    const result = await packageService.getPromotionsController(queryOptions, searchFilter, pagination);
+    res.json(result);
   } catch (err) {
-    console.error('❌ Error en getPromotions:', err);
+    console.error("❌ Error en getPromotions:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
 export const getDestinosUnicos = async (req, res) => {
   try {
-    const destinos = await packageService.getDestinosUnicos();
-    res.json(destinos);
+    const result = await packageService.getDestinosUnicosController();
+    res.json(result);
   } catch (err) {
     console.error("❌ Error en getDestinosUnicos:", err);
     res.status(500).json({ error: err.message });
