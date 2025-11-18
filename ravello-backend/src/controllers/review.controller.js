@@ -10,7 +10,9 @@ export const getReviews = async (req, res) => {
     const filters = {};
 
     for (const key of allowedFilters) {
-      if (req.query[key] !== undefined) filters[key] = req.query[key];
+      if (req.query[key] !== undefined && req.query[key] !== "") {
+        filters[key] = req.query[key];
+      }
     }
 
     // Merge con filtro de búsqueda textual (si existe)
@@ -43,6 +45,7 @@ export const getReviewById = async (req, res) => {
 // POST /api/review
 export const createReview = async (req, res) => {
   try {
+    console.log("Llega")
     const review = await reviewService.createReview(req.body);
     res.status(201).json(review);
   } catch (err) {

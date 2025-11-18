@@ -78,3 +78,13 @@ export const getPromotions = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+export const getDestinosUnicos = async (req, res) => {
+  try {
+    const destinos = await packageService.getDestinosUnicos();
+    res.json(destinos);
+  } catch (err) {
+    console.error("❌ Error en getDestinosUnicos:", err);
+    res.status(500).json({ error: err.message });
+  }
+};

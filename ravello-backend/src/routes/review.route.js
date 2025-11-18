@@ -1,7 +1,8 @@
+// routes/reviewRoutes.js
 import express from "express";
 import { reviewController } from "../controllers/index.js";
 import { validateRequest } from "../middlewares/index.js";
-import { createReviewSchema, updateReviewSchema } from "../validations/index.js";
+import { createReviewSchema, updateReviewSchema } from "../validations/index.js"; // ⚠️ Asegúrate de que esta línea esté
 import { paginationMiddleware } from "../middlewares/pagination.js";
 import { queryMiddleware } from "../middlewares/query.js";
 import { searchMiddleware } from "../middlewares/search.js";
@@ -14,7 +15,7 @@ router.get("/", queryMiddleware, searchMiddleware, paginationMiddleware, reviewC
 // GET /api/review/:id
 router.get("/:id", reviewController.getReviewById);
 
-// POST /api/review → validar
+// POST /api/review → validar ⚠️ Aquí debe estar el middleware
 router.post("/", validateRequest(createReviewSchema), reviewController.createReview);
 
 // PUT /api/review/:id → validar

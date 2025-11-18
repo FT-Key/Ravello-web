@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import clientAxios from "../../api/axiosConfig";
 
+// 🆕 Import utils
+import { extractResponseArray } from "../../utils/extractResponseArray";
+
 export default function ManageFeaturedPromotions() {
   const [packages, setPackages] = useState([]);
   const [selected, setSelected] = useState([]);
@@ -9,27 +12,11 @@ export default function ManageFeaturedPromotions() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
 
-  // 🔍 Normaliza la estructura del response
-  const extractPackages = (response) => {
-    console.log("📦 RAW packages response:", response);
-
-    const data = response?.data;
-    if (!data) return [];
-
-    if (Array.isArray(data.items)) return data.items;
-    if (Array.isArray(data.results)) return data.results;
-    if (Array.isArray(data.packages)) return data.packages;
-    if (Array.isArray(data)) return data;
-
-    console.warn("⚠️ No se reconoció la estructura de paquetes:", data);
-    return [];
-  };
-
   useEffect(() => {
     const fetchPackages = async () => {
       try {
         const res = await clientAxios.get("/packages?limit=100");
-        const parsed = extractPackages(res);
+        const parsed = extractResponseArray(res, ["packages"]);
         setPackages(parsed);
       } catch (err) {
         console.error("❌ Error al cargar paquetes:", err);
@@ -40,13 +27,14 @@ export default function ManageFeaturedPromotions() {
     const fetchCurrent = async () => {
       try {
         const { data } = await clientAxios.get("/featured-promotions");
+
         if (data) {
           setSelected(data.packages?.map((p) => p._id) || []);
           setTitulo(data.titulo || "Ofertas imperdibles");
           setDescripcion(data.descripcion || "");
         }
       } catch {
-        // No pasa nada si no existe el documento
+        // No pasa nada si no existe todavía
       }
     };
 
@@ -54,7 +42,6 @@ export default function ManageFeaturedPromotions() {
     fetchCurrent();
   }, []);
 
-  // 🔵 Ordena para que los seleccionados siempre estén arriba
   const getSortedPackages = () => {
     const selectedSet = new Set(selected);
 
@@ -64,7 +51,6 @@ export default function ManageFeaturedPromotions() {
     return [...selectedPkgs, ...unselectedPkgs];
   };
 
-  // ⭐ Seleccionar máximo 2 y reordenar automáticamente
   const toggleSelect = (id) => {
     setSelected((prev) => {
       if (prev.includes(id)) {
@@ -73,7 +59,7 @@ export default function ManageFeaturedPromotions() {
       if (prev.length < 2) {
         return [...prev, id];
       }
-      return prev; // no deja más de 2
+      return prev;
     });
   };
 
@@ -112,13 +98,12 @@ export default function ManageFeaturedPromotions() {
 
         {message.text && (
           <div
-            className={`mb-6 rounded-lg px-4 py-3 text-white ${
-              message.type === "success"
+            className={`mb-6 rounded-lg px-4 py-3 text-white ${message.type === "success"
                 ? "bg-green-600"
                 : message.type === "error"
-                ? "bg-red-600"
-                : "bg-yellow-500"
-            }`}
+                  ? "bg-red-600"
+                  : "bg-yellow-500"
+              }`}
           >
             {message.text}
           </div>
@@ -155,11 +140,10 @@ export default function ManageFeaturedPromotions() {
                 <div
                   key={pkg._id}
                   onClick={() => toggleSelect(pkg._id)}
-                  className={`cursor-pointer rounded-lg border p-4 transition-all ${
-                    selected.includes(pkg._id)
+                  className={`cursor-pointer rounded-lg border p-4 transition-all ${selected.includes(pkg._id)
                       ? "border-blue-600 bg-blue-50"
                       : "border-gray-200 hover:border-blue-400"
-                  }`}
+                    }`}
                 >
                   <p className="font-medium">{pkg.nombre}</p>
 
@@ -177,11 +161,10 @@ export default function ManageFeaturedPromotions() {
             <button
               onClick={handleSave}
               disabled={loading || selected.length !== 2}
-              className={`px-6 py-3 rounded-full font-semibold transition-all ${
-                loading || selected.length !== 2
+              className={`px-6 py-3 rounded-full font-semibold transition-all ${loading || selected.length !== 2
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-blue-600 hover:bg-blue-700 text-white"
-              }`}
+                }`}
             >
               {loading ? "Guardando..." : "Guardar promociones destacadas"}
             </button>

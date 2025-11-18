@@ -23,8 +23,11 @@ router.get(
   packageController.getPromotions
 );
 
+router.get("/destinos/list", packageController.getDestinosUnicos);
+
 // GET /packages/:id → obtener un paquete por ID
 router.get('/:id', packageController.getPackage);
+
 
 // POST /packages → crear paquete (valida request)
 router.post(

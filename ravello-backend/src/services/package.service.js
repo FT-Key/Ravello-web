@@ -52,3 +52,30 @@ export const getPromotions = async (filters, sort, pagination) => {
     },
   };
 };
+
+export const getDestinosUnicos = async () => {
+  const results = await Package.aggregate([
+    {
+      $unwind: {
+        path: "$destinos",
+        preserveNullAndEmptyArrays: false
+      }
+    },
+    {
+      $group: {
+        _id: { ciudad: "$destinos.ciudad", pais: "$destinos.pais" }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        ciudad: "$_id.ciudad",
+        pais: "$_id.pais"
+      }
+    },
+    { $sort: { ciudad: 1 } }
+  ]);
+
+  return results;
+};
+

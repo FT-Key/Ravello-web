@@ -6,6 +6,9 @@ import { useUserStore } from "../../stores/useUserStore";
 import { toast } from "react-hot-toast";
 import clientAxios from "../../api/axiosConfig";
 
+// 🆕 Import extractor centralizado
+import { extractResponseArray } from "../../utils/extractResponseArray";
+
 export default function ManagePackagesPage() {
   const { user } = useUserStore();
   const [packages, setPackages] = useState([]);
@@ -23,24 +26,6 @@ export default function ManagePackagesPage() {
   });
 
   // -------------------------------
-  // 🔥 Extractor tipo "usuarios"
-  // -------------------------------
-  const extractArray = (payload) => {
-    if (!payload) return [];
-
-    if (Array.isArray(payload)) return payload; // lista plana
-
-    if (Array.isArray(payload.data)) return payload.data; // paginada estilo {data:[]}
-
-    // variantes tipo { packages: [] }
-    if (Array.isArray(payload.packages)) return payload.packages;
-    if (Array.isArray(payload.items)) return payload.items;
-    if (Array.isArray(payload.results)) return payload.results;
-
-    return [];
-  };
-
-  // -------------------------------
   // 📦 Cargar paquetes
   // -------------------------------
   const loadPackages = async () => {
@@ -50,7 +35,7 @@ export default function ManagePackagesPage() {
       const params = new URLSearchParams(filters);
       const res = await clientAxios.get(`/packages?${params}`);
 
-      const arr = extractArray(res.data);
+      const arr = extractResponseArray(res, ["packages"]); // ✅ AHORA CENTRALIZADO
 
       setPackages(arr);
       setFiltered(arr);
@@ -72,7 +57,6 @@ export default function ManagePackagesPage() {
   useEffect(() => {
     let result = [...packages];
 
-    // Búsqueda global
     if (query.trim()) {
       const q = query.toLowerCase();
       result = result.filter((p) =>
@@ -191,7 +175,6 @@ export default function ManagePackagesPage() {
   // -------------------------------
   return (
     <div className="p-6">
-      {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Gestión de Paquetes</h1>
         <button
@@ -202,7 +185,6 @@ export default function ManagePackagesPage() {
         </button>
       </div>
 
-      {/* Filtros */}
       <PackageFilterBar
         query={query}
         setQuery={setQuery}
@@ -210,7 +192,6 @@ export default function ManagePackagesPage() {
         onFilterChange={handleFilterChange}
       />
 
-      {/* Tabla */}
       {loading ? (
         <div className="text-center py-8 text-gray-500">
           Cargando paquetes...
@@ -224,7 +205,6 @@ export default function ManagePackagesPage() {
         />
       )}
 
-      {/* Modal */}
       <PackageEditModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}

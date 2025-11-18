@@ -6,6 +6,9 @@ import { useUserStore } from "../../stores/useUserStore";
 import { toast } from "react-hot-toast";
 import clientAxios from "../../api/axiosConfig";
 
+// 🆕 utils
+import { extractResponseArray } from "../../utils/extractResponseArray";
+
 export default function ManageUsersPage() {
   const { user } = useUserStore();
   const [users, setUsers] = useState([]);
@@ -14,24 +17,15 @@ export default function ManageUsersPage() {
   const [editUser, setEditUser] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  // --------------------------
-  // 🔥 FIX: consumir /users paginado
-  // --------------------------
+  // ---------------------------------------------------
+  // 🔥 Ahora usando extractResponseArray()
+  // ---------------------------------------------------
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const res = await clientAxios.get("/users");
 
-        console.log(res)
-        const payload = res.data;
-
-        // El backend devuelve:
-        // { total, page, limit, data: [...] }
-        const usersArray = Array.isArray(payload?.data)
-          ? payload.data
-          : Array.isArray(payload)
-          ? payload
-          : [];
+        const usersArray = extractResponseArray(res, ["users"]);
 
         setUsers(usersArray);
       } catch (err) {
@@ -42,7 +36,7 @@ export default function ManageUsersPage() {
 
     fetchUsers();
   }, []);
-  // --------------------------
+  // ---------------------------------------------------
 
   const handleEdit = (u) => {
     setEditUser(u);
@@ -64,9 +58,11 @@ export default function ManageUsersPage() {
   const handleSave = async (data) => {
     try {
       const res = await clientAxios.put(`/users/${editUser._id}`, data);
+
       setUsers((prev) =>
         prev.map((u) => (u._id === editUser._id ? res.data : u))
       );
+
       toast.success("Usuario actualizado correctamente");
       setModalOpen(false);
     } catch {

@@ -13,6 +13,7 @@ export const getAllReviews = async (filters = {}, pagination = { page:1, limit:1
     Review.countDocuments(filters)
   ]);
 
+  console.log("Items: ", items)
   return {
     items,
     pagination: {

@@ -5,6 +5,9 @@ import { useUserStore } from "../../stores/useUserStore";
 import ContactEditModal from "../../components/admin/ContactEditModal";
 import clientAxios from "../../api/axiosConfig";
 
+// 🆕 Import utils
+import { extractResponseArray } from "../../utils/extractResponseArray";
+
 export default function ManageContactsPage() {
   const { user } = useUserStore(); 
   const [contacts, setContacts] = useState([]);
@@ -12,33 +15,14 @@ export default function ManageContactsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // 📌 Función descriptiva para manejar variaciones en la API
-  const extractContacts = (response) => {
-    console.log("📨 RAW contacts response:", response);
-
-    if (!response || typeof response !== "object") return [];
-
-    const data = response.data;
-
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data?.items)) return data.items;
-    if (Array.isArray(data?.results)) return data.results;
-    if (Array.isArray(data?.contacts)) return data.contacts;
-
-    console.warn("⚠️ No se pudo determinar la estructura de contacts:", data);
-    return [];
-  };
-
-  // --- Cargar mensajes ---
   const fetchContacts = async () => {
     try {
       setLoading(true);
       const response = await clientAxios.get("/contacts");
 
-      const parsed = extractContacts(response);
+      const parsed = extractResponseArray(response, ["contacts"]);
       setContacts(parsed);
 
-      console.log("📨 Contacts procesados:", parsed);
     } catch (err) {
       console.error("❌ Error cargando mensajes:", err);
       toast.error("Error cargando mensajes");
@@ -51,20 +35,17 @@ export default function ManageContactsPage() {
     fetchContacts();
   }, []);
 
-  // --- Abrir modal de edición ---
   const openEditModal = (contact) => {
     setSelectedContact(contact);
     setIsModalOpen(true);
   };
 
-  // --- Guardar cambios ---
   const handleSaveContact = (updated) => {
     setContacts((prev) =>
       prev.map((c) => (c._id === updated._id ? updated : c))
     );
   };
 
-  // --- Eliminar mensaje ---
   const handleDelete = async (msg) => {
     if (!confirm(`¿Eliminar el mensaje de ${msg.nombre}?`)) return;
     try {
@@ -78,7 +59,6 @@ export default function ManageContactsPage() {
     }
   };
 
-  // --- Columnas ---
   const columns = [
     { key: "nombre", label: "Nombre", sortable: true },
     { key: "email", label: "Email", sortable: true },

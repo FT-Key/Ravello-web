@@ -170,6 +170,15 @@ const seedData = async () => {
           descripcion: `Explorá ${d.destination}, uno de los destinos más atractivos de ${d.country}.`,
           descripcionCorta: d.descripcionCorta,
           tipo: d.country === "Argentina" ? "nacional" : "internacional",
+
+          // ✅ AGREGADO: Destinos correctos
+          destinos: [
+            {
+              ciudad: d.destination,
+              pais: d.country,
+            },
+          ],
+
           traslado: [
             {
               tipo: "vuelo",
@@ -187,6 +196,7 @@ const seedData = async () => {
               descripcion: "Vuelo directo con equipaje incluido.",
             },
           ],
+
           hospedaje: {
             nombre: `Hotel ${d.destination}`,
             categoria: "4 estrellas",
@@ -197,6 +207,7 @@ const seedData = async () => {
               descripcion: "Desayuno buffet y cena incluida.",
             },
           },
+
           actividades: [
             {
               nombre: `Tour por ${d.destination}`,
@@ -205,6 +216,7 @@ const seedData = async () => {
               incluido: true,
             },
           ],
+
           coordinadores: [
             {
               nombre: "Equipo de Coordinadores",
@@ -212,6 +224,7 @@ const seedData = async () => {
               email: "info@turismo.com",
             },
           ],
+
           descuentoNinos: 10,
           precioBase: d.price,
           moneda: "ARS",
@@ -225,7 +238,6 @@ const seedData = async () => {
           imagenes: [d.image],
           publicado: true,
 
-          // 👇 Etiquetas para promotions
           etiquetas: (() => {
             const tags = [];
             tags.push("nuevo");

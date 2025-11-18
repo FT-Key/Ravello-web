@@ -1,28 +1,11 @@
 import React, { useEffect, useState } from "react";
 import clientAxios from "../../api/axiosConfig";
+import { extractResponseArray } from "../../utils/extractResponseArray"; // ✅ IMPORTANTE
 
 export default function ManageNewsletterPage() {
   const [subscribers, setSubscribers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  // --------------------------------------------
-  // 🔍 Extractor estándar (igual que usuarios)
-  // --------------------------------------------
-  const extractArray = (payload) => {
-    if (!payload) return [];
-
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload.data)) return payload.data;
-
-    if (Array.isArray(payload.items)) return payload.items;
-    if (Array.isArray(payload.results)) return payload.results;
-
-    // el backend viejo devolvía: { newsletter: [...] }
-    if (Array.isArray(payload.newsletter)) return payload.newsletter;
-
-    return [];
-  };
 
   // --------------------------------------------
   // 📬 Cargar suscriptores
@@ -31,8 +14,8 @@ export default function ManageNewsletterPage() {
     try {
       setLoading(true);
 
-      const { data } = await clientAxios.get("/newsletter");
-      const arr = extractArray(data);
+      const res = await clientAxios.get("/newsletter");
+      const arr = extractResponseArray(res, ["newsletter"]); // ✅ AHORA ESTÁ CENTRALIZADO
 
       setSubscribers(arr);
       setError("");

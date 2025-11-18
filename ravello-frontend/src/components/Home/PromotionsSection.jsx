@@ -1,54 +1,74 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import clientAxios from "../../api/axiosConfig"; // ✅ usa tu cliente axios
+import clientAxios from "../../api/axiosConfig";
 
 export default function PromotionsSection() {
   const [promos, setPromos] = useState([]);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPromotions = async () => {
       try {
-        // ✅ Llamada al nuevo modelo "featured-promotions"
         const { data } = await clientAxios.get("/featured-promotions");
-        if (!data || !data.packages || data.packages.length === 0)
-          throw new Error("Sin promociones destacadas");
 
-        const processed = data.packages.map((pkg) => {
-          const etiquetas = pkg.etiquetas || [];
-          let etiquetasFinales = [];
+        // Validación segura
+        const packages = data?.packages ?? [];
 
-          if (etiquetas.includes("Más vendido")) etiquetasFinales.push("Más vendido");
+        if (packages.length === 0) {
+          console.warn("[PromotionsSection] No hay promociones destacadas.");
+          setPromos([]); // deja la sección como "próximamente"
+        } else {
+          const processed = packages.map((pkg) => {
+            const etiquetas = pkg.etiquetas || [];
+            let etiquetasFinales = [];
 
-          const otras = etiquetas.filter((e) => e !== "Más vendido");
-          if (otras.length > 0) {
-            const random = otras[Math.floor(Math.random() * otras.length)];
-            etiquetasFinales.push(random);
-          }
+            if (etiquetas.includes("Más vendido"))
+              etiquetasFinales.push("Más vendido");
 
-          return { ...pkg, etiquetas: etiquetasFinales };
-        });
+            const otras = etiquetas.filter((e) => e !== "Más vendido");
+            if (otras.length > 0) {
+              const random = otras[Math.floor(Math.random() * otras.length)];
+              etiquetasFinales.push(random);
+            }
 
-        setPromos(processed);
+            return { ...pkg, etiquetas: etiquetasFinales };
+          });
+
+          setPromos(processed);
+        }
+
       } catch (err) {
         console.error("[PromotionsSection] ❌ Error al cargar promociones:", err);
-        setError("No se pudieron cargar las promociones destacadas.");
+        setPromos([]); // previene crash del render
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchPromotions();
   }, []);
 
-  if (error) {
+  // 🔹 Mientras carga, mostramos un espacio vacío elegante
+  if (loading) {
     return (
       <section className="py-20 bg-secondary-sand text-center">
-        <p className="text-gray-600">{error}</p>
+        <p className="text-gray-500">Cargando promociones...</p>
       </section>
     );
   }
 
-  if (promos.length === 0) return null;
+  // 🔹 Si no hay promos → mostramos "PRÓXIMAMENTE"
+  if (promos.length === 0) {
+    return (
+      <section className="py-20 bg-secondary-sand text-center">
+        <h2 className="text-4xl md:text-5xl font-bold text-primary-blue mb-4">
+          Ofertas imperdibles
+        </h2>
+        <p className="text-lg text-gray-600">Próximamente ✨</p>
+      </section>
+    );
+  }
 
   const getBadgeInfo = (tag) => {
     if (!tag) return null;

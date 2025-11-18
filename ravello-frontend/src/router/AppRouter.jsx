@@ -6,7 +6,6 @@ import PackagesListPage from "../pages/Packages/PackagesListPage";
 import PackageDetailPage from "../pages/Packages/PackageDetailPage";
 import AboutPage from "../pages/About/AboutPage";
 import ContactPage from "../pages/Contact/ContactPage";
-import ReviewsPage from "../pages/Reviews/ReviewsPage";
 import LoginPage from "../pages/Auth/LoginPage";
 import RegisterPage from "../pages/Auth/RegisterPage";
 import DashboardPage from "../pages/Admin/DashboardPage";
@@ -47,7 +46,6 @@ function AppRouterInner() {
         <Route path="/paquetes" element={<PackagesListPage />} />
         <Route path="/paquetes/:id" element={<PackageDetailPage />} />
         <Route path="/sobre-nosotros" element={<AboutPage />} />
-        <Route path="/opiniones" element={<ReviewsPage />} />
         <Route path="/contacto" element={<ContactPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/registro" element={<RegisterPage />} />

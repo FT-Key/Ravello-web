@@ -5,6 +5,9 @@ import ReviewEditModal from "../../components/admin/ReviewEditModal";
 import clientAxios from "../../api/axiosConfig";
 import { toast } from "react-hot-toast";
 
+// 🆕 utils
+import { extractResponseArray } from "../../utils/extractResponseArray";
+
 export default function ManageReviewsPage() {
   const [reviews, setReviews] = useState([]);
   const [query, setQuery] = useState("");
@@ -13,25 +16,15 @@ export default function ManageReviewsPage() {
   const [modalOpen, setModalOpen] = useState(false);
 
   // ---------------------------------------------------
-  // 🔥 FIX: consumir /reviews paginado o como array plano
+  // 🔥 Usamos extractResponseArray()
   // ---------------------------------------------------
   useEffect(() => {
     const fetchReviews = async () => {
       try {
         const params = new URLSearchParams(filters);
-
         const res = await clientAxios.get(`/reviews?${params}`);
-
-        const payload = res.data;
-
-        // backend puede devolver:
-        // 1) { total, page, limit, data: [...] }
-        // 2) un array plano directamente [...]
-        const reviewsArray = Array.isArray(payload?.data)
-          ? payload.data
-          : Array.isArray(payload)
-          ? payload
-          : [];
+console.log("RESPONSE: ", res)
+        const reviewsArray = extractResponseArray(res, ["reviews"]);
 
         setReviews(reviewsArray);
       } catch (err) {
@@ -63,15 +56,10 @@ export default function ManageReviewsPage() {
 
   const handleSave = async (data) => {
     try {
-      const res = await clientAxios.put(
-        `/reviews/${editReview._id}`,
-        data
-      );
+      const res = await clientAxios.put(`/reviews/${editReview._id}`, data);
 
       setReviews((prev) =>
-        prev.map((r) =>
-          r._id === editReview._id ? res.data : r
-        )
+        prev.map((r) => (r._id === editReview._id ? res.data : r))
       );
 
       toast.success("Reseña actualizada correctamente");
