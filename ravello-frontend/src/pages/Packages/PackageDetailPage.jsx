@@ -62,7 +62,7 @@ export default function PackageDetailPage() {
             limit: 10,
           },
         });
-        
+
         const reviewItems = response.data.items || [];
         setReviews(reviewItems);
 
@@ -126,9 +126,8 @@ export default function PackageDetailPage() {
     return (
       <span
         key={etiqueta}
-        className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
-          styles[etiqueta] || "bg-gray-500 text-white"
-        }`}
+        className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${styles[etiqueta] || "bg-gray-500 text-white"
+          }`}
       >
         {etiqueta}
       </span>
@@ -153,11 +152,10 @@ export default function PackageDetailPage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsFavorite(!isFavorite)}
-                className={`p-2 rounded-full transition-all ${
-                  isFavorite
+                className={`p-2 rounded-full transition-all ${isFavorite
                     ? "bg-red-50 text-red-500"
                     : "bg-background-light text-light hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
               </button>
@@ -173,13 +171,19 @@ export default function PackageDetailPage() {
         {/* Galería de imágenes */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
+
             {/* Imagen principal */}
             <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden">
               <img
-                src={pkg.imagenes?.[selectedImage] || "/placeholder-package.jpg"}
-                alt={pkg.titulo}
+                src={
+                  pkg.imagenes?.[selectedImage]?.url ||
+                  pkg.imagenPrincipal?.url ||
+                  "/placeholder-package.jpg"
+                }
+                alt={pkg.nombre}
                 className="w-full h-full object-cover"
               />
+
               {pkg.etiquetas && pkg.etiquetas.length > 0 && (
                 <div className="absolute top-4 left-4 flex flex-wrap gap-2">
                   {pkg.etiquetas.map(renderEtiqueta)}
@@ -193,13 +197,16 @@ export default function PackageDetailPage() {
                 <div
                   key={idx}
                   onClick={() => setSelectedImage(idx)}
-                  className={`relative h-36 lg:h-60 rounded-xl overflow-hidden cursor-pointer transition-all ${
-                    selectedImage === idx
+                  className={`relative h-36 lg:h-60 rounded-xl overflow-hidden cursor-pointer transition-all ${selectedImage === idx
                       ? "ring-4 ring-primary-blue"
                       : "hover:opacity-80"
-                  }`}
+                    }`}
                 >
-                  <img src={img} alt={`${pkg.titulo} ${idx + 1}`} className="w-full h-full object-cover" />
+                  <img
+                    src={img.url}
+                    alt={`${pkg.nombre} ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               ))}
             </div>

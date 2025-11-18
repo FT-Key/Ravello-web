@@ -1,7 +1,7 @@
 export function parseJSONBody(req, res, next) {
+  console.log("🔹 parseJSONBody start");
   if (!req.body) return next();
 
-  // TODOS los campos que llegan como JSON string en multipart
   const jsonFields = [
     "destinos",
     "traslado",
@@ -26,5 +26,6 @@ export function parseJSONBody(req, res, next) {
     }
   });
 
+  console.log("🔹 parseJSONBody end", req.body);
   next();
 }

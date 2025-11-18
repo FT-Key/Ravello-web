@@ -108,7 +108,7 @@ export default function PackageModal({ open, onClose, pkg, onSaved }) {
 
       // Imágenes múltiples (archivos nuevos)
       imagenesFiles.forEach((file) =>
-        formData.append("imagenes[]", file)
+        formData.append("imagenes", file)
       );
 
       // Log para debug
