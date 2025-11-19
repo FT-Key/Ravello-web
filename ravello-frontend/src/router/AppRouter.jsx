@@ -19,6 +19,8 @@ import UnsubscribePage from "../pages/Newsletter/Unsubscribe"; // o el path dond
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
 import ManageNewsletterPage from "../pages/Admin/ManageNewsletterPage";
+import ScrollToTop from "../utils/scrollToTop";
+import ReviewPage from "../pages/Review/ReviewPage";
 
 function AppRouterInner() {
   const location = useLocation();
@@ -45,6 +47,7 @@ function AppRouterInner() {
         <Route path="/" element={<HomePage />} />
         <Route path="/paquetes" element={<PackagesListPage />} />
         <Route path="/paquetes/:id" element={<PackageDetailPage />} />
+        <Route path="/opiniones" element={<ReviewPage />} />
         <Route path="/sobre-nosotros" element={<AboutPage />} />
         <Route path="/contacto" element={<ContactPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -82,6 +85,7 @@ function AppRouterInner() {
 export default function AppRouter() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AppRouterInner />
     </BrowserRouter>
   );

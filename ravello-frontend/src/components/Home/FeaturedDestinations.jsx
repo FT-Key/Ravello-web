@@ -64,7 +64,7 @@ const FeaturedDestinations = () => {
               <DestinationCard
                 key={pkg._id}
                 id={pkg._id}   // ← agregado
-                image={pkg.imagenPrincipal}
+                image={pkg.imagenPrincipal?.url}
                 destination={pkg.nombre}
                 country={pkg.tipo === "internacional" ? "Internacional" : "Nacional"}
                 price={pkg.precioBase}

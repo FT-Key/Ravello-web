@@ -1,5 +1,6 @@
 // src/pages/Packages/PackageListPage.jsx
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../../api/axiosConfig";
 import PackageCard from "../../components/packages/PackageCard";
 import PackageFilterBar from "../../components/packages/PackageFilterBar";
@@ -8,6 +9,7 @@ import PackageCarousel from "../../components/packages/PackageCarousel";
 import { getQueryParams } from "../../utils/getQueryParams";
 
 const PackageListPage = () => {
+  const navigate = useNavigate(); // 🔹 Hook de navegación
   const [packages, setPackages] = useState([]);
   const [filters, setFilters] = useState({});
   const [pagination, setPagination] = useState({ page: 1, pages: 1 });
@@ -18,17 +20,14 @@ const PackageListPage = () => {
     const params = getQueryParams();
     const initial = {};
 
-    // Mapear 'destino' a 'search'
     if (params.destino) initial.search = params.destino;
     if (params.search) initial.search = params.search;
     if (params.tipo) initial.tipo = params.tipo;
     if (params.etiqueta) initial.etiqueta = params.etiqueta;
 
-    // Solo actualizar si hay filtros en la URL
     if (Object.keys(initial).length > 0) {
       setFilters(initial);
     } else {
-      // Si no hay filtros en URL, hacer la búsqueda inicial
       fetchPackages();
     }
   }, []);
@@ -46,14 +45,16 @@ const PackageListPage = () => {
       if (filters.search) {
         apiFilters.$or = [
           { titulo: { $regex: filters.search, $options: "i" } },
-          { "destinos.ciudad": { $regex: filters.search, $options: "i" } }
+          { "destinos.ciudad": { $regex: filters.search, $options: "i" } },
         ];
       }
 
       if (filters.tipo) apiFilters.tipo = filters.tipo;
       if (filters.etiqueta) apiFilters.etiquetas = filters.etiqueta;
-      if (filters.maxPrecio) apiFilters.precioBase = { $lte: Number(filters.maxPrecio) };
-      if (filters.minDias) apiFilters["destinos.diasEstadia"] = { $gte: Number(filters.minDias) };
+      if (filters.maxPrecio)
+        apiFilters.precioBase = { $lte: Number(filters.maxPrecio) };
+      if (filters.minDias)
+        apiFilters["destinos.diasEstadia"] = { $gte: Number(filters.minDias) };
 
       const queryParams = {
         sort: "-createdAt",
@@ -75,13 +76,15 @@ const PackageListPage = () => {
 
   // 🔹 Ejecutar búsqueda cuando cambien filtros
   useEffect(() => {
-    // Solo ejecutar si filters tiene contenido (evita doble llamada inicial)
     if (Object.keys(filters).length > 0) {
       fetchPackages();
     }
   }, [filters]);
 
-  const handleView = (id) => (window.location.href = `/paquetes/${id}`);
+  // 🔹 Navegación SPA usando navigate
+  const handleView = (id) => {
+    navigate(`/paquetes/${id}`);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

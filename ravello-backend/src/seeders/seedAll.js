@@ -171,7 +171,6 @@ const seedData = async () => {
           descripcionCorta: d.descripcionCorta,
           tipo: d.country === "Argentina" ? "nacional" : "internacional",
 
-          // ✅ AGREGADO: Destinos correctos
           destinos: [
             {
               ciudad: d.destination,
@@ -234,10 +233,16 @@ const seedData = async () => {
             salida: new Date("2025-12-01"),
             regreso: new Date("2025-12-07"),
           },
-          imagenPrincipal: d.image,
-          imagenes: [d.image],
-          publicado: true,
 
+          imagenPrincipal: {
+            url: d.image,
+            path: ""
+          },
+          imagenes: [
+            { url: d.image, path: "" }
+          ],
+
+          publicado: true,
           etiquetas: (() => {
             const tags = [];
             tags.push("nuevo");

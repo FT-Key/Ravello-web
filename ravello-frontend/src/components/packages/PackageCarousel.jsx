@@ -64,7 +64,7 @@ const PackageCarousel = () => {
             <div className="px-2">
               <div className="rounded-2xl overflow-hidden shadow-lg bg-white hover:shadow-2xl transition-shadow duration-300">
                 <img
-                  src={promo.imagenPrincipal}
+                  src={promo.imagenPrincipal?.url}
                   alt={promo.nombre}
                   className="w-full h-64 object-cover"
                 />

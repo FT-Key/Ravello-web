@@ -111,12 +111,12 @@ export default function PromotionsSection() {
                 key={pkg._id || pkg.id}
                 data-aos={i === 0 ? "fade-right" : "fade-left"}
                 className="cursor-pointer"
-                onClick={() => navigate(`/packages/${pkg._id || pkg.id}`)}
+                onClick={() => navigate(`/paquetes/${pkg._id || pkg.id}`)}
               >
                 <div
                   className="rounded-3xl overflow-hidden shadow-xl relative h-80"
                   style={{
-                    backgroundImage: `url(${pkg.imagenPrincipal})`,
+                    backgroundImage: `url(${pkg.imagenPrincipal?.url})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                   }}

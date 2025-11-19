@@ -16,7 +16,7 @@ const PackageCard = ({ pkg, onView }) => {
       {/* Imagen principal */}
       <div className="relative h-56 overflow-hidden">
         <img
-          src={pkg.imagenPrincipal}
+          src={pkg.imagenPrincipal?.url}
           alt={pkg.nombre}
           className={`w-full h-full object-cover transition-transform duration-500 ${hover ? "scale-110" : "scale-100"
             }`}
