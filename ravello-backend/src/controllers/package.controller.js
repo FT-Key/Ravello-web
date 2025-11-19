@@ -28,21 +28,12 @@ export const createPackage = async (req, res) => {
     res.status(201).json(result);
   } catch (err) {
     console.error("❌ Error en createPackage:", err);
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 };
 
 export const updatePackage = async (req, res) => {
   console.log("📌 [CONTROLLER] --> Entró a updatePackage()");
-  console.log("📌 Params recibidos:", req.params);
-  console.log("📌 Body recibido:", req.body);
-  console.log("📌 Files recibidos:", Object.keys(req.files || {}));
-
-  if (req.files) {
-    console.log("📌 imagenPrincipal:", req.files.imagenPrincipal?.length || 0);
-    console.log("📌 imagenes:", req.files.imagenes?.length || 0);
-  }
-
   try {
     const result = await packageService.updatePackageController(
       req.params.id,
@@ -50,14 +41,12 @@ export const updatePackage = async (req, res) => {
       req.files
     );
 
-    console.log("✅ [CONTROLLER] updatePackage finalizó OK");
     res.json(result);
   } catch (err) {
     console.error("❌ [CONTROLLER] Error en updatePackage:", err);
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 };
-
 
 export const deletePackage = async (req, res) => {
   try {

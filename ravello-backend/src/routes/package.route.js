@@ -23,7 +23,7 @@ router.get('/:id', packageController.getPackage);
 // CREAR
 router.post(
   '/',
-  uploadPackageImages,   // soporta imagenPrincipal + imagenes
+  uploadPackageImages,
   parseJSONBody,
   validateRequest(packageSchema),
   packageController.createPackage
@@ -32,7 +32,7 @@ router.post(
 // EDITAR
 router.put(
   '/:id',
-  uploadPackageImages,   // 👈 el CORRECTO
+  uploadPackageImages,
   parseJSONBody,
   validateRequest(packageSchema),
   packageController.updatePackage

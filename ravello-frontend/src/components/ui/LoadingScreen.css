@@ -1,0 +1,114 @@
+/* ------------------------------------------------- */
+/* CONTENEDOR PRINCIPAL */
+/* ------------------------------------------------- */
+.loading-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  overflow: hidden;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: radial-gradient(
+    circle at 50% 50%,
+    #000 0%,
+    #000 40%,
+    #113f63 80%,
+    var(--color-primary-blue) 100%
+  );
+
+  /* Asegura que se vea encima del contenido */
+  pointer-events: none;
+
+  /* TRANSICIÓN FINAL */
+  animation: exitAnimation 1.4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  animation-delay: 2s;
+}
+
+/* ------------------------------------------------- */
+/* CAPA GRADIENTE ANIMADA */
+/* ------------------------------------------------- */
+.loading-gradient {
+  position: absolute;
+  inset: 0;
+  opacity: 0.35;
+  filter: blur(40px);
+
+  mask-image: url("./mask.svg");
+  mask-size: cover;
+
+  animation: morph 6s ease-in-out infinite alternate;
+}
+
+/* ------------------------------------------------- */
+/* LOGO */
+/* ------------------------------------------------- */
+.loading-logo-container {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  animation: fadeIn 1.2s ease forwards;
+}
+
+.loading-logo {
+  width: 400px;
+  filter: drop-shadow(0 0 12px rgba(255,255,255,0.35));
+}
+
+/* texto opcional */
+.loading-text {
+  margin-top: 20px;
+  font-size: 1.2rem;
+  color: white;
+  opacity: 0;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  animation: fadeIn 1.2s ease forwards;
+  animation-delay: 0.7s;
+}
+
+/* ------------------------------------------------- */
+/* ANIMACIÓN DE SALIDA (SLIDE VISIBLE REAL) */
+/* ------------------------------------------------- */
+@keyframes exitAnimation {
+  0% {
+    clip-path: inset(0 0 0 0); /* visible completo */
+  }  
+  100% {
+    clip-path: inset(0 100% 0 0); /* se recorta completamente desde la derecha */
+  }
+}
+
+/* ------------------------------------------------- */
+/* GRADIENTE ORGÁNICO */
+/* ------------------------------------------------- */
+@keyframes morph {
+  0% {
+    transform: scale(1.1) translate(0, 0);
+  }
+  50% {
+    transform: scale(1.2) translate(20px, -20px);
+  }
+  100% {
+    transform: scale(1.1) translate(-20px, 20px);
+  }
+}
+
+/* ------------------------------------------------- */
+/* SUAVE APARICIÓN */
+/* ------------------------------------------------- */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

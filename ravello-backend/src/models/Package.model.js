@@ -40,45 +40,41 @@ const actividadSchema = new mongoose.Schema({
   incluido: { type: Boolean, default: true }
 });
 
-// --- Nuevo subesquema de destino
+// --- Subesquema de destino
 const destinoSchema = new mongoose.Schema({
   ciudad: { type: String, required: true },
   pais: { type: String },
-  diasEstadia: { type: Number }, // Ej: 3 días en Roma
+  diasEstadia: { type: Number }, 
   descripcion: String,
-  actividades: [actividadSchema], // actividades específicas del destino
-  hospedaje: hospedajeSchema // hospedaje particular en esa ciudad
+  actividades: [actividadSchema],
+  hospedaje: hospedajeSchema
 });
 
 // --- Esquema principal de paquete
 const packageSchema = new mongoose.Schema(
   {
     nombre: { type: String, required: true },
-    // ✨ Nuevo campo para texto corto (para cards, listados, etc.)
+
     descripcionCorta: {
       type: String,
-      maxlength: 200, // opcional, limita el texto
+      maxlength: 200,
       default: ''
     },
 
-    // ✨ Nuevo campo para descripción detallada (para la vista del producto)
     descripcionDetallada: {
       type: String,
       default: ''
     },
+
     descripcion: String,
     tipo: { type: String, enum: ['nacional', 'internacional'], required: true },
 
-    // ✅ Nuevo campo para múltiples destinos
     destinos: [destinoSchema],
 
-    // Si el paquete incluye traslados generales (entre destinos, por ejemplo)
     traslado: [transferSchema],
 
-    // Hospedaje general (si no hay uno por destino)
     hospedaje: hospedajeSchema,
 
-    // Actividades generales (no ligadas a un destino en particular)
     actividades: [actividadSchema],
 
     coordinadores: [coordinatorSubSchema],
@@ -89,15 +85,14 @@ const packageSchema = new mongoose.Schema(
     montoSenia: { type: Number, required: true },
     plazoPagoTotalDias: { type: Number, default: 7 },
 
-    fechas: {
-      salida: Date,
-      regreso: Date
-    },
+    // ✨ Duración total del itinerario (calculado automáticamente)
+    duracionTotal: { type: Number, default: 0 },
 
     imagenPrincipal: {
       url: { type: String, required: true },
-      path: { type: String, required: false } // ruta en el bucket para poder borrar después
+      path: { type: String }
     },
+
     imagenes: [
       {
         url: String,
@@ -117,5 +112,17 @@ const packageSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// ============================================================
+// 🟩 Middleware: Calcula duración total según destinos
+// ============================================================
+packageSchema.pre('save', function (next) {
+  const total = this.destinos?.reduce(
+    (acc, dest) => acc + (dest.diasEstadia || 0),
+    0
+  );
+  this.duracionTotal = total || 0;
+  next();
+});
 
 export default mongoose.model('Package', packageSchema);

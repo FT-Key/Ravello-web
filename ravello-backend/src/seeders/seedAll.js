@@ -1,10 +1,109 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { connectDB } from "../config/db.js";
-import { Package, Featured, Offer } from "../models/index.js";
+import { Package, PackageDate, Featured, Offer } from "../models/index.js";
 
 dotenv.config();
 
+// ------------------------------
+// HELPERS
+// ------------------------------
+const randomInt = (min, max) =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
+
+// Genera al menos 3 fechas por paquete
+const generatePackageDates = (packageId, precioBase) => {
+  const numFechas = randomInt(3, 6); // Entre 3 y 6 fechas
+  const base = new Date("2025-12-01");
+  
+  return Array.from({ length: numFechas }).map((_, i) => {
+    const salida = new Date(base);
+    salida.setDate(salida.getDate() + i * 15);
+    
+    // Variación del precio base (±20%)
+    const variacion = randomInt(-20, 20) / 100;
+    const precioFinal = Math.round(precioBase * (1 + variacion));
+    
+    return {
+      package: packageId,
+      salida,
+      // regreso se calculará automáticamente con el middleware
+      precioFinal,
+      moneda: "ARS",
+      cuposTotales: randomInt(20, 50),
+      cuposDisponibles: randomInt(10, 40),
+      estado: "disponible"
+    };
+  });
+};
+
+// Genera entre 1 y 4 destinos por paquete
+const generateDestinos = (d) => {
+  const count = randomInt(1, 4);
+  const destinos = [];
+  
+  // Primer destino siempre es el principal
+  destinos.push({
+    ciudad: d.destination,
+    pais: d.country,
+    diasEstadia: randomInt(3, 7),
+    descripcion: d.descripcionCorta,
+    actividades: [
+      {
+        nombre: `Tour por ${d.destination}`,
+        descripcion: `Excursión guiada por los principales puntos turísticos.`,
+        duracion: "Medio día",
+        incluido: true
+      }
+    ],
+    hospedaje: {
+      nombre: `Hotel ${d.destination}`,
+      categoria: ["3 estrellas", "4 estrellas", "5 estrellas"][randomInt(0, 2)],
+      ubicacion: `Centro de ${d.destination}`,
+      caracteristicas: ["WiFi", "Piscina", "Desayuno incluido"],
+      gastronomia: {
+        pension: ["media pension", "pension completa"][randomInt(0, 1)],
+        descripcion: "Desayuno buffet y cena incluida."
+      }
+    }
+  });
+  
+  // Destinos adicionales si corresponde
+  const ciudadesAdicionales = {
+    "Grecia": ["Atenas", "Mykonos", "Creta"],
+    "Francia": ["Lyon", "Niza", "Burdeos"],
+    "Suiza": ["Zúrich", "Ginebra", "Lucerna"],
+    "Italia": ["Florencia", "Venecia", "Milán"],
+    "Japón": ["Kioto", "Osaka", "Hiroshima"],
+    "Tailandia": ["Phuket", "Chiang Mai", "Krabi"]
+  };
+  
+  if (count > 1 && ciudadesAdicionales[d.country]) {
+    const ciudades = ciudadesAdicionales[d.country];
+    for (let i = 1; i < count && i < ciudades.length + 1; i++) {
+      destinos.push({
+        ciudad: ciudades[i - 1],
+        pais: d.country,
+        diasEstadia: randomInt(2, 4),
+        descripcion: `Explorá ${ciudades[i - 1]} y sus maravillas.`,
+        actividades: [
+          {
+            nombre: `Excursión en ${ciudades[i - 1]}`,
+            descripcion: "Visita guiada a los puntos de interés.",
+            duracion: "Día completo",
+            incluido: true
+          }
+        ]
+      });
+    }
+  }
+  
+  return destinos;
+};
+
+// ------------------------------
+// DESTINOS BASE
+// ------------------------------
 const destinations = [
   {
     image: "https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?w=600",
@@ -152,111 +251,125 @@ const destinations = [
   },
 ];
 
+// ------------------------------
+// SEEDER PRINCIPAL
+// ------------------------------
 const seedData = async () => {
   try {
     await connectDB();
 
     console.log("🗑️  Eliminando datos previos...");
     await Package.deleteMany();
+    await PackageDate.deleteMany();
     await Featured.deleteMany();
     await Offer.deleteMany();
 
-    console.log("📦 Cargando paquetes...");
+    console.log("📦 Creando paquetes...");
 
-    const paquetes = await Promise.all(
-      destinations.map((d, i) =>
-        Package.create({
-          nombre: `Viaje a ${d.destination}`,
-          descripcion: `Explorá ${d.destination}, uno de los destinos más atractivos de ${d.country}.`,
-          descripcionCorta: d.descripcionCorta,
-          tipo: d.country === "Argentina" ? "nacional" : "internacional",
+    const paquetes = [];
 
-          destinos: [
-            {
-              ciudad: d.destination,
-              pais: d.country,
+    // Crear paquetes
+    for (const d of destinations) {
+      const destinos = generateDestinos(d);
+      
+      const pkg = await Package.create({
+        nombre: `Viaje a ${d.destination}`,
+        descripcion: `Explorá ${d.destination}, uno de los destinos más atractivos de ${d.country}.`,
+        descripcionCorta: d.descripcionCorta,
+        descripcionDetallada: `Descubrí todo lo que ${d.destination} tiene para ofrecerte en este paquete completo que incluye traslados, hospedaje y actividades exclusivas.`,
+        tipo: d.country === "Argentina" ? "nacional" : "internacional",
+
+        destinos,
+
+        traslado: [
+          {
+            tipo: "vuelo",
+            compania: "AirTour",
+            salida: {
+              lugar: "Buenos Aires",
+              fecha: new Date("2025-12-01"),
+              hora: "09:00",
             },
-          ],
-
-          traslado: [
-            {
-              tipo: "vuelo",
-              compania: "AirTour",
-              salida: {
-                lugar: "Buenos Aires",
-                fecha: new Date("2025-12-01"),
-                hora: "09:00",
-              },
-              llegada: {
-                lugar: d.destination,
-                fecha: new Date("2025-12-01"),
-                hora: "18:00",
-              },
-              descripcion: "Vuelo directo con equipaje incluido.",
+            llegada: {
+              lugar: d.destination,
+              fecha: new Date("2025-12-01"),
+              hora: "18:00",
             },
-          ],
-
-          hospedaje: {
-            nombre: `Hotel ${d.destination}`,
-            categoria: "4 estrellas",
-            ubicacion: `Centro de ${d.destination}`,
-            caracteristicas: ["WiFi", "Piscina", "Desayuno incluido"],
-            gastronomia: {
-              pension: "media pension",
-              descripcion: "Desayuno buffet y cena incluida.",
-            },
+            descripcion: "Vuelo directo con equipaje incluido.",
           },
+        ],
 
-          actividades: [
-            {
-              nombre: `Tour por ${d.destination}`,
-              descripcion: `Excursión guiada por los principales puntos turísticos de ${d.destination}.`,
-              duracion: "Medio día",
-              incluido: true,
-            },
-          ],
-
-          coordinadores: [
-            {
-              nombre: "Equipo de Coordinadores",
-              telefono: "+54 9 11 5555-0000",
-              email: "info@turismo.com",
-            },
-          ],
-
-          descuentoNinos: 10,
-          precioBase: d.price,
-          moneda: "ARS",
-          montoSenia: d.price * 0.2,
-          plazoPagoTotalDias: 10,
-          fechas: {
-            salida: new Date("2025-12-01"),
-            regreso: new Date("2025-12-07"),
+        // Hospedaje general (también está en cada destino)
+        hospedaje: {
+          nombre: `Hotel ${d.destination}`,
+          categoria: "4 estrellas",
+          ubicacion: `Centro de ${d.destination}`,
+          caracteristicas: ["WiFi", "Piscina", "Desayuno incluido"],
+          gastronomia: {
+            pension: "media pension",
+            descripcion: "Desayuno buffet y cena incluida.",
           },
+        },
 
-          imagenPrincipal: {
-            url: d.image,
-            path: ""
+        // Actividades generales
+        actividades: [
+          {
+            nombre: `City Tour en ${d.destination}`,
+            descripcion: `Recorrido guiado por los principales puntos turísticos.`,
+            duracion: "Medio día",
+            incluido: true,
           },
-          imagenes: [
-            { url: d.image, path: "" }
-          ],
+        ],
 
-          publicado: true,
-          etiquetas: (() => {
-            const tags = [];
-            tags.push("nuevo");
-            if (d.price < 700000) tags.push("oferta");
-            if ([0, 2, 4, 6, 15].includes(i)) tags.push("mas vendido");
-            return tags;
-          })(),
-        })
-      )
-    );
+        coordinadores: [
+          {
+            nombre: "Equipo de Coordinadores",
+            telefono: "+54 9 11 5555-0000",
+            email: "info@turismo.com",
+          },
+        ],
 
-    console.log(`✅ ${paquetes.length} paquetes insertados`);
+        descuentoNinos: randomInt(10, 20),
+        precioBase: d.price,
+        moneda: "ARS",
+        montoSenia: Math.round(d.price * 0.2),
+        plazoPagoTotalDias: randomInt(7, 15),
 
-    // 🌟 Featured
+        // duracionTotal se calculará automáticamente con el middleware
+
+        imagenPrincipal: { url: d.image, path: "" },
+        imagenes: [
+          { url: d.image, path: "" }
+        ],
+
+        etiquetas: (() => {
+          const tags = [];
+          if (randomInt(0, 1) === 1) tags.push("nuevo");
+          if (d.price < 700000) tags.push("oferta");
+          if (d.rating >= 4.8) tags.push("recomendado");
+          return tags;
+        })(),
+
+        activo: true,
+        visibleEnWeb: true
+      });
+
+      paquetes.push(pkg);
+
+      // Generar fechas para este paquete
+      const fechas = generatePackageDates(pkg._id, pkg.precioBase);
+      await PackageDate.insertMany(fechas);
+      
+      console.log(`✅ Paquete creado: ${pkg.nombre} (${destinos.length} destinos, ${fechas.length} fechas)`);
+    }
+
+    console.log(`\n🎉 ${paquetes.length} paquetes creados exitosamente`);
+
+    // ------------------------------
+    // FEATURED
+    // ------------------------------
+    console.log("\n⭐ Creando sección de destacados...");
+    
     const destacados = paquetes
       .filter((p, i) => destinations[i].featured)
       .map((p, i) => ({
@@ -273,58 +386,70 @@ const seedData = async () => {
       activo: true,
     });
 
-    // 💥 OFERTAS EXCLUSIVAS
-    console.log("💥 Creando ofertas especiales...");
+    console.log(`✅ ${destacados.length} paquetes destacados`);
+
+    // ------------------------------
+    // OFERTAS
+    // ------------------------------
+    console.log("\n💥 Creando ofertas especiales...");
 
     const europa = paquetes.find((p) => p.nombre.includes("Europa Clásica"));
     const cancun = paquetes.find((p) => p.nombre.includes("Cancún"));
     const bali = paquetes.find((p) => p.nombre.includes("Bali"));
 
-    const ofertas = [
-      {
+    const ofertas = [];
+
+    if (europa) {
+      ofertas.push({
         titulo: "Europa Clásica - 30% OFF",
-        descripcion: "Recorré 5 ciudades europeas en 12 días con un 30% de descuento. ¡Imperdible!",
-        package: europa?._id,
+        descripcion:
+          "Recorré múltiples ciudades europeas con un 30% de descuento.",
+        package: europa._id,
         tipoDescuento: "porcentaje",
         valorDescuento: 30,
         fechaInicio: new Date("2025-11-01"),
         fechaFin: new Date("2025-12-31"),
         destacada: true,
-        imagen: europa?.imagenPrincipal,
         activo: true,
-      },
-      {
+      });
+    }
+
+    if (cancun) {
+      ofertas.push({
         titulo: "Caribe Todo Incluido - 25% OFF",
-        descripcion: "Viví el sol y el mar con todo incluido en Cancún. Últimos cupos disponibles.",
-        package: cancun?._id,
+        descripcion: "Viví el sol y el mar con todo incluido en Cancún.",
+        package: cancun._id,
         tipoDescuento: "porcentaje",
         valorDescuento: 25,
         fechaInicio: new Date("2025-11-10"),
         fechaFin: new Date("2026-01-15"),
         destacada: true,
-        imagen: cancun?.imagenPrincipal,
         activo: true,
-      },
-      {
+      });
+    }
+
+    if (bali) {
+      ofertas.push({
         titulo: "Bali Relax - 20% OFF",
-        descripcion: "Desconectá del mundo en los templos y playas de Bali con un 20% de descuento.",
-        package: bali?._id,
+        descripcion: "Desconectá del mundo en los templos y playas de Bali.",
+        package: bali._id,
         tipoDescuento: "porcentaje",
         valorDescuento: 20,
         fechaInicio: new Date("2025-11-05"),
         fechaFin: new Date("2025-12-31"),
         destacada: false,
-        imagen: bali?.imagenPrincipal,
         activo: true,
-      },
-    ];
+      });
+    }
 
-    await Offer.insertMany(ofertas);
+    if (ofertas.length > 0) {
+      await Offer.insertMany(ofertas);
+      console.log(`✅ ${ofertas.length} ofertas creadas`);
+    }
 
-    console.log("🎁 Ofertas creadas exitosamente.");
-    console.log("🌟 Sección de destacados creada exitosamente.");
-    console.log("🎉 Seed completado.");
-
+    console.log("\n🎊 ¡Seeder completado exitosamente!");
+    console.log("=" .repeat(50));
+    
     process.exit();
   } catch (error) {
     console.error("❌ Error durante el seed:", error);
