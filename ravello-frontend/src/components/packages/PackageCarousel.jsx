@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import api from "../../api/axiosConfig";
+import clientAxios from "../../api/axiosConfig";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, Navigation } from "swiper/modules";
 import "swiper/css";
@@ -13,7 +13,7 @@ const PackageCarousel = () => {
   useEffect(() => {
     const fetchPromotions = async () => {
       try {
-        const response = await api.get("/packages/promotions", {
+        const response = await clientAxios.get("/packages/promotions", {
           params: {
             page: 1,
             limit: 12,

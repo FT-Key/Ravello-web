@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
+import clientAxios from "../../api/axiosConfig"; // <-- importa tu axiosConfig
 
 export default function ContactEditModal({ isOpen, onClose, contact, onSave }) {
   const [leido, setLeido] = useState(false);
@@ -12,11 +13,9 @@ export default function ContactEditModal({ isOpen, onClose, contact, onSave }) {
 
   const handleSave = async () => {
     try {
-      await fetch(`/api/contacts/${contact._id}/read`, {
-        method: "PATCH",
-      });
+      await clientAxios.patch(`/contacts/${contact._id}/read`);
 
-      onSave({ ...contact, leido: true }); // Backend siempre marca como leído
+      onSave({ ...contact, leido: true }); // el backend siempre marca como leído
       toast.success("Mensaje marcado como leído");
       onClose();
     } catch (err) {

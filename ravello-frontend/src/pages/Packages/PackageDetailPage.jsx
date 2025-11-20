@@ -20,7 +20,7 @@ import {
   MessageSquare,
   AlertCircle,
 } from "lucide-react";
-import api from "../../api/axiosConfig";
+import clientAxios from "../../api/axiosConfig";
 import ReviewForm from "../../components/reviews/ReviewForm";
 import ReviewList from "../../components/reviews/ReviewList";
 
@@ -43,7 +43,7 @@ export default function PackageDetailPage() {
     const fetchPackage = async () => {
       try {
         setLoading(true);
-        const response = await api.get(`/packages/${id}`);
+        const response = await clientAxios.get(`/packages/${id}`);
         console.log("Paquete: ", response.data);
         setPkg(response.data);
         setSelectedImage(0);
@@ -62,7 +62,7 @@ export default function PackageDetailPage() {
     const fetchPackageDates = async () => {
       try {
         setDatesLoading(true);
-        const response = await api.get(`/package-dates/by-package/${id}`, {
+        const response = await clientAxios.get(`/package-dates/by-package/${id}`, {
           params: {
             estado: "disponible",
             sort: "salida:asc",
@@ -93,7 +93,7 @@ export default function PackageDetailPage() {
     const fetchReviews = async () => {
       try {
         setReviewsLoading(true);
-        const response = await api.get("/reviews", {
+        const response = await clientAxios.get("/reviews", {
           params: {
             paquete: id,
             estadoModeracion: "aprobada",
