@@ -12,6 +12,33 @@ import newsletterRoutes from './newsletter.route.js';
 
 const router = express.Router();
 
+// --------------------------------------------------
+// 🟢 HEALTH CHECK
+// --------------------------------------------------
+router.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// --------------------------------------------------
+// 🟢 PUBLIC ROUTES (sin autenticación)
+// --------------------------------------------------
+const publicRouter = express.Router();
+
+// Ejemplo de ruta pública
+publicRouter.get("/info", (req, res) => {
+  res.json({ message: "API pública funcionando" });
+});
+
+// Montar public
+router.use("/public", publicRouter);
+
+// --------------------------------------------------
+// 🟢 API ROUTES
+// --------------------------------------------------
 router.use('/packages', packageRoutes);
 router.use('/package-dates', packageDateRoutes);
 router.use('/reviews', reviewRoutes);
