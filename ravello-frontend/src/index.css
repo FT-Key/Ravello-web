@@ -1,6 +1,32 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* Bootstrap (opcional, si lo importás aquí) */
-@import "bootstrap/dist/css/bootstrap.min.css";
+:root {
+    /* ---------------------------------- */
+    /* Colores Principales (Identidad Ravello) */
+    /* ---------------------------------- */
+    --color-primary-blue: #1C77B7; /* El azul fuerte del logo (Confianza, Cielo) */
+    --color-primary-red: #E33D35;   /* El rojo de acento del logo (Acción, Energía) */
+
+    /* ---------------------------------- */
+    /* Colores Secundarios (Soporte, Destino) */
+    /* ---------------------------------- */
+    --color-secondary-cyan: #34B0D9; /* Azul más claro (Cielo, Agua, Destino) */
+    --color-secondary-sand: #F5E0B3; /* Color cálido (Arena, relax) para fondos suaves */
+
+    /* ---------------------------------- */
+    /* Colores de Texto y Fondo (Legibilidad) */
+    /* ---------------------------------- */
+    --color-text-dark: #333333;       /* Texto principal */
+    --color-text-light: #666666;      /* Texto secundario/cuerpo */
+
+    --color-background-white: #FFFFFF; /* Fondo principal */
+    --color-background-light: #F7F7F7;  /* Fondo de secciones alternas */
+    --color-border-subtle: #DDDDDD;    /* Borde sutil para tarjetas/divisores */
+
+    /* ---------------------------------- */
+    /* Colores de Estado (Comercio Electrónico) */
+    /* ---------------------------------- */
+    --color-state-success: #4CAF50; /* Éxito (Reserva confirmada, pago) */
+    --color-state-error: #D32F2F;   /* Error (Formulario, producto agotado) */
+    --color-state-warning: #FFC107; /* Advertencia (Últimos cupos, atención) */
+}

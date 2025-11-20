@@ -1,0 +1,107 @@
+/* Colores personalizados como clases de Tailwind */
+.bg-primary-blue {
+    background-color: var(--color-primary-blue);
+}
+
+.bg-primary-red {
+    background-color: var(--color-primary-red);
+}
+
+.bg-secondary-cyan {
+    background-color: var(--color-secondary-cyan);
+}
+
+.bg-secondary-sand {
+    background-color: var(--color-secondary-sand);
+}
+
+.bg-background-light {
+    background-color: var(--color-background-light);
+}
+
+.bg-background-white {
+    background-color: var(--color-background-white);
+}
+
+.text-primary-blue {
+    color: var(--color-primary-blue);
+}
+
+.text-primary-red {
+    color: var(--color-primary-red);
+}
+
+.text-dark {
+    color: var(--color-text-dark);
+}
+
+.text-light {
+    color: var(--color-text-light);
+}
+
+.border-subtle {
+    border-color: var(--color-border-subtle);
+}
+
+.bg-state-success {
+    background-color: var(--color-state-success);
+}
+
+.bg-state-warning {
+    background-color: var(--color-state-warning);
+}
+
+/* Hero background con blend mode */
+/* Hero background con blend mode y parallax */
+.hero-bg {
+  background-image: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&h=900&fit=crop');
+  background-size: cover;
+  background-position: center;
+  background-blend-mode: multiply;
+  transition: transform 0.1s ease-out;
+  will-change: transform;
+  /* Hacemos el background más grande para que el parallax tenga espacio */
+  transform: scale(1.2);
+}
+
+/* Animaciones personalizadas */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 1s ease-out;
+}
+
+/* Hover states personalizados */
+.experience-card {
+    transition: all 0.3s ease;
+}
+
+.experience-card:hover {
+    transform: translateY(-4px);
+}
+
+/* Iconos con background con opacidad */
+.icon-bg-cyan {
+    background-color: rgba(52, 176, 217, 0.2);
+}
+
+.icon-bg-blue {
+    background-color: rgba(28, 119, 183, 0.2);
+}
+
+.icon-bg-red {
+    background-color: rgba(227, 61, 53, 0.2);
+}
+
+.icon-bg-green {
+    background-color: rgba(76, 175, 80, 0.2);
+}
