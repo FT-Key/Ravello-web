@@ -1,22 +1,25 @@
-import express from "express";
-import authRoutes from "./authRoutes.js";
-import userRoutes from "./userRoutes.js";
-import packageRoutes from "./packageRoutes.js";
-import orderRoutes from "./orderRoutes.js";
-import quoteRoutes from "./quoteRoutes.js";
-import favoriteRoutes from "./favoriteRoutes.js";
-import cartRoutes from "./cartRoutes.js";
-import paymentRoutes from "./paymentRoutes.js";
+import express from 'express';
+
+import packageRoutes from './package.route.js';
+import packageDateRoutes from './packageDate.routes.js';
+import reviewRoutes from './review.route.js';
+import contactMessageRoutes from './contactMessage.route.js';
+import userRoutes from './user.route.js';
+import featuredRoutes from './featured.route.js';
+import offerRoutes from './offer.route.js';
+import featuredPromotionsRoutes from './featuredPromotions.route.js';
+import newsletterRoutes from './newsletter.route.js';
 
 const router = express.Router();
 
-router.use("/auth", authRoutes);
-router.use("/users", userRoutes);
-router.use("/packages", packageRoutes);
-router.use("/orders", orderRoutes);
-router.use("/quotes", quoteRoutes);
-router.use("/favorites", favoriteRoutes);
-router.use("/cart", cartRoutes);
-router.use("/payments", paymentRoutes);
+router.use('/packages', packageRoutes);
+router.use('/package-dates', packageDateRoutes);
+router.use('/reviews', reviewRoutes);
+router.use('/contacts', contactMessageRoutes);
+router.use('/users', userRoutes);
+router.use('/featured-promotions', featuredPromotionsRoutes);
+router.use('/featured', featuredRoutes);
+router.use('/offers', offerRoutes);
+router.use('/newsletter', newsletterRoutes);
 
 export default router;
