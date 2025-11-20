@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import toast from "react-hot-toast";
+import clientAxios from "../../api/axiosConfig";
 
 export default function PackageModal({ open, onClose, pkg, onSaved }) {
   const {
@@ -70,20 +71,16 @@ export default function PackageModal({ open, onClose, pkg, onSaved }) {
   // ----------------------------------------------------
   const onSubmit = async (data) => {
     try {
-      const method = pkg ? "PUT" : "POST";
-      const url = pkg ? `/api/packages/${pkg._id}` : "/api/packages";
+      const method = pkg ? "put" : "post";
+      const url = pkg ? `/packages/${pkg._id}` : "/packages";
 
       const formData = new FormData();
 
       // Convertir campos dinámicamente
       Object.keys(data).forEach((key) => {
-        // ❌ No enviar imagenPrincipal si es URL
         if (key === "imagenPrincipal") return;
-
-        // ❌ No enviar imagenes si vienen del backend (urls)
         if (key === "imagenes") return;
 
-        // ❌ No enviar destinos, traslado, hospedaje, actividades, coordinadores si no existen
         if (["destinos", "traslado", "hospedaje", "actividades", "coordinadores"].includes(key)) {
           if (data[key] && (Array.isArray(data[key]) ? data[key].length > 0 : true)) {
             formData.append(key, JSON.stringify(data[key]));
@@ -91,10 +88,7 @@ export default function PackageModal({ open, onClose, pkg, onSaved }) {
           return;
         }
 
-        // ❌ No enviar duracionTotal (se calcula automáticamente)
         if (key === "duracionTotal") return;
-
-        // ❌ No enviar timestamps
         if (["createdAt", "updatedAt", "__v", "_id"].includes(key)) return;
 
         const value = data[key];
@@ -114,32 +108,31 @@ export default function PackageModal({ open, onClose, pkg, onSaved }) {
       }
 
       // Imágenes múltiples (archivos nuevos)
-      imagenesFiles.forEach((file) =>
-        formData.append("imagenes", file)
-      );
+      imagenesFiles.forEach((file) => formData.append("imagenes", file));
 
-      // Log para debug
+      // Debug
       console.log("📤 DATA antes de enviar:", data);
       for (let pair of formData.entries()) {
         console.log("📦 FormData →", pair[0], ":", pair[1]);
       }
 
-      const res = await fetch(url, { method, body: formData });
+      // ----- 🚀 Enviar con Axios -----
+      const { data: saved } = await clientAxios({
+        method,
+        url,
+        data: formData,
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Error al guardar paquete");
-      }
-
-      const saved = await res.json();
       onSaved(saved);
       toast.success(`Paquete ${pkg ? "actualizado" : "creado"} correctamente`);
       onClose();
     } catch (err) {
       console.error(err);
-      toast.error(err.message || "Hubo un error al guardar el paquete");
+      toast.error(err.response?.data?.message || err.message || "Hubo un error al guardar el paquete");
     }
   };
+
 
   if (!open) return null;
 
@@ -160,7 +153,7 @@ export default function PackageModal({ open, onClose, pkg, onSaved }) {
               </p>
             )}
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
           >
@@ -182,9 +175,8 @@ export default function PackageModal({ open, onClose, pkg, onSaved }) {
               </label>
               <input
                 {...register("nombre", { required: "El nombre es obligatorio" })}
-                className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.nombre ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.nombre ? "border-red-500" : "border-gray-300"
+                  }`}
                 placeholder="Ej: Mendoza Aventura 5 días"
               />
               {errors.nombre && (
@@ -197,8 +189,8 @@ export default function PackageModal({ open, onClose, pkg, onSaved }) {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Tipo <span className="text-red-500">*</span>
               </label>
-              <select 
-                {...register("tipo")} 
+              <select
+                {...register("tipo")}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="nacional">Nacional</option>
@@ -217,9 +209,8 @@ export default function PackageModal({ open, onClose, pkg, onSaved }) {
                 })}
                 rows={2}
                 maxLength={200}
-                className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
-                  errors.descripcionCorta ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${errors.descripcionCorta ? "border-red-500" : "border-gray-300"
+                  }`}
                 placeholder="Breve descripción para listados..."
               />
               <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -269,13 +260,12 @@ export default function PackageModal({ open, onClose, pkg, onSaved }) {
                 <input
                   type="number"
                   step="0.01"
-                  {...register("precioBase", { 
+                  {...register("precioBase", {
                     required: "El precio base es obligatorio",
                     min: { value: 0, message: "El precio no puede ser negativo" }
                   })}
-                  className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.precioBase ? "border-red-500" : "border-gray-300"
-                  }`}
+                  className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.precioBase ? "border-red-500" : "border-gray-300"
+                    }`}
                   placeholder="0.00"
                 />
                 {errors.precioBase && (
@@ -285,8 +275,8 @@ export default function PackageModal({ open, onClose, pkg, onSaved }) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
-                <select 
-                  {...register("moneda")} 
+                <select
+                  {...register("moneda")}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="ARS">ARS - Peso Argentino</option>
@@ -320,13 +310,12 @@ export default function PackageModal({ open, onClose, pkg, onSaved }) {
                 <input
                   type="number"
                   step="0.01"
-                  {...register("montoSenia", { 
+                  {...register("montoSenia", {
                     required: "El monto de seña es obligatorio",
                     min: { value: 0, message: "No puede ser negativo" }
                   })}
-                  className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.montoSenia ? "border-red-500" : "border-gray-300"
-                  }`}
+                  className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.montoSenia ? "border-red-500" : "border-gray-300"
+                    }`}
                   placeholder="0.00"
                 />
                 {errors.montoSenia && (
@@ -456,11 +445,10 @@ export default function PackageModal({ open, onClose, pkg, onSaved }) {
                       key={etq}
                       type="button"
                       onClick={() => toggleEtiqueta(etq)}
-                      className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
-                        etiquetas.includes(etq)
+                      className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${etiquetas.includes(etq)
                           ? "bg-blue-600 text-white border-blue-600 shadow-md"
                           : "border-gray-300 text-gray-700 hover:border-blue-400 hover:text-blue-600"
-                      }`}
+                        }`}
                     >
                       {etq}
                     </button>
@@ -472,18 +460,18 @@ export default function PackageModal({ open, onClose, pkg, onSaved }) {
             {/* ESTADO */}
             <div className="flex gap-6 items-center">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  {...register("activo")} 
+                <input
+                  type="checkbox"
+                  {...register("activo")}
                   className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                 />
                 <span className="text-sm font-medium text-gray-700">Activo</span>
               </label>
 
               <label className="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  {...register("visibleEnWeb")} 
+                <input
+                  type="checkbox"
+                  {...register("visibleEnWeb")}
                   className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                 />
                 <span className="text-sm font-medium text-gray-700">Visible en Web</span>

@@ -1,7 +1,7 @@
 // src/pages/Packages/PackageListPage.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../api/axiosConfig";
+import clientAxios from "../../api/axiosConfig";
 import PackageCard from "../../components/packages/PackageCard";
 import PackageFilterBar from "../../components/packages/PackageFilterBar";
 import PackageFilters from "../../components/packages/PackageFilters";
@@ -63,7 +63,7 @@ const PackageListPage = () => {
         limit: 12,
       };
 
-      const response = await api.get("/packages", { params: queryParams });
+      const response = await clientAxios.get("/packages", { params: queryParams });
 
       setPackages(response.data.items || []);
       setPagination(response.data.pagination || {});
