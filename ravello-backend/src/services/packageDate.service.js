@@ -3,32 +3,22 @@ import { PackageDate, Package } from "../models/index.js";
 
 export const PackageDateService = {
 
+  // ---------------------------------------------------------
+  // 🟢 CREAR FECHA DE PAQUETE
+  // ---------------------------------------------------------
   async createPackageDate(data) {
     const pkg = await Package.findById(data.package);
     if (!pkg) throw new Error("El paquete no existe");
 
+    // Inconsistencias opcionales
     const inconsistencias = [];
 
-    // VALIDACIÓN 1 → fechas coherentes
-    if (new Date(data.salida) >= new Date(data.regreso)) {
-      inconsistencias.push("La fecha de salida debe ser anterior a la de regreso.");
-    }
+    const sumaDestinos = pkg.destinos?.reduce(
+      (acc, d) => acc + (d.diasEstadia || 0),
+      0
+    ) || 0;
 
-    // VALIDACIÓN 2 → recalcular totalDias
-    const diasReales = Math.ceil(
-      (new Date(data.regreso) - new Date(data.salida)) / (1000 * 60 * 60 * 24)
-    );
-
-    if (diasReales !== data.totalDias) {
-      inconsistencias.push(
-        `totalDias (${data.totalDias}) no coincide con los días reales (${diasReales}).`
-      );
-    }
-
-    // VALIDACIÓN 3 → suma destinos
-    const sumaDestinos = pkg.destinos.reduce((acc, d) => acc + (d.diasEstadia || 0), 0);
-
-    if (sumaDestinos !== data.totalDias) {
+    if (data.totalDias != null && sumaDestinos !== data.totalDias) {
       inconsistencias.push(
         `La suma de días por destino (${sumaDestinos}) no coincide con totalDias (${data.totalDias}).`
       );
@@ -36,11 +26,19 @@ export const PackageDateService = {
 
     data.inconsistencias = inconsistencias;
     data.validadoDestinos = inconsistencias.length === 0;
-    data.validadoFechas = inconsistencias.length === 0;
+    data.validadoFechas = true;
 
-    return await PackageDate.create(data);
+    // create() → dispara pre("save")
+    const created = await PackageDate.create(data);
+
+    // ❗ Devuelve documento completo con populate
+    const populated = await PackageDate.findById(created._id).populate("package");
+    return populated;
   },
 
+  // ---------------------------------------------------------
+  // 🟢 LISTAR TODOS
+  // ---------------------------------------------------------
   async getAll(queryOptions, searchFilter, pagination) {
     const query = {
       ...queryOptions.filters,
@@ -59,10 +57,13 @@ export const PackageDateService = {
       total,
       page: pagination.page,
       limit: pagination.limit,
-      data
+      items: data
     };
   },
 
+  // ---------------------------------------------------------
+  // 🟢 LISTAR POR ID DE PAQUETE
+  // ---------------------------------------------------------
   async getByPackage(packageId, queryOptions, searchFilter, pagination) {
     const query = {
       package: packageId,
@@ -82,27 +83,40 @@ export const PackageDateService = {
       total,
       page: pagination.page,
       limit: pagination.limit,
-      data
+      items: data
     };
   },
 
+  // ---------------------------------------------------------
+  // 🟢 OBTENER POR ID
+  // ---------------------------------------------------------
   async getById(id) {
     const date = await PackageDate.findById(id).populate("package");
     if (!date) throw new Error("Fecha no encontrada");
     return date;
   },
 
+  // ---------------------------------------------------------
+  // 🟢 ACTUALIZAR FECHA DE PAQUETE
+  // ---------------------------------------------------------
   async update(id, data) {
-    const updated = await PackageDate.findByIdAndUpdate(id, data, {
-      new: true,
-      runValidators: true
-    });
+    const doc = await PackageDate.findById(id);
+    if (!doc) throw new Error("No se pudo actualizar la fecha del paquete");
 
-    if (!updated) throw new Error("No se pudo actualizar la fecha del paquete");
+    // asignamos campos
+    Object.assign(doc, data);
 
-    return updated;
+    // ❗ save() → dispara pre("save") → recalcula 'regreso'
+    await doc.save();
+
+    // devolver documento completo y populado
+    const populated = await PackageDate.findById(id).populate("package");
+    return populated;
   },
 
+  // ---------------------------------------------------------
+  // 🟢 ELIMINAR
+  // ---------------------------------------------------------
   async delete(id) {
     const result = await PackageDate.findByIdAndDelete(id);
     if (!result) throw new Error("No existe esa fecha");

@@ -32,10 +32,17 @@ export default function ManagePackageDatesPage() {
 
       const params = new URLSearchParams(filters);
       const res = await clientAxios.get(`/package-dates?${params}`);
-
+console.log("Paquetes: ", res)
       const arr = extractResponseArray(res, ["dates"]);
-      setDates(arr);
-      setFiltered(arr);
+
+      if (Array.isArray(arr)) {
+        setDates(arr);
+        setFiltered(arr);
+      } else {
+        console.warn("⚠ extractResponseArray devolvió algo inesperado:", arr);
+        setDates([]);
+        setFiltered([]);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Error cargando fechas");
@@ -80,14 +87,24 @@ export default function ManagePackageDatesPage() {
     setModalOpen(true);
   };
 
+  // ------------------------------------------------
+  // 🔄 FIX: actualización segura (evita crashes)
+  // ------------------------------------------------
   const handleSaved = (saved) => {
+    if (!saved || !saved._id) {
+      console.warn("⚠ handleSaved recibió un valor inválido:", saved);
+      return;
+    }
+
     setDates((prev) => {
       const idx = prev.findIndex((d) => d._id === saved._id);
+
       if (idx >= 0) {
         const arr = [...prev];
         arr[idx] = saved;
         return arr;
       }
+
       return [saved, ...prev];
     });
 
@@ -193,9 +210,12 @@ export default function ManagePackageDatesPage() {
 
       <PackageDateEditModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
         data={editing}
         onSaved={handleSaved}
+        onClose={() => {
+          setModalOpen(false);
+          setEditing(null); // ← FIX extra
+        }}
       />
     </div>
   );

@@ -31,27 +31,48 @@ const packageDateSchema = new mongoose.Schema(
 );
 
 // ============================================================
-// 🟩 Middleware: Calcula la fecha de regreso basado en el itinerario
+// 🟣 Middleware: recalcular regreso en updates
 // ============================================================
-packageDateSchema.pre("save", async function (next) {
+packageDateSchema.pre("findOneAndUpdate", async function (next) {
+  console.log("🟣 PRE-UPDATE PackageDate ejecutado");
+
+  const update = this.getUpdate();
+  console.log("📥 Update recibido:", update);
+
+  // Determinar package y salida
+  const pkgId = update.package || this._conditions.package;
+  const salida = update.salida;
+
+  console.log("📦 package ID:", pkgId);
+  console.log("📅 nueva salida:", salida);
+
+  // Si no hay salida, no recalcular
+  if (!pkgId || !salida) return next();
+
   try {
     const Package = mongoose.model("Package");
-    const pkg = await Package.findById(this.package);
+    const pkg = await Package.findById(pkgId);
 
     if (!pkg) {
+      console.log("❌ Package no encontrado");
       return next(new Error("Package no encontrado para esta salida"));
     }
 
     const dias = pkg.duracionTotal || 0;
+    const salidaDate = new Date(salida);
+    const regresoDate = new Date(salidaDate);
+    regresoDate.setDate(regresoDate.getDate() + dias);
 
-    const salida = new Date(this.salida);
-    const regreso = new Date(salida);
-    regreso.setDate(regreso.getDate() + dias);
+    console.log("📅 regreso calculado:", regresoDate);
 
-    this.regreso = regreso;
+    // Insertar regreso en el update
+    update.regreso = regresoDate;
+    this.setUpdate(update);
 
+    console.log("🟢 Regreso agregado a update");
     next();
   } catch (err) {
+    console.log("❌ Error:", err);
     next(err);
   }
 });

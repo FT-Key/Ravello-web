@@ -68,6 +68,8 @@ export default function PackageDetailPage() {
             sort: "salida:asc",
           },
         });
+
+        console.log(response)
         
         const dates = response.data.items || response.data || [];
         setPackageDates(dates);

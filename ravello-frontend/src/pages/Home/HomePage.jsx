@@ -19,9 +19,28 @@ import TestimonialsSection from "../../components/Home/TestimonialsSection"; // 
 import NewsletterSection from "../../components/Home/NewsletterSection";
 
 // ==================== HERO SECTION ====================
+// ==================== HERO SECTION ====================
 const HeroSection = () => {
+  const heroRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      if (heroRef.current) {
+        const scrolled = window.scrollY;
+        const parallaxBg = heroRef.current.querySelector('.hero-bg');
+        if (parallaxBg) {
+          // Mueve el background más lento que el scroll (efecto parallax)
+          parallaxBg.style.transform = `translateY(${scrolled * 0.5}px)`;
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <div className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
+    <div ref={heroRef} className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-cyan-600 to-blue-700 hero-bg" />
       <div className="absolute inset-0 bg-black opacity-30" />
 

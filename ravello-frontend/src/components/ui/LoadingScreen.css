@@ -23,7 +23,7 @@
   pointer-events: none;
 
   /* TRANSICIÓN FINAL */
-  animation: exitAnimation 1.4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  animation: exitAnimation .5s cubic-bezier(0.65, 0, 0.35, 1) forwards;
   animation-delay: 2s;
 }
 
@@ -52,7 +52,7 @@
   flex-direction: column;
   align-items: center;
 
-  animation: fadeIn 1.2s ease forwards;
+  animation: fadeIn 1s ease forwards;
 }
 
 .loading-logo {

@@ -1,8 +1,6 @@
 // utils/extractResponseArray.js
 
 export const extractResponseArray = (response, possibleKeys = []) => {
-  console.log("📨 RAW response:", response);
-
   if (!response || typeof response !== "object") return [];
 
   const data = response.data;
