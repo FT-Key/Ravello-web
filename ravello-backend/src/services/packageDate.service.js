@@ -47,16 +47,23 @@ export const PackageDateService = {
 
     const total = await PackageDate.countDocuments(query);
 
-    const data = await PackageDate.find(query)
+    let mongoQuery = PackageDate.find(query)
       .populate("package")
-      .sort(queryOptions.sort)
-      .skip(pagination.skip)
-      .limit(pagination.limit);
+      .sort(queryOptions.sort);
+
+    // 👇 Solo aplicar paginación si existe
+    if (pagination) {
+      mongoQuery = mongoQuery
+        .skip(pagination.skip)
+        .limit(pagination.limit);
+    }
+
+    const data = await mongoQuery;
 
     return {
       total,
-      page: pagination.page,
-      limit: pagination.limit,
+      page: pagination?.page || null,
+      limit: pagination?.limit || null,
       items: data
     };
   },
@@ -73,16 +80,22 @@ export const PackageDateService = {
 
     const total = await PackageDate.countDocuments(query);
 
-    const data = await PackageDate.find(query)
+    let mongoQuery = PackageDate.find(query)
       .populate("package")
-      .sort(queryOptions.sort)
-      .skip(pagination.skip)
-      .limit(pagination.limit);
+      .sort(queryOptions.sort);
+
+    if (pagination) {
+      mongoQuery = mongoQuery
+        .skip(pagination.skip)
+        .limit(pagination.limit);
+    }
+
+    const data = await mongoQuery;
 
     return {
       total,
-      page: pagination.page,
-      limit: pagination.limit,
+      page: pagination?.page || null,
+      limit: pagination?.limit || null,
       items: data
     };
   },

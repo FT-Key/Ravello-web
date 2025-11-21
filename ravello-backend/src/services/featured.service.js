@@ -1,36 +1,47 @@
+// services/featured.service.js
 import { Featured } from '../models/index.js';
 
-export const getActiveFeatured = async ({ filters = {}, sort = '-createdAt', pagination = { page: 1, limit: 12, skip: 0 } } = {}) => {
-  const { limit, skip } = pagination;
-
-  const featured = await Featured.findOne({ activo: true, ...filters })
+export const getActiveFeatured = async ({ 
+  filters = {}, 
+  sort = '-createdAt', 
+  pagination = null 
+} = {}) => {
+  let query = Featured.findOne({ activo: true, ...filters })
     .populate({
       path: 'items.package',
       model: 'Package',
       select: 'nombre descripcion precioBase imagenPrincipal fechas.tipo etiquetas',
     })
-    .sort(sort)
-    .skip(skip)
-    .limit(limit)
-    .lean();
+    .sort(sort);
 
+  // Solo aplicar skip/limit si hay paginación
+  if (pagination) {
+    query = query.skip(pagination.skip).limit(pagination.limit);
+  }
+
+  const featured = await query.lean();
   return featured;
 };
 
-export const getAllFeatured = async ({ filters = {}, sort = '-createdAt', pagination = { page: 1, limit: 12, skip: 0 } } = {}) => {
-  const { limit, skip } = pagination;
-
-  const featured = await Featured.find(filters)
+export const getAllFeatured = async ({ 
+  filters = {}, 
+  sort = '-createdAt', 
+  pagination = null 
+} = {}) => {
+  let query = Featured.find(filters)
     .populate({
       path: 'items.package',
       model: 'Package',
       select: 'nombre descripcion precioBase imagenPrincipal fechas.tipo etiquetas',
     })
-    .sort(sort)
-    .skip(skip)
-    .limit(limit)
-    .lean();
+    .sort(sort);
 
+  // Solo aplicar skip/limit si hay paginación
+  if (pagination) {
+    query = query.skip(pagination.skip).limit(pagination.limit);
+  }
+
+  const featured = await query.lean();
   return featured;
 };
 

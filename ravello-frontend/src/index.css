@@ -4,29 +4,55 @@
     /* ---------------------------------- */
     /* Colores Principales (Identidad Ravello) */
     /* ---------------------------------- */
-    --color-primary-blue: #1C77B7; /* El azul fuerte del logo (Confianza, Cielo) */
-    --color-primary-red: #E33D35;   /* El rojo de acento del logo (Acción, Energía) */
+    --color-primary-blue: #1C77B7;
+    /* El azul fuerte del logo (Confianza, Cielo) */
+    --color-primary-red: #E33D35;
+    /* El rojo de acento del logo (Acción, Energía) */
 
     /* ---------------------------------- */
     /* Colores Secundarios (Soporte, Destino) */
     /* ---------------------------------- */
-    --color-secondary-cyan: #34B0D9; /* Azul más claro (Cielo, Agua, Destino) */
-    --color-secondary-sand: #F5E0B3; /* Color cálido (Arena, relax) para fondos suaves */
+    --color-secondary-cyan: #34B0D9;
+    /* Azul más claro (Cielo, Agua, Destino) */
+    --color-secondary-sand: #F5E0B3;
+    /* Color cálido (Arena, relax) para fondos suaves */
 
     /* ---------------------------------- */
     /* Colores de Texto y Fondo (Legibilidad) */
     /* ---------------------------------- */
-    --color-text-dark: #333333;       /* Texto principal */
-    --color-text-light: #666666;      /* Texto secundario/cuerpo */
+    --color-text-dark: #333333;
+    /* Texto principal */
+    --color-text-light: #666666;
+    /* Texto secundario/cuerpo */
 
-    --color-background-white: #FFFFFF; /* Fondo principal */
-    --color-background-light: #F7F7F7;  /* Fondo de secciones alternas */
-    --color-border-subtle: #DDDDDD;    /* Borde sutil para tarjetas/divisores */
+    --color-background-white: #FFFFFF;
+    /* Fondo principal */
+    --color-background-light: #F7F7F7;
+    /* Fondo de secciones alternas */
+    --color-border-subtle: #DDDDDD;
+    /* Borde sutil para tarjetas/divisores */
 
     /* ---------------------------------- */
     /* Colores de Estado (Comercio Electrónico) */
     /* ---------------------------------- */
-    --color-state-success: #4CAF50; /* Éxito (Reserva confirmada, pago) */
-    --color-state-error: #D32F2F;   /* Error (Formulario, producto agotado) */
-    --color-state-warning: #FFC107; /* Advertencia (Últimos cupos, atención) */
+    --color-state-success: #4CAF50;
+    /* Éxito (Reserva confirmada, pago) */
+    --color-state-error: #D32F2F;
+    /* Error (Formulario, producto agotado) */
+    --color-state-warning: #FFC107;
+    /* Advertencia (Últimos cupos, atención) */
+
+    /* ---------------------------------- */
+    /* Otras variables */
+    /* ---------------------------------- */
+    --background: white;
+}
+
+/* Gradiente vertical con stops personalizados */
+.bg-sand-fade {
+    background: linear-gradient(to bottom,
+            transparent 0%,
+            var(--color-secondary-sand) 15%,
+            var(--color-secondary-sand) 85%,
+            transparent 100%);
 }

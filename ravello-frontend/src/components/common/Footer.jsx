@@ -48,7 +48,7 @@ const Footer = () => {
         >
           <path
             d="M0,0 C300,80 600,80 900,40 C1050,20 1150,0 1200,0 L1200,120 L0,120 Z"
-            fill="rgba(255,255,255,0.8)"
+            fill="var(--background)"
           />
         </svg>
       </div>
@@ -89,7 +89,7 @@ const Footer = () => {
             <div className="lg:col-span-2">
               <div className="flex items-center gap-2 mb-4">
                 <img
-                  src="./ravello-mini-logo.svg"
+                  src="/ravello-mini-logo.svg"
                   alt="Logo"
                   className="w-11 h-11"
                 />

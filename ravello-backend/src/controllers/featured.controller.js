@@ -7,7 +7,7 @@ export const getActiveFeatured = async (req, res) => {
     let featured = await featuredService.getActiveFeatured({
       filters: searchFilter,
       sort: queryOptions.sort,
-      pagination
+      pagination // puede ser null
     });
 
     if (!featured)
@@ -30,7 +30,7 @@ export const getAllFeatured = async (req, res) => {
     const featured = await featuredService.getAllFeatured({
       filters: searchFilter,
       sort: queryOptions.sort,
-      pagination
+      pagination // puede ser null
     });
 
     res.json(featured);

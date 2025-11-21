@@ -37,6 +37,8 @@ export default function DashboardPage() {
           clientAxios.get("/package-dates"), // 👈 NUEVO endpoint
         ]);
 
+        console.log("Respuestas: ", usersRes, packagesRes, reviewsRes, contactsRes, offersRes, newsletterRes, packageDatesRes)
+
         const extractTotal = (response) => {
           if (!response || typeof response !== "object") return 0;
           const payload = response.data;

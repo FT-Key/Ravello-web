@@ -15,6 +15,7 @@ const Navbar = ({ position = "sticky" }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [mobileDropdowns, setMobileDropdowns] = useState({});
 
   const [destinos, setDestinos] = useState([]);
 
@@ -45,6 +46,13 @@ const Navbar = ({ position = "sticky" }) => {
     { label: "Opiniones", link: "/opiniones" },
   ];
 
+  const toggleMobileDropdown = (index) => {
+    setMobileDropdowns((prev) => ({
+      ...prev,
+      [index]: !prev[index],
+    }));
+  };
+
   const getNavbarBackground = () => {
     if (isScrolled) return "bg-white shadow-lg";
     if (position === "fixed") return "bg-transparent";
@@ -54,41 +62,75 @@ const Navbar = ({ position = "sticky" }) => {
   return (
     <nav className={`${position} top-0 left-0 right-0 z-50 min-h-[115px] transition-all duration-500`}>
       <div
-        className={`transition-all duration-500 ${getNavbarBackground()} ${
-          !isScrolled && position !== "fixed"
-            ? "bg-[url('./navbar/nav-bg.jpg')] bg-cover bg-bottom"
-            : ""
-        }`}
+        className={`transition-all duration-500 ${getNavbarBackground()} ${!isScrolled && position !== "fixed"
+          ? "bg-[url('/navbar/nav-bg.jpg')] bg-cover bg-bottom"
+          : ""
+          }`}
       >
 
         {/* Barra superior */}
         <div
-          className={`transition-all duration-500 overflow-hidden ${
-            isScrolled ? "max-h-0 opacity-0" : "max-h-20 opacity-100"
-          }`}
+          className={`transition-all duration-500 overflow-hidden ${isScrolled ? "max-h-0 opacity-0" : "max-h-24 opacity-100"
+            }`}
         >
           <div className="max-w-7xl mx-auto px-4">
-            <div className="flex items-center justify-between text-sm py-2 border-b border-white border-opacity-20">
-              <div className="flex items-center gap-6 text-white">
-                <a href="tel:+5491123456789" className="flex items-center gap-2 hover:text-secondary-cyan transition-colors">
-                  <Phone size={14} />
-                  <span>+54 911 2345-6789</span>
+            {/* Contenedor principal: justify-between y items-center para centrar verticalmente */}
+            <div className="flex justify-between items-center text-sm py-2 border-b border-white border-opacity-20 min-h-[56px]">
+
+              {/* IZQUIERDA: Teléfono + Correo (responsive) */}
+              <div className="flex-1 flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-6 text-white">
+
+                <a
+                  href="tel:+5491123456789"
+                  className="flex items-center gap-2 hover:text-secondary-cyan transition-colors text-sm"
+                >
+                  <Phone size={16} />
+                  <span className="leading-tight">+54 911 2345-6789</span>
                 </a>
-                <a href="mailto:info@ravello.com" className="flex items-center gap-2 hover:text-secondary-cyan transition-colors">
-                  <Mail size={14} />
-                  <span>info@ravello.com</span>
+
+                <a
+                  href="mailto:info@ravello.com"
+                  className="flex items-center gap-2 hover:text-secondary-cyan transition-colors text-sm"
+                >
+                  <Mail size={16} />
+                  <span className="leading-tight">info@ravello.com</span>
                 </a>
               </div>
 
-              <div className="flex items-center gap-4">
-                <button className="text-white hover:text-secondary-cyan transition-colors flex items-center gap-1">
+              {/* DERECHA: Idioma + Redes (CENTRADOS verticalmente) */}
+              <div className="flex items-center gap-4 text-white ml-4">
+                {/* Idioma */}
+                <button
+                  aria-label="Cambiar idioma"
+                  className="hover:text-secondary-cyan transition-colors flex items-center gap-1 text-sm"
+                >
                   <Globe size={14} />
                   <span>ES</span>
                 </button>
-                <div className="flex gap-3">
-                  <a className="text-white hover:text-secondary-cyan transition-colors"><FaFacebook size={16} /></a>
-                  <a className="text-white hover:text-secondary-cyan transition-colors"><FaInstagram size={16} /></a>
-                  <a className="text-white hover:text-secondary-cyan transition-colors"><FaTwitter size={16} /></a>
+
+                {/* Redes - evita wrap en móviles */}
+                <div className="flex items-center gap-3 whitespace-nowrap">
+                  <a
+                    href="#facebook"
+                    aria-label="Facebook"
+                    className="hover:text-secondary-cyan transition-colors"
+                  >
+                    <FaFacebook size={20} />
+                  </a>
+                  <a
+                    href="#instagram"
+                    aria-label="Instagram"
+                    className="hover:text-secondary-cyan transition-colors"
+                  >
+                    <FaInstagram size={20} />
+                  </a>
+                  <a
+                    href="#twitter"
+                    aria-label="Twitter"
+                    className="hover:text-secondary-cyan transition-colors"
+                  >
+                    <FaTwitter size={20} />
+                  </a>
                 </div>
               </div>
             </div>
@@ -108,9 +150,8 @@ const Navbar = ({ position = "sticky" }) => {
                 <h1 className={`text-2xl font-bold transition-colors ${isScrolled ? "text-primary-blue" : "text-white"}`}>
                   Ra<span className={`${isScrolled ? "text-primary-red" : "text-white"}`}>v</span>ello
                 </h1>
-                <p className={`text-xs transition-colors max-w-[120px] whitespace-normal break-words text-center sm:text-left ${
-                  isScrolled ? "text-light" : "text-white text-opacity-90"
-                }`}>
+                <p className={`text-xs transition-colors max-w-[120px] whitespace-normal break-words text-center sm:text-left ${isScrolled ? "text-light" : "text-white text-opacity-90"
+                  }`}>
                   Administramos buenos momentos
                 </p>
               </div>
@@ -128,11 +169,10 @@ const Navbar = ({ position = "sticky" }) => {
                   {item.submenu ? (
                     <>
                       <button
-                        className={`px-4 py-2 font-medium transition-all rounded-lg flex items-center gap-1 ${
-                          isScrolled
-                            ? "text-dark hover:text-black hover:bg-background-light"
-                            : "text-white hover:text-black hover:bg-white hover:bg-opacity-10"
-                        }`}
+                        className={`px-4 py-2 font-medium transition-all rounded-lg flex items-center gap-1 ${isScrolled
+                          ? "text-dark hover:text-black hover:bg-background-light"
+                          : "text-white hover:text-black hover:bg-white hover:bg-opacity-10"
+                          }`}
                       >
                         {item.label}
                         <ChevronDown size={16} className="transition-transform group-hover:rotate-180" />
@@ -140,11 +180,10 @@ const Navbar = ({ position = "sticky" }) => {
 
                       {/* Dropdown */}
                       <div
-                        className={`absolute top-full left-0 w-56 bg-white rounded-xl shadow-2xl overflow-hidden transition-all duration-300 ${
-                          activeDropdown === idx
-                            ? "opacity-100 translate-y-0 pointer-events-auto"
-                            : "opacity-0 -translate-y-2 pointer-events-none"
-                        }`}
+                        className={`absolute top-full left-0 w-56 bg-white rounded-xl shadow-2xl overflow-hidden transition-all duration-300 ${activeDropdown === idx
+                          ? "opacity-100 translate-y-0 pointer-events-auto"
+                          : "opacity-0 -translate-y-2 pointer-events-none"
+                          }`}
                       >
                         <div className="max-h-60 overflow-y-auto">
                           {item.submenu.length === 0 ? (
@@ -152,9 +191,8 @@ const Navbar = ({ position = "sticky" }) => {
                           ) : (
                             item.submenu.map((subitem, subidx) => {
                               // 🔹 Mostrar "Ciudad, País" pero enviar solo "Ciudad"
-                              const nombreCompleto = `${subitem.ciudad}${
-                                subitem.pais ? ", " + subitem.pais : ""
-                              }`;
+                              const nombreCompleto = `${subitem.ciudad}${subitem.pais ? ", " + subitem.pais : ""
+                                }`;
                               const ciudadSola = subitem.ciudad;
 
                               return (
@@ -174,11 +212,10 @@ const Navbar = ({ position = "sticky" }) => {
                   ) : (
                     <Link
                       to={item.link}
-                      className={`px-4 py-2 font-medium transition-all rounded-lg ${
-                        isScrolled
-                          ? "text-dark hover:text-black hover:bg-background-light"
-                          : "text-white hover:text-black hover:bg-white hover:bg-opacity-10"
-                      }`}
+                      className={`px-4 py-2 font-medium transition-all rounded-lg ${isScrolled
+                        ? "text-dark hover:text-black hover:bg-background-light"
+                        : "text-white hover:text-black hover:bg-white hover:bg-opacity-10"
+                        }`}
                     >
                       {item.label}
                     </Link>
@@ -200,11 +237,10 @@ const Navbar = ({ position = "sticky" }) => {
             {/* Botón Mobile */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className={`lg:hidden p-2 rounded-lg transition-colors ${
-                isScrolled
-                  ? "text-dark hover:bg-background-light"
-                  : "text-white hover:bg-white hover:bg-opacity-10"
-              }`}
+              className={`lg:hidden p-2 rounded-lg transition-colors ${isScrolled
+                ? "text-dark hover:bg-background-light"
+                : "text-white hover:bg-white hover:bg-opacity-10"
+                }`}
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -214,24 +250,37 @@ const Navbar = ({ position = "sticky" }) => {
 
       {/* MENÚ MOBILE */}
       <div
-        className={`lg:hidden bg-white shadow-xl transition-all duration-300 overflow-hidden ${
-          isMobileMenuOpen ? "max-h-screen opacity-100" : "max-h-0 opacity-0"
-        }`}
+        className={`lg:hidden bg-white shadow-xl overflow-y-auto transition-all duration-300 ${isMobileMenuOpen
+            ? "max-h-[80vh] opacity-100 pointer-events-auto"
+            : "max-h-0 opacity-0 pointer-events-none"
+          }`}
       >
         <div className="px-4 py-6 space-y-2">
           {menuItems.map((item, idx) => (
             <div key={idx}>
               {item.submenu ? (
                 <>
-                  <button className="w-full text-left px-4 py-3 text-dark font-medium rounded-lg">
+                  {/* Botón que ABRE con CLICK */}
+                  <button
+                    onClick={() => toggleMobileDropdown(idx)}
+                    className="w-full flex justify-between items-center px-4 py-3 text-dark font-medium rounded-lg"
+                  >
                     {item.label}
+                    <ChevronDown
+                      size={18}
+                      className={`transition-transform ${mobileDropdowns[idx] ? "rotate-180" : ""
+                        }`}
+                    />
                   </button>
-                  <div className="pl-4 mt-1 space-y-1">
+
+                  {/* Contenido del dropdown MOBILE */}
+                  <div
+                    className={`pl-4 mt-1 space-y-1 transition-all overflow-hidden ${mobileDropdowns[idx] ? "max-h-96" : "max-h-0"
+                      }`}
+                  >
                     {item.submenu.map((subitem, subidx) => {
-                      // 🔹 Mostrar "Ciudad, País" pero enviar solo "Ciudad"
-                      const nombreCompleto = `${subitem.ciudad}${
-                        subitem.pais ? ", " + subitem.pais : ""
-                      }`;
+                      const nombreCompleto = `${subitem.ciudad}${subitem.pais ? ", " + subitem.pais : ""
+                        }`;
                       const ciudadSola = subitem.ciudad;
 
                       return (
@@ -265,6 +314,7 @@ const Navbar = ({ position = "sticky" }) => {
           </Link>
         </div>
       </div>
+
     </nav>
   );
 };

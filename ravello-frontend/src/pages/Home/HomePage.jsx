@@ -1,10 +1,7 @@
 import React from "react";
 import {
-  Search,
-  MapPin,
   DollarSign,
   Clock,
-  Star,
   Plane,
   Mountain,
   Umbrella,
@@ -13,73 +10,11 @@ import {
   Users,
 } from "lucide-react";
 import "./home.css";
+import HeroSection from "../../components/Home/HeroSection";
 import FeaturedDestinations from "../../components/Home/FeaturedDestinations";
 import PromotionsSection from "../../components/Home/PromotionsSection";
-import TestimonialsSection from "../../components/Home/TestimonialsSection"; // 👈 Nuevo import
+import TestimonialsSection from "../../components/Home/TestimonialsSection";
 import NewsletterSection from "../../components/Home/NewsletterSection";
-
-// ==================== HERO SECTION ====================
-// ==================== HERO SECTION ====================
-const HeroSection = () => {
-  const heroRef = React.useRef(null);
-
-  React.useEffect(() => {
-    const handleScroll = () => {
-      if (heroRef.current) {
-        const scrolled = window.scrollY;
-        const parallaxBg = heroRef.current.querySelector('.hero-bg');
-        if (parallaxBg) {
-          // Mueve el background más lento que el scroll (efecto parallax)
-          parallaxBg.style.transform = `translateY(${scrolled * 0.5}px)`;
-        }
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  return (
-    <div ref={heroRef} className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-cyan-600 to-blue-700 hero-bg" />
-      <div className="absolute inset-0 bg-black opacity-30" />
-
-      <div
-        className="relative z-10 text-center text-white py-20 px-4 max-w-6xl mx-auto"
-        data-aos="fade-up"
-      >
-        <h1 className="text-5xl md:text-7xl font-bold mb-6">
-          Viajá donde siempre soñaste
-        </h1>
-        <p className="text-xl md:text-2xl mb-8 font-light">
-          Paquetes exclusivos, precios increíbles, atención personalizada
-        </p>
-
-        <div
-          className="max-w-2xl mx-auto bg-white rounded-full shadow-2xl p-2 flex items-center"
-          data-aos="zoom-in"
-          data-aos-delay="200"
-        >
-          <input
-            type="text"
-            placeholder="¿A dónde querés viajar?"
-            className="flex-1 px-6 py-3 text-gray-800 outline-none rounded-l-full"
-          />
-          <button className="bg-primary-red rounded-full px-8 py-3 font-semibold text-white border-0 flex items-center transition-transform hover:scale-105">
-            <Search className="mr-2" size={20} />
-            Buscar
-          </button>
-        </div>
-      </div>
-
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-white rounded-full mt-2" />
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // ==================== EXPERIENCES SECTION ====================
 const ExperiencesSection = () => {
@@ -125,7 +60,6 @@ const ExperiencesSection = () => {
             Elegí el tipo de viaje perfecto para vos
           </p>
         </div>
-
         <div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
           data-aos="zoom-in-up"
@@ -168,8 +102,7 @@ const WhyRavello = () => {
     {
       icon: DollarSign,
       title: "Mejores precios garantizados",
-      description:
-        "Encontrás algo más barato? Te devolvemos la diferencia",
+      description: "Encontrás algo más barato? Te devolvemos la diferencia",
     },
     {
       icon: Clock,
@@ -194,7 +127,6 @@ const WhyRavello = () => {
             Tu próxima aventura merece el mejor servicio
           </p>
         </div>
-
         <div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
           data-aos="zoom-in-up"
@@ -231,7 +163,7 @@ export default function Home() {
       <PromotionsSection />
       <ExperiencesSection />
       <WhyRavello />
-      <TestimonialsSection /> {/* 👈 Usa ahora el componente dinámico */}
+      <TestimonialsSection />
       <NewsletterSection />
     </div>
   );
