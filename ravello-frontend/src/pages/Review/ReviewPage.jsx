@@ -33,8 +33,8 @@ const ReviewForm = ({ packageId, onSuccess }) => {
 
       const reviewData = {
         ...data,
-        ...(packageId && { paquete: packageId }), // solo si hay packageId
-        tipo: packageId ? "paquete" : "empresa",   // tipo según contexto
+        ...(packageId && { paquete: packageId }),
+        tipo: packageId ? "paquete" : "empresa",
         estadoModeracion: "pendiente",
       };
 
@@ -42,7 +42,7 @@ const ReviewForm = ({ packageId, onSuccess }) => {
 
       setSubmitMessage({
         type: "success",
-        text: "¡Gracias por tu opinión! Tu reseña será publicada una vez aprobada por nuestro equipo.",
+        text: "¡Gracias por tu opinión! Tu reseña será publicada una vez aprobada.",
       });
 
       reset();
@@ -61,7 +61,7 @@ const ReviewForm = ({ packageId, onSuccess }) => {
   };
 
   const renderStars = () => (
-    <div className="flex gap-2">
+    <div className="flex gap-3">
       {[1, 2, 3, 4, 5].map((star) => (
         <button
           key={star}
@@ -73,11 +73,10 @@ const ReviewForm = ({ packageId, onSuccess }) => {
         >
           <Star
             size={32}
-            className={`${
-              star <= (hoveredStar || calificacion)
+            className={`${star <= (hoveredStar || calificacion)
                 ? "text-yellow-500 fill-yellow-500"
                 : "text-gray-300"
-            } transition-colors`}
+              } transition-colors`}
           />
         </button>
       ))}
@@ -85,107 +84,121 @@ const ReviewForm = ({ packageId, onSuccess }) => {
   );
 
   return (
-    <div className="bg-background-light p-6 rounded-xl">
-      <h3 className="text-lg font-semibold text-dark mb-4">
-        Comparte tu experiencia
-      </h3>
+    <div className="w-full bg-background-light py-16 px-4 flex justify-center">
+      <div className="w-full max-w-2xl bg-background-white shadow-xl rounded-2xl p-8 md:p-10">
 
-      {submitMessage && (
-        <div
-          className={`mb-4 p-4 rounded-lg ${
-            submitMessage.type === "success"
-              ? "bg-green-50 text-green-800 border border-green-200"
-              : "bg-red-50 text-red-800 border border-red-200"
-          }`}
-        >
-          {submitMessage.text}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Nombre */}
-        <div>
-          <label className="block text-sm font-medium text-dark mb-2">
-            Tu nombre <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            {...register("nombre", {
-              required: "El nombre es obligatorio",
-              minLength: {
-                value: 2,
-                message: "El nombre debe tener al menos 2 caracteres",
-              },
-            })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent transition-all"
-            placeholder="Escribe tu nombre"
-          />
-          {errors.nombre && (
-            <p className="mt-1 text-sm text-red-600">{errors.nombre.message}</p>
-          )}
-        </div>
-
-        {/* Calificación */}
-        <div>
-          <label className="block text-sm font-medium text-dark mb-2">
-            Calificación <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="hidden"
-            {...register("calificacion", {
-              required: "Debes seleccionar una calificación",
-              min: { value: 1, message: "Selecciona al menos 1 estrella" },
-            })}
-          />
-          {renderStars()}
-          {errors.calificacion && (
-            <p className="mt-2 text-sm text-red-600">{errors.calificacion.message}</p>
-          )}
-          {calificacion > 0 && (
-            <p className="mt-2 text-sm text-light">
-              Has seleccionado {calificacion}{" "}
-              {calificacion === 1 ? "estrella" : "estrellas"}
-            </p>
-          )}
-        </div>
-
-        {/* Comentario */}
-        <div>
-          <label className="block text-sm font-medium text-dark mb-2">
-            Tu opinión (opcional)
-          </label>
-          <textarea
-            {...register("comentario", {
-              maxLength: {
-                value: 500,
-                message: "El comentario no puede superar los 500 caracteres",
-              },
-            })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent transition-all resize-none"
-            rows={4}
-            placeholder="Cuéntanos sobre tu experiencia..."
-          />
-          {errors.comentario && (
-            <p className="mt-1 text-sm text-red-600">{errors.comentario.message}</p>
-          )}
-          <p className="mt-1 text-xs text-light">
-            {watch("comentario")?.length || 0} / 500 caracteres
-          </p>
-        </div>
-
-        {/* Botón de envío */}
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full px-6 py-3 bg-primary-blue text-white font-semibold rounded-lg hover:bg-opacity-90 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
-        >
-          {isSubmitting ? "Enviando..." : "Enviar opinión"}
-        </button>
-
-        <p className="text-xs text-light text-center">
-          Tu opinión será revisada antes de ser publicada
+        {/* Título */}
+        <h2 className="text-3xl font-semibold text-primary-blue text-center mb-2">
+          Comparte tu experiencia
+        </h2>
+        <p className="text-dark text-center mb-8">
+          Tu opinión ayuda a otros viajeros.
         </p>
-      </form>
+
+        {/* Mensaje de estado */}
+        {submitMessage && (
+          <div
+            className={`mb-6 p-4 rounded-lg text-sm font-medium ${submitMessage.type === "success"
+                ? "bg-green-50 text-green-800 border border-green-200"
+                : "bg-red-50 text-red-800 border border-red-200"
+              }`}
+          >
+            {submitMessage.text}
+          </div>
+        )}
+
+        {/* FORMULARIO */}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+
+          {/* Nombre */}
+          <div>
+            <label className="text-dark font-medium mb-1 block">Nombre</label>
+            <input
+              type="text"
+              {...register("nombre", {
+                required: "El nombre es obligatorio",
+                minLength: { value: 2, message: "Debe tener al menos 2 caracteres" },
+              })}
+              placeholder="Tu nombre"
+              className="w-full p-3 rounded-lg border border-subtle bg-background-white text-dark
+              focus:ring-2 focus:ring-primary-blue focus:outline-none"
+            />
+            {errors.nombre && (
+              <p className="text-primary-red text-sm">{errors.nombre.message}</p>
+            )}
+          </div>
+
+          {/* Calificación */}
+          <div className="flex flex-col">
+            <label className="text-dark font-medium mb-2">Calificación</label>
+
+            <input
+              type="hidden"
+              {...register("calificacion", {
+                required: "Selecciona una calificación",
+                min: { value: 1, message: "Selecciona al menos 1 estrella" },
+              })}
+            />
+
+            {renderStars()}
+
+            {errors.calificacion && (
+              <p className="text-primary-red text-sm mt-2">
+                {errors.calificacion.message}
+              </p>
+            )}
+
+            {calificacion > 0 && (
+              <p className="text-light text-sm mt-1">
+                Seleccionaste {calificacion}{" "}
+                {calificacion === 1 ? "estrella" : "estrellas"}
+              </p>
+            )}
+          </div>
+
+          {/* Comentario */}
+          <div>
+            <label className="text-dark font-medium mb-1 block">
+              Tu opinión (opcional)
+            </label>
+            <textarea
+              rows="4"
+              {...register("comentario", {
+                maxLength: {
+                  value: 500,
+                  message: "Máximo 500 caracteres",
+                },
+              })}
+              placeholder="Escribe tu experiencia..."
+              className="w-full p-3 rounded-lg border border-subtle bg-background-white text-dark resize-none
+              focus:ring-2 focus:ring-primary-blue focus:outline-none"
+            />
+            {errors.comentario && (
+              <p className="text-primary-red text-sm mt-1">{errors.comentario.message}</p>
+            )}
+            <p className="text-light text-xs mt-1">
+              {watch("comentario")?.length || 0} / 500 caracteres
+            </p>
+          </div>
+
+          {/* Botón */}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`w-full py-3 rounded-lg font-semibold text-white shadow-md transition-all
+              ${isSubmitting
+                ? "bg-primary-blue/50 cursor-not-allowed"
+                : "bg-primary-blue hover:bg-primary-blue/80"
+              }`}
+          >
+            {isSubmitting ? "Enviando..." : "Enviar opinión"}
+          </button>
+
+          <p className="text-light text-xs text-center">
+            Las opiniones son moderadas antes de publicarse.
+          </p>
+        </form>
+      </div>
     </div>
   );
 };

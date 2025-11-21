@@ -21,7 +21,7 @@ const DestinationCard = ({
 
   return (
     <div
-      data-aos="zoom-in"
+      data-aos="flip-down"
       data-aos-once="true"
       className="cursor-default"
     >

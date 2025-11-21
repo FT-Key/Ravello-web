@@ -86,11 +86,20 @@ export const packageService = {
   // -------------------------------------------------------------
   // CRUD
   // -------------------------------------------------------------
-  async getPackages(filters = {}, sort = "-createdAt", pagination = { page: 1, limit: 12, skip: 0 }) {
-    const { limit, skip, page } = pagination;
+  async getPackages(filters = {}, sort = "-createdAt", pagination = null) {
+    let mongoQuery = Package.find(filters).sort(sort);
+
+    let page = null;
+    let limit = null;
+    let skip = null;
+
+    if (pagination) {
+      ({ limit, skip, page } = pagination);
+      mongoQuery = mongoQuery.skip(skip).limit(limit);
+    }
 
     const [items, total] = await Promise.all([
-      Package.find(filters).sort(sort).skip(skip).limit(limit),
+      mongoQuery,
       Package.countDocuments(filters),
     ]);
 
@@ -99,7 +108,8 @@ export const packageService = {
       pagination: {
         total,
         page,
-        pages: Math.ceil(total / limit),
+        pages: pagination ? Math.ceil(total / limit) : null,
+        limit: pagination ? limit : null
       },
     };
   },

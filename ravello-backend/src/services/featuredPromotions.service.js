@@ -1,23 +1,30 @@
 import mongoose from 'mongoose';
 import { FeaturedPromotion, Package } from '../models/index.js';
 
-export const getActive = async ({ filters = {}, sort = '-createdAt', pagination = { page: 1, limit: 12, skip: 0 } } = {}) => {
-  const { limit, skip } = pagination;
+/* ============================================================
+   🟦 GET ACTIVE (NO USA PAGINACIÓN)
+   Porque solo existe una promoción destacada activa
+============================================================ */
+export const getActive = async ({
+  filters = {},
+  sort = { createdAt: -1 }
+} = {}) => {
 
   const promo = await FeaturedPromotion.findOne({ activo: true, ...filters })
     .populate({
       path: 'packages',
       model: 'Package',
-      select: 'nombre descripcion precioBase imagenPrincipal fechas.tipo etiquetas',
+      select: 'nombre descripcion precioBase imagenPrincipal fechas.tipo etiquetas'
     })
     .sort(sort)
-    .skip(skip)
-    .limit(limit)
     .lean();
 
   return promo;
 };
 
+/* ============================================================
+   🟩 CREATE OR REPLACE
+============================================================ */
 export const createOrReplace = async ({ packages, titulo, descripcion }) => {
   if (!packages || packages.length !== 2) {
     throw new Error('Debes seleccionar exactamente 2 paquetes.');
@@ -26,12 +33,12 @@ export const createOrReplace = async ({ packages, titulo, descripcion }) => {
   const objectIds = packages.map((id) => {
     try {
       return mongoose.Types.ObjectId.createFromHexString(id.toString());
-    } catch (e) {
+    } catch {
       throw new Error(`El ID ${id} no es válido.`);
     }
   });
 
-  // Verificar que los paquetes existan
+  // Verificación de existencia de paquetes
   const existing = await Package.find({ _id: { $in: objectIds } });
   if (existing.length !== 2) {
     throw new Error('Uno o más paquetes seleccionados no existen.');
@@ -58,6 +65,9 @@ export const createOrReplace = async ({ packages, titulo, descripcion }) => {
   return await current.populate('packages');
 };
 
+/* ============================================================
+   🟥 DELETE BY ID
+============================================================ */
 export const deleteById = async (id) => {
   return await FeaturedPromotion.findByIdAndDelete(id);
 };
