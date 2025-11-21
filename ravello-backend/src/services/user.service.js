@@ -3,7 +3,11 @@ import argon2 from "argon2";
 
 // === LISTAR TODOS LOS USUARIOS ===
 export const getAllUsers = async (filter = {}, options = {}) => {
-  const { search, page = 1, limit = 10 } = options;
+  const { search } = options;
+
+  const page = options.page ? parseInt(options.page) : null;
+  const limit = options.limit ? parseInt(options.limit) : null;
+
   const query = {};
 
   if (filter.rol) query.rol = filter.rol;
@@ -16,6 +20,21 @@ export const getAllUsers = async (filter = {}, options = {}) => {
     ];
   }
 
+  // === Si NO hay paginación → traer todo ===
+  if (!page || !limit) {
+    const data = await User.find(query)
+      .select("-password")
+      .sort({ createdAt: -1 });
+
+    return {
+      total: data.length,
+      page: null,
+      limit: null,
+      data,
+    };
+  }
+
+  // === Con paginación ===
   const skip = (page - 1) * limit;
   const total = await User.countDocuments(query);
   const data = await User.find(query)

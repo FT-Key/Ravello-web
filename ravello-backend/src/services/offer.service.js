@@ -2,8 +2,8 @@ import { Offer } from "../models/index.js";
 import mongoose from "mongoose";
 
 export const getAllOffers = async ({
-  page = 1,
-  limit = 10,
+  page,
+  limit,
   search,
   sortBy = "createdAt",
   sortOrder = "desc",
@@ -25,15 +25,41 @@ export const getAllOffers = async ({
   if (filters.destacada !== undefined)
     query.destacada = filters.destacada === "true";
 
-  const skip = (page - 1) * limit;
+  // Ordenamiento
   const sort = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
+
+  // ==============================
+  // 🟢 SIN PAGINACIÓN → traer todo
+  // ==============================
+  if (!page || !limit) {
+    const data = await Offer.find(query)
+      .populate("package")
+      .sort(sort);
+
+    return {
+      data,
+      pagination: {
+        total: data.length,
+        page: null,
+        limit: null,
+        totalPages: null,
+      },
+    };
+  }
+
+  // ==============================
+  // 🔵 CON PAGINACIÓN
+  // ==============================
+  const _page = Number(page);
+  const _limit = Number(limit);
+  const skip = (_page - 1) * _limit;
 
   const [data, total] = await Promise.all([
     Offer.find(query)
       .populate("package")
       .sort(sort)
       .skip(skip)
-      .limit(Number(limit)),
+      .limit(_limit),
     Offer.countDocuments(query),
   ]);
 
@@ -41,12 +67,14 @@ export const getAllOffers = async ({
     data,
     pagination: {
       total,
-      page: Number(page),
-      totalPages: Math.ceil(total / limit),
+      page: _page,
+      limit: _limit,
+      totalPages: Math.ceil(total / _limit),
     },
   };
 };
 
+// === OFERTAS ACTIVAS SIN CAMBIOS ===
 export const getActiveOffers = async () => {
   const today = new Date();
   return await Offer.find({
@@ -56,21 +84,25 @@ export const getActiveOffers = async () => {
   }).populate("package");
 };
 
+// === OBTENER POR ID ===
 export const getOfferById = async (id) => {
   if (!mongoose.Types.ObjectId.isValid(id)) return null;
   return await Offer.findById(id).populate("package");
 };
 
+// === CREAR ===
 export const createOffer = async (data) => {
   const offer = new Offer(data);
   return await offer.save();
 };
 
+// === ACTUALIZAR ===
 export const updateOffer = async (id, data) => {
   if (!mongoose.Types.ObjectId.isValid(id)) return null;
   return await Offer.findByIdAndUpdate(id, data, { new: true });
 };
 
+// === ELIMINAR ===
 export const deleteOffer = async (id) => {
   if (!mongoose.Types.ObjectId.isValid(id)) return null;
   return await Offer.findByIdAndDelete(id);

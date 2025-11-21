@@ -1,6 +1,31 @@
 import { Review } from "../models/index.js";
 
-export const getAllReviews = async (filters = {}, pagination = { page:1, limit:10 }, sort = { createdAt: -1 }) => {
+export const getAllReviews = async (
+  filters = {},
+  pagination = null,
+  sort = { createdAt: -1 }
+) => {
+
+  // Si NO hay paginación → traer TODO
+  if (!pagination) {
+    const [items, total] = await Promise.all([
+      Review.find(filters)
+        .populate("paquete", "nombre")
+        .sort(sort),
+      Review.countDocuments(filters),
+    ]);
+
+    return {
+      items,
+      pagination: {
+        total,
+        page: null,
+        pages: 1,
+      },
+    };
+  }
+
+  // Si HAY paginación → aplicar limit/skip
   const { page = 1, limit = 10 } = pagination;
   const skip = (page - 1) * limit;
 
@@ -10,10 +35,9 @@ export const getAllReviews = async (filters = {}, pagination = { page:1, limit:1
       .sort(sort)
       .skip(skip)
       .limit(limit),
-    Review.countDocuments(filters)
+    Review.countDocuments(filters),
   ]);
 
-  console.log("Items: ", items)
   return {
     items,
     pagination: {

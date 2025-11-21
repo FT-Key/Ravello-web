@@ -21,7 +21,7 @@ export default function NewsletterSection() {
   };
 
   return (
-    <section className="py-20 bg-secondary-sand">
+    <section className="py-20 bg-sand-fade">
       <div className="max-w-7xl mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center" data-aos="zoom-in">
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-primary-blue">
@@ -34,7 +34,7 @@ export default function NewsletterSection() {
           <form
             onSubmit={handleSubmit}
             className="bg-white rounded-full shadow-xl p-2 flex items-center max-w-2xl mx-auto"
-            data-aos="fade-up"
+            data-aos="flip-up"
             data-aos-delay="200"
           >
             <input
@@ -48,9 +48,8 @@ export default function NewsletterSection() {
             <button
               type="submit"
               disabled={status === "loading"}
-              className={`bg-primary-red rounded-full px-8 py-3 font-semibold text-white border-0 transition-transform hover:scale-105 ${
-                status === "loading" ? "opacity-70 cursor-not-allowed" : ""
-              }`}
+              className={`bg-primary-red rounded-full px-8 py-3 font-semibold text-white border-0 transition-transform hover:scale-105 ${status === "loading" ? "opacity-70 cursor-not-allowed" : ""
+                }`}
             >
               {status === "loading" ? "Enviando..." : "Suscribirse"}
             </button>

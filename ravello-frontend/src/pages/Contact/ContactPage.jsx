@@ -16,7 +16,7 @@ export default function ContactForm() {
   const onSubmit = async (data) => {
     setErrorMsg("");
     try {
-      const res = await clientAxios.post("/contacts", {
+      await clientAxios.post("/contacts", {
         nombre: data.nombre,
         email: data.email,
         telefono: data.telefono,
@@ -24,11 +24,9 @@ export default function ContactForm() {
         asunto: data.asunto || "General",
       });
 
-      console.log("📤 Mensaje enviado:", res.data);
       setSubmitted(true);
       reset();
     } catch (error) {
-      console.error("❌ Error al enviar:", error);
       setErrorMsg(
         error.response?.data?.error || "Ocurrió un error al enviar el mensaje."
       );
@@ -36,36 +34,43 @@ export default function ContactForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center px-4">
-      <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-8 w-full max-w-md text-white">
-        <h2 className="text-2xl font-semibold mb-4 text-center">📬 Contáctanos</h2>
-        <p className="text-slate-300 mb-6 text-center">
+    <div className="w-full bg-background-light py-16 px-4 flex justify-center">
+      <div className="w-full max-w-2xl bg-background-white shadow-xl rounded-2xl p-8 md:p-10">
+
+        {/* Título */}
+        <h2 className="text-3xl font-semibold text-primary-blue text-center mb-2">
+          Contáctanos
+        </h2>
+
+        <p className="text-dark text-center mb-8">
           Envíanos tu consulta y te responderemos lo antes posible.
         </p>
 
         {submitted ? (
-          <div className="text-center text-green-400 font-medium">
-            ✅ ¡Tu mensaje ha sido enviado correctamente!
+          <div className="text-center text-state-success font-medium text-lg">
+            ✓ ¡Tu mensaje ha sido enviado correctamente!
           </div>
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-              <label className="block mb-1 font-medium">Nombre</label>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+
+            {/* Nombre */}
+            <div className="flex flex-col">
+              <label className="text-dark font-medium mb-1">Nombre</label>
               <input
                 type="text"
                 {...register("nombre", { required: "El nombre es obligatorio" })}
                 placeholder="Tu nombre"
-                className={`w-full p-3 rounded-lg bg-slate-900/60 border ${
-                  errors.nombre ? "border-red-500" : "border-slate-700"
-                } focus:ring-2 focus:ring-blue-500 focus:outline-none`}
+                className={`w-full p-3 rounded-lg border border-subtle bg-background-white text-dark 
+                  focus:ring-2 focus:ring-primary-blue focus:outline-none`}
               />
               {errors.nombre && (
-                <p className="text-red-400 text-sm">{errors.nombre.message}</p>
+                <p className="text-primary-red text-sm">{errors.nombre.message}</p>
               )}
             </div>
 
+            {/* Email */}
             <div>
-              <label className="block mb-1 font-medium">Correo electrónico</label>
+              <label className="text-dark font-medium mb-1">Correo electrónico</label>
               <input
                 type="email"
                 {...register("email", {
@@ -76,17 +81,17 @@ export default function ContactForm() {
                   },
                 })}
                 placeholder="tucorreo@ejemplo.com"
-                className={`w-full p-3 rounded-lg bg-slate-900/60 border ${
-                  errors.email ? "border-red-500" : "border-slate-700"
-                } focus:ring-2 focus:ring-blue-500 focus:outline-none`}
+                className={`w-full p-3 rounded-lg border border-subtle bg-background-white text-dark
+                  focus:ring-2 focus:ring-primary-blue focus:outline-none`}
               />
               {errors.email && (
-                <p className="text-red-400 text-sm">{errors.email.message}</p>
+                <p className="text-primary-red text-sm">{errors.email.message}</p>
               )}
             </div>
 
+            {/* Teléfono */}
             <div>
-              <label className="block mb-1 font-medium">Teléfono (opcional)</label>
+              <label className="text-dark font-medium mb-1">Teléfono (opcional)</label>
               <input
                 type="text"
                 {...register("telefono", {
@@ -96,50 +101,55 @@ export default function ContactForm() {
                   },
                 })}
                 placeholder="+54 9 381 000 0000"
-                className={`w-full p-3 rounded-lg bg-slate-900/60 border ${
-                  errors.telefono ? "border-red-500" : "border-slate-700"
-                } focus:ring-2 focus:ring-blue-500 focus:outline-none`}
+                className={`w-full p-3 rounded-lg border border-subtle bg-background-white text-dark
+                  focus:ring-2 focus:ring-primary-blue focus:outline-none`}
               />
               {errors.telefono && (
-                <p className="text-red-400 text-sm">{errors.telefono.message}</p>
+                <p className="text-primary-red text-sm">{errors.telefono.message}</p>
               )}
             </div>
 
+            {/* Asunto */}
             <div>
-              <label className="block mb-1 font-medium">Asunto</label>
+              <label className="text-dark font-medium mb-1">Asunto</label>
               <input
                 type="text"
                 {...register("asunto")}
                 placeholder="Motivo de contacto"
-                className="w-full p-3 rounded-lg bg-slate-900/60 border border-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full p-3 rounded-lg border border-subtle bg-background-white text-dark
+                focus:ring-2 focus:ring-primary-blue focus:outline-none"
               />
             </div>
 
+            {/* Mensaje */}
             <div>
-              <label className="block mb-1 font-medium">Mensaje</label>
+              <label className="text-dark font-medium mb-1">Mensaje</label>
               <textarea
                 rows="4"
                 {...register("mensaje", { required: "El mensaje es obligatorio" })}
                 placeholder="Escribe tu mensaje..."
-                className={`w-full p-3 rounded-lg bg-slate-900/60 border ${
-                  errors.mensaje ? "border-red-500" : "border-slate-700"
-                } focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none`}
+                className={`w-full p-3 rounded-lg border border-subtle bg-background-white text-dark resize-none
+                focus:ring-2 focus:ring-primary-blue focus:outline-none`}
               />
               {errors.mensaje && (
-                <p className="text-red-400 text-sm">{errors.mensaje.message}</p>
+                <p className="text-primary-red text-sm">{errors.mensaje.message}</p>
               )}
             </div>
 
-            {errorMsg && <p className="text-red-400 text-sm">{errorMsg}</p>}
+            {errorMsg && (
+              <p className="text-primary-red text-sm">{errorMsg}</p>
+            )}
 
+            {/* Botón */}
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full py-3 mt-2 rounded-lg font-semibold shadow-lg transition-all ${
-                isSubmitting
-                  ? "bg-blue-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
+              className={`w-full py-3 mt-2 rounded-lg font-semibold text-white shadow-md transition-all
+                ${
+                  isSubmitting
+                    ? "bg-primary-blue/50 cursor-not-allowed"
+                    : "bg-primary-blue hover:bg-primary-blue/80"
+                }`}
             >
               {isSubmitting ? "Enviando..." : "Enviar mensaje"}
             </button>

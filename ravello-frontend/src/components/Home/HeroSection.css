@@ -1,0 +1,359 @@
+/* ==================== HERO SECTION - ESTRUCTURA BASE ==================== */
+
+.hero-section {
+  position: relative;
+  width: 100%;
+  height: 100vh; /* Mobile: altura completa */
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* ==================== BACKGROUND Y OVERLAYS ==================== */
+
+.hero-bg-wrapper {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&h=900&fit=crop');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transform: scale(1.2);
+  transition: transform 0.1s ease-out;
+  will-change: transform;
+}
+
+/* Gradiente azul sobre la imagen */
+/* .hero-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, 
+    rgba(30, 58, 138, 0.5) 0%,
+    rgba(8, 145, 178, 0.5) 50%,
+    rgba(29, 78, 216, 0.5) 100%
+  );
+  background-blend-mode: multiply;
+} */
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+/* ==================== CONTENIDO PRINCIPAL ==================== */
+
+.hero-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 1200px;
+  padding: 1rem; /* Mobile: padding reducido */
+  text-align: center;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem; /* Mobile: gap reducido */
+}
+
+/* ==================== TÍTULO ==================== */
+
+.hero-title {
+  font-size: 2rem; /* Mobile: 32px */
+  line-height: 1.1;
+  font-weight: 800;
+  margin: 0;
+  padding: 0 1rem;
+  text-shadow: 2px 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ==================== SUBTÍTULO ==================== */
+
+.hero-subtitle {
+  font-size: 1rem; /* Mobile: 16px */
+  line-height: 1.5;
+  font-weight: 300;
+  margin: 0;
+  padding: 0 1.5rem;
+  opacity: 0.95;
+  text-shadow: 1px 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* ==================== BARRA DE BÚSQUEDA ==================== */
+
+.hero-search-wrapper {
+  width: 100%;
+  max-width: 700px;
+  padding: 0 1rem;
+}
+
+.hero-search-form {
+  display: flex;
+  flex-direction: column; /* Mobile: vertical */
+  gap: 0.75rem;
+  background-color: white;
+  border-radius: 50px;
+  padding: 0.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.hero-search-form:hover {
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.hero-search-input {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  font-size: 0.95rem; /* Mobile: texto más pequeño */
+  color: #1f2937;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  border-radius: 50px;
+  width: 100%;
+}
+
+.hero-search-input::placeholder {
+  color: #9ca3af;
+}
+
+.hero-search-input:focus {
+  background-color: #f9fafb;
+}
+
+.hero-search-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  font-size: 0.95rem; /* Mobile: texto más pequeño */
+  font-weight: 600;
+  color: white;
+  background-color: var(--color-primary-red, #e33d35);
+  border: none;
+  border-radius: 20px 20px 50px 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.hero-search-button:hover {
+  background-color: #c92a22;
+  transform: scale(1.05);
+}
+
+.hero-search-button:active {
+  transform: scale(0.95);
+}
+
+.hero-search-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.hero-search-text {
+  display: inline; /* Mobile: mostrar texto */
+}
+
+/* ==================== SCROLL INDICATOR ==================== */
+
+.hero-scroll-indicator {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  animation: bounce 2s infinite;
+  display: none; /* Mobile: oculto por defecto */
+}
+
+.hero-scroll-mouse {
+  width: 24px;
+  height: 40px;
+  border: 2px solid white;
+  border-radius: 20px;
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+  opacity: 0.8;
+}
+
+.hero-scroll-wheel {
+  width: 4px;
+  height: 12px;
+  background-color: white;
+  border-radius: 2px;
+  animation: scroll 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(10px); }
+}
+
+@keyframes scroll {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(12px); }
+}
+
+/* ==================== TABLET (640px+) ==================== */
+
+@media (min-width: 640px) {
+  .hero-section {
+    height: 90vh;
+    min-height: 650px;
+  }
+
+  .hero-content {
+    padding: 2rem;
+    gap: 2rem;
+  }
+
+  .hero-title {
+    font-size: 3rem; /* Tablet: 48px */
+    padding: 0 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.25rem; /* Tablet: 20px */
+    padding: 0 2rem;
+  }
+
+  .hero-search-wrapper {
+    padding: 0 2rem;
+  }
+
+  .hero-search-form {
+    flex-direction: row; /* Tablet: horizontal */
+    gap: 0;
+    padding: 0.375rem;
+  }
+
+  .hero-search-input {
+    padding: 1rem 1.75rem;
+    font-size: 1rem;
+    border-radius: 50px 0 0 50px;
+  }
+
+  .hero-search-button {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    border-radius: 0 50px 50px 0;
+  }
+
+  .hero-scroll-indicator {
+    display: block; /* Tablet: mostrar */
+  }
+}
+
+/* ==================== DESKTOP (1024px+) ==================== */
+
+@media (min-width: 1024px) {
+  .hero-section {
+    height: 85vh;
+    min-height: 700px;
+  }
+
+  .hero-content {
+    gap: 2.5rem;
+  }
+
+  .hero-title {
+    font-size: 4.5rem; /* Desktop: 72px */
+  }
+
+  .hero-subtitle {
+    font-size: 1.5rem; /* Desktop: 24px */
+  }
+
+  .hero-search-input {
+    padding: 1.125rem 2rem;
+    font-size: 1.0625rem;
+  }
+
+  .hero-search-button {
+    padding: 1.125rem 2.5rem;
+    font-size: 1.0625rem;
+  }
+}
+
+/* ==================== LARGE DESKTOP (1280px+) ==================== */
+
+@media (min-width: 1280px) {
+  .hero-title {
+    font-size: 5rem; /* Large: 80px */
+  }
+
+  .hero-subtitle {
+    font-size: 1.75rem; /* Large: 28px */
+  }
+}
+
+/* ==================== OPTIMIZACIÓN PARA TOUCH DEVICES ==================== */
+
+@media (hover: none) and (pointer: coarse) {
+  .hero-search-form:hover {
+    transform: none;
+  }
+
+  .hero-search-button:hover {
+    transform: none;
+    background-color: var(--color-primary-red, #e33d35);
+  }
+
+  .hero-search-button:active {
+    transform: scale(0.95);
+    background-color: #c92a22;
+  }
+}
+
+/* ==================== FIX PARA iOS ==================== */
+
+@supports (-webkit-touch-callout: none) {
+  .hero-search-input {
+    -webkit-appearance: none;
+  }
+  
+  .hero-section {
+    /* Fix para iOS que no respeta 100vh correctamente */
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* ==================== MODO LANDSCAPE MÓVIL ==================== */
+
+@media (max-width: 767px) and (orientation: landscape) {
+  .hero-section {
+    height: auto;
+    min-height: 100vh;
+    padding: 2rem 0;
+  }
+
+  .hero-title {
+    font-size: 2.25rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+  }
+
+  .hero-scroll-indicator {
+    display: none;
+  }
+}

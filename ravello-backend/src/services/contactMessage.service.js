@@ -70,22 +70,48 @@ Recibido el: ${new Date().toLocaleString()}
 }
 
 /** Obtener mensajes con filtros y paginación */
-export async function getAllMessages(filter = {}, options = {}) {
-  const { sort = "-createdAt", page = 1, limit = 10 } = options;
-  const skip = (page - 1) * limit;
+export async function getAllMessages(filter = {}, { sort = "-createdAt", page, limit } = {}) {
 
-  const total = await ContactMessage.countDocuments(filter);
-  const data = await ContactMessage.find(filter)
-    .sort(sort)
-    .skip(skip)
-    .limit(limit);
+  // ==============================
+  // 🟢 SIN PAGINACIÓN → traer todos
+  // ==============================
+  if (!page || !limit) {
+    const items = await ContactMessage.find(filter).sort(sort);
+
+    return {
+      items,
+      pagination: {
+        total: items.length,
+        page: null,
+        limit: null,
+        totalPages: null,
+      },
+    };
+  }
+
+  // ==============================
+  // 🔵 CON PAGINACIÓN
+  // ==============================
+  const _page = Number(page);
+  const _limit = Number(limit);
+  const skip = (_page - 1) * _limit;
+
+  const [items, total] = await Promise.all([
+    ContactMessage.find(filter)
+      .sort(sort)
+      .skip(skip)
+      .limit(_limit),
+    ContactMessage.countDocuments(filter)
+  ]);
 
   return {
-    total,
-    page,
-    limit,
-    pages: Math.ceil(total / limit),
-    items: data,
+    items,
+    pagination: {
+      total,
+      page: _page,
+      limit: _limit,
+      totalPages: Math.ceil(total / _limit),
+    },
   };
 }
 
