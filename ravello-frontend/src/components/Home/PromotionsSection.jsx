@@ -91,7 +91,7 @@ export default function PromotionsSection() {
   };
 
   return (
-    <section className="py-20 bg-secondary-sand overflow-x-hidden">
+    <section className="py-20 bg-sand-fade overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-12" data-aos="fade-up">
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-primary-blue">

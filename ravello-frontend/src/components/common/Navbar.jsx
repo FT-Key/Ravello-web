@@ -46,6 +46,11 @@ const Navbar = ({ position = "sticky" }) => {
     { label: "Opiniones", link: "/opiniones" },
   ];
 
+  const handleMobileLinkClick = () => {
+    setIsMobileMenuOpen(false);
+    setMobileDropdowns({});
+  };
+
   const toggleMobileDropdown = (index) => {
     setMobileDropdowns((prev) => ({
       ...prev,
@@ -142,7 +147,7 @@ const Navbar = ({ position = "sticky" }) => {
           <div className="flex items-center justify-between">
 
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 group">
+            <Link onClick={handleMobileLinkClick} to="/" className="flex items-center gap-2 group">
               <div className="relative">
                 <img src="/ravello-mini-logo.svg" alt="Ravello Logo" className="w-[50px] h-[50px] object-contain transition-transform duration-300 group-hover:scale-110" />
               </div>
@@ -197,6 +202,7 @@ const Navbar = ({ position = "sticky" }) => {
 
                               return (
                                 <Link
+                                onClick={handleMobileLinkClick}
                                   key={subidx}
                                   to={`/paquetes?destino=${encodeURIComponent(ciudadSola)}`}
                                   className="block px-6 py-3 text-dark hover:bg-background-light hover:text-black transition-colors border-b border-border-subtle last:border-b-0"
@@ -211,6 +217,7 @@ const Navbar = ({ position = "sticky" }) => {
                     </>
                   ) : (
                     <Link
+                    onClick={handleMobileLinkClick}
                       to={item.link}
                       className={`px-4 py-2 font-medium transition-all rounded-lg ${isScrolled
                         ? "text-dark hover:text-black hover:bg-background-light"
@@ -227,6 +234,7 @@ const Navbar = ({ position = "sticky" }) => {
             {/* CTA */}
             <div className="hidden lg:flex items-center gap-3">
               <Link
+              onClick={handleMobileLinkClick}
                 to="/contacto"
                 className="px-6 py-2 rounded-full border-2 border-[var(--color-primary-red)] text-[var(--color-primary-red)] font-semibold hover:bg-[var(--color-primary-red)] hover:text-white transition-all duration-300"
               >
@@ -251,8 +259,8 @@ const Navbar = ({ position = "sticky" }) => {
       {/* MENÚ MOBILE */}
       <div
         className={`lg:hidden bg-white shadow-xl overflow-y-auto transition-all duration-300 ${isMobileMenuOpen
-            ? "max-h-[80vh] opacity-100 pointer-events-auto"
-            : "max-h-0 opacity-0 pointer-events-none"
+          ? "max-h-[80vh] opacity-100 pointer-events-auto"
+          : "max-h-0 opacity-0 pointer-events-none"
           }`}
       >
         <div className="px-4 py-6 space-y-2">
@@ -285,6 +293,7 @@ const Navbar = ({ position = "sticky" }) => {
 
                       return (
                         <Link
+                        onClick={handleMobileLinkClick}
                           key={subidx}
                           to={`/paquetes?destino=${encodeURIComponent(ciudadSola)}`}
                           className="block px-4 py-2 text-sm text-light hover:text-primary-blue transition-colors"
@@ -297,6 +306,7 @@ const Navbar = ({ position = "sticky" }) => {
                 </>
               ) : (
                 <Link
+                onClick={handleMobileLinkClick}
                   to={item.link}
                   className="block px-4 py-3 text-dark hover:bg-background-light hover:text-primary-blue rounded-lg transition-colors font-medium"
                 >
@@ -307,6 +317,7 @@ const Navbar = ({ position = "sticky" }) => {
           ))}
 
           <Link
+          onClick={handleMobileLinkClick}
             to="/contacto"
             className="w-full mt-4 px-6 py-3 rounded-full bg-primary-red text-white font-semibold hover:bg-opacity-90 transition-all"
           >
