@@ -1,47 +1,22 @@
-import React, { useState, useMemo } from "react";
-import { Edit3, Trash2, Search } from "lucide-react";
+import React from "react";
+import { Edit3, Trash2 } from "lucide-react";
 import Pagination from "../common/Pagination";
 
-export default function DataTable({ columns, data, onEdit, onDelete }) {
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
-
-  // 🔍 Filtrado por búsqueda
-  const filteredData = useMemo(() => {
-    if (!search.trim()) return data;
-    return data.filter((row) =>
-      Object.values(row).some((value) =>
-        String(value).toLowerCase().includes(search.toLowerCase())
-      )
-    );
-  }, [search, data]);
-
-  // 📄 Paginación
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const paginatedData = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredData.slice(start, start + itemsPerPage);
-  }, [filteredData, currentPage]);
+export default function DataTable({
+  columns,
+  data,
+  loading,
+  page,
+  limit,
+  total,
+  onPageChange,
+  onEdit,
+  onDelete,
+}) {
+  const totalPages = Math.ceil(total / limit);
 
   return (
     <div className="bg-white rounded-lg shadow p-4">
-      {/* 🔍 Barra de búsqueda */}
-      <div className="flex justify-between mb-4 items-center">
-        <div className="relative w-64">
-          <Search size={18} className="absolute left-3 top-2.5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-blue-200"
-          />
-        </div>
-      </div>
 
       {/* 📋 Tabla */}
       <div className="overflow-x-auto">
@@ -60,8 +35,17 @@ export default function DataTable({ columns, data, onEdit, onDelete }) {
           </thead>
 
           <tbody>
-            {paginatedData.length > 0 ? (
-              paginatedData.map((row) => (
+            {loading ? (
+              <tr>
+                <td
+                  colSpan={columns.length + (onEdit || onDelete ? 1 : 0)}
+                  className="text-center py-6 text-gray-500"
+                >
+                  Cargando...
+                </td>
+              </tr>
+            ) : data.length > 0 ? (
+              data.map((row) => (
                 <tr
                   key={row._id}
                   className="bg-white border-b hover:bg-gray-50 transition"
@@ -112,11 +96,11 @@ export default function DataTable({ columns, data, onEdit, onDelete }) {
         </table>
       </div>
 
-      {/* 📄 Paginación */}
+      {/* 🌐 Paginación real del backend */}
       <Pagination
-        currentPage={currentPage}
+        currentPage={page}
         totalPages={totalPages}
-        onPageChange={setCurrentPage}
+        onPageChange={onPageChange}
       />
     </div>
   );
