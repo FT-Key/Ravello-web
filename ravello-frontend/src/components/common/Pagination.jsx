@@ -3,10 +3,15 @@ import React from "react";
 export default function Pagination({ currentPage, totalPages, onPageChange }) {
   if (totalPages <= 1) return null;
 
+  const goTo = (page) => {
+    if (page < 1 || page > totalPages) return;
+    onPageChange(page);
+  };
+
   return (
     <div className="flex justify-center mt-8 gap-2">
       <button
-        onClick={() => onPageChange(currentPage - 1)}
+        onClick={() => goTo(currentPage - 1)}
         disabled={currentPage === 1}
         className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100 transition"
       >
@@ -18,7 +23,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
       </span>
 
       <button
-        onClick={() => onPageChange(currentPage + 1)}
+        onClick={() => goTo(currentPage + 1)}
         disabled={currentPage === totalPages}
         className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100 transition"
       >

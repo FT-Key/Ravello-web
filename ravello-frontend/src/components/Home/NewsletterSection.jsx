@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import clientAxios from "../../api/axiosConfig";
+import "./NewsletterSection.css";
 
 export default function NewsletterSection() {
   const [email, setEmail] = useState("");
@@ -11,29 +12,26 @@ export default function NewsletterSection() {
 
     try {
       const res = await clientAxios.post("/newsletter", { email });
-      console.log("✅ Suscripción exitosa:", res.data);
       setStatus("success");
       setEmail("");
     } catch (err) {
-      console.error("❌ Error al suscribirse:", err.response?.data || err);
       setStatus("error");
     }
   };
 
   return (
-    <section className="py-20 bg-sand-fade">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="max-w-3xl mx-auto text-center" data-aos="zoom-in">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-primary-blue">
-            Recibí nuestras mejores ofertas
-          </h2>
-          <p className="text-lg mb-8 text-light">
+    <section className="newsletter-section bg-sand-fade">
+      <div className="newsletter-container">
+        <div className="newsletter-content" data-aos="zoom-in">
+          <h2 className="newsletter-title">Recibí nuestras mejores ofertas</h2>
+          <p className="newsletter-subtitle">
             Suscribite y no te pierdas ninguna promoción exclusiva
           </p>
 
+          {/* FORMULARIO */}
           <form
             onSubmit={handleSubmit}
-            className="bg-white rounded-full shadow-xl p-2 flex items-center max-w-2xl mx-auto"
+            className="newsletter-form"
             data-aos="flip-up"
             data-aos-delay="200"
           >
@@ -43,29 +41,32 @@ export default function NewsletterSection() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Tu correo electrónico"
               required
-              className="flex-1 px-6 py-3 outline-none rounded-l-full text-dark"
+              className="newsletter-input"
             />
             <button
               type="submit"
               disabled={status === "loading"}
-              className={`bg-primary-red rounded-full px-8 py-3 font-semibold text-white border-0 transition-transform hover:scale-105 ${status === "loading" ? "opacity-70 cursor-not-allowed" : ""
-                }`}
+              className={`newsletter-button ${
+                status === "loading" ? "loading" : ""
+              }`}
             >
               {status === "loading" ? "Enviando..." : "Suscribirse"}
             </button>
           </form>
 
+          {/* MENSAJES */}
           {status === "success" && (
-            <p className="text-green-600 mt-4">
+            <p className="newsletter-message success">
               ✅ ¡Te suscribiste correctamente!
             </p>
           )}
           {status === "error" && (
-            <p className="text-red-600 mt-4">
+            <p className="newsletter-message error">
               ❌ Ocurrió un error. Verificá tu email.
             </p>
           )}
-          <p className="text-sm mt-4 text-light">
+
+          <p className="newsletter-footnote">
             No spam. Solo las mejores ofertas para tu próximo viaje.
           </p>
         </div>

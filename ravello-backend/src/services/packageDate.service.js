@@ -1,18 +1,14 @@
 // services/packageDate.service.js
+import mongoose from "mongoose";
 import { PackageDate, Package } from "../models/index.js";
 
 export const PackageDateService = {
 
-  // ---------------------------------------------------------
-  // 🟢 CREAR FECHA DE PAQUETE
-  // ---------------------------------------------------------
   async createPackageDate(data) {
     const pkg = await Package.findById(data.package);
     if (!pkg) throw new Error("El paquete no existe");
 
-    // Inconsistencias opcionales
     const inconsistencias = [];
-
     const sumaDestinos = pkg.destinos?.reduce(
       (acc, d) => acc + (d.diasEstadia || 0),
       0
@@ -28,108 +24,166 @@ export const PackageDateService = {
     data.validadoDestinos = inconsistencias.length === 0;
     data.validadoFechas = true;
 
-    // create() → dispara pre("save")
     const created = await PackageDate.create(data);
-
-    // ❗ Devuelve documento completo con populate
     const populated = await PackageDate.findById(created._id).populate("package");
     return populated;
   },
 
   // ---------------------------------------------------------
-  // 🟢 LISTAR TODOS
+  // 🟢 LISTAR TODOS - CON BÚSQUEDA EN PAQUETES
   // ---------------------------------------------------------
   async getAll(queryOptions, searchFilter, pagination) {
-    const query = {
-      ...queryOptions.filters,
-      ...searchFilter
-    };
+    let query = { ...queryOptions.filters };
 
-    const total = await PackageDate.countDocuments(query);
+    // 🔥 Si hay búsqueda, buscar TAMBIÉN en nombres de paquetes
+    if (searchFilter && searchFilter.$or && searchFilter.$or.length > 0) {
+      // Extraer el término de búsqueda del primer campo
+      const searchTerm = searchFilter.$or[0]?.[Object.keys(searchFilter.$or[0])[0]]?.$regex;
+      
+      if (searchTerm) {
+        console.log("🔍 Término de búsqueda:", searchTerm);
 
-    let mongoQuery = PackageDate.find(query)
-      .populate("package")
-      .sort(queryOptions.sort);
+        // 1. Buscar paquetes que coincidan con el término
+        const matchingPackages = await Package.find({
+          nombre: { $regex: searchTerm, $options: 'i' }
+        }).select('_id');
 
-    // 👇 Solo aplicar paginación si existe
-    if (pagination) {
-      mongoQuery = mongoQuery
-        .skip(pagination.skip)
-        .limit(pagination.limit);
+        const packageIds = matchingPackages.map(p => p._id);
+        console.log(`📦 Paquetes encontrados: ${packageIds.length}`);
+
+        // 2. Construir búsqueda combinada
+        const validFields = ['estado', 'moneda', 'notas'];
+        const validSearchConditions = searchFilter.$or.filter(condition => {
+          const field = Object.keys(condition)[0];
+          return validFields.includes(field);
+        });
+
+        // 3. Combinar: búsqueda en campos propios O en paquetes encontrados
+        const searchConditions = [
+          ...validSearchConditions,
+          { package: { $in: packageIds } }
+        ];
+
+        if (Object.keys(query).length > 0) {
+          // Si hay filtros adicionales (estado, moneda), combinar con AND
+          query = {
+            $and: [
+              query,
+              { $or: searchConditions }
+            ]
+          };
+        } else {
+          // Si no hay filtros, solo la búsqueda
+          query.$or = searchConditions;
+        }
+      }
     }
 
-    const data = await mongoQuery;
+    console.log("🔍 Query final:", JSON.stringify(query, null, 2));
 
-    return {
-      total,
-      page: pagination?.page || null,
-      limit: pagination?.limit || null,
-      items: data
-    };
+    try {
+      const total = await PackageDate.countDocuments(query);
+
+      let mongoQuery = PackageDate.find(query)
+        .populate("package")
+        .sort(queryOptions.sort);
+
+      if (pagination) {
+        mongoQuery = mongoQuery
+          .skip(pagination.skip)
+          .limit(pagination.limit);
+      }
+
+      const data = await mongoQuery;
+
+      console.log(`✅ Resultados encontrados: ${data.length} de ${total} total`);
+
+      return {
+        total,
+        page: pagination?.page || null,
+        limit: pagination?.limit || null,
+        items: data
+      };
+    } catch (error) {
+      console.error("❌ Error en getAll:", error);
+      throw new Error(`Error buscando package dates: ${error.message}`);
+    }
   },
 
   // ---------------------------------------------------------
   // 🟢 LISTAR POR ID DE PAQUETE
   // ---------------------------------------------------------
   async getByPackage(packageId, queryOptions, searchFilter, pagination) {
-    const query = {
+    let query = {
       package: packageId,
       ...queryOptions.filters,
-      ...searchFilter
     };
 
-    const total = await PackageDate.countDocuments(query);
+    if (searchFilter && searchFilter.$or && searchFilter.$or.length > 0) {
+      const validFields = ['estado', 'moneda', 'notas'];
+      
+      const validSearchConditions = searchFilter.$or.filter(condition => {
+        const field = Object.keys(condition)[0];
+        return validFields.includes(field);
+      });
 
-    let mongoQuery = PackageDate.find(query)
-      .populate("package")
-      .sort(queryOptions.sort);
-
-    if (pagination) {
-      mongoQuery = mongoQuery
-        .skip(pagination.skip)
-        .limit(pagination.limit);
+      if (validSearchConditions.length > 0) {
+        const baseQuery = { package: packageId, ...queryOptions.filters };
+        query = {
+          $and: [
+            baseQuery,
+            { $or: validSearchConditions }
+          ]
+        };
+      }
     }
 
-    const data = await mongoQuery;
+    console.log("🔍 Query getByPackage:", JSON.stringify(query, null, 2));
 
-    return {
-      total,
-      page: pagination?.page || null,
-      limit: pagination?.limit || null,
-      items: data
-    };
+    try {
+      const total = await PackageDate.countDocuments(query);
+
+      let mongoQuery = PackageDate.find(query)
+        .populate("package")
+        .sort(queryOptions.sort);
+
+      if (pagination) {
+        mongoQuery = mongoQuery
+          .skip(pagination.skip)
+          .limit(pagination.limit);
+      }
+
+      const data = await mongoQuery;
+
+      return {
+        total,
+        page: pagination?.page || null,
+        limit: pagination?.limit || null,
+        items: data
+      };
+    } catch (error) {
+      console.error("❌ Error en getByPackage:", error);
+      throw new Error(`Error buscando package dates por paquete: ${error.message}`);
+    }
   },
 
-  // ---------------------------------------------------------
-  // 🟢 OBTENER POR ID
-  // ---------------------------------------------------------
   async getById(id) {
     const date = await PackageDate.findById(id).populate("package");
     if (!date) throw new Error("Fecha no encontrada");
     return date;
   },
 
-  // ---------------------------------------------------------
-  // 🟢 ACTUALIZAR FECHA DE PAQUETE
-  // ---------------------------------------------------------
   async update(id, data) {
     const doc = await PackageDate.findById(id);
     if (!doc) throw new Error("No se pudo actualizar la fecha del paquete");
 
-    // asignamos campos
     Object.assign(doc, data);
-
-    // ❗ save() → dispara pre("save") → recalcula 'regreso'
     await doc.save();
 
-    // devolver documento completo y populado
     const populated = await PackageDate.findById(id).populate("package");
     return populated;
   },
 
-  // ---------------------------------------------------------
-  // 🟢 ELIMINAR
-  // ---------------------------------------------------------
   async delete(id) {
     const result = await PackageDate.findByIdAndDelete(id);
     if (!result) throw new Error("No existe esa fecha");

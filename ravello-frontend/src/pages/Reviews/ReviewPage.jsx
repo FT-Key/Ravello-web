@@ -84,7 +84,7 @@ const ReviewForm = ({ packageId, onSuccess }) => {
   );
 
   return (
-    <div className="w-full bg-background-light py-16 px-4 flex justify-center">
+    <div className="w-full bg-light-fade py-16 px-4 pb-24 flex justify-center">
       <div className="w-full max-w-2xl bg-background-white shadow-xl rounded-2xl p-8 md:p-10">
 
         {/* Título */}
