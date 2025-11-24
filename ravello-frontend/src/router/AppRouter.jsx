@@ -20,8 +20,8 @@ import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
 import ManageNewsletterPage from "../pages/Admin/ManageNewsletterPage";
 import ScrollToTop from "../utils/scrollToTop";
-import ReviewPage from "../pages/Review/ReviewPage";
-import ManagePackageDatesPage from "../pages/Admin/ManagePackageDatesPage.jsx";
+import ReviewPage from "../pages/Reviews/ReviewPage";
+import ManagePackageDatesPage from "../pages/Admin/ManagePackageDatesPage";
 
 function AppRouterInner() {
   const location = useLocation();

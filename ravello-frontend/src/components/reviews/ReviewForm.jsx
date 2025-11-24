@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Star } from "lucide-react";
-import api from "../../api/axiosConfig";
+import clientAxios from "../../api/axiosConfig";
 
 const ReviewForm = ({ packageId, onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,7 +37,7 @@ const ReviewForm = ({ packageId, onSuccess }) => {
         estadoModeracion: "pendiente",
       };
 
-      await api.post("/reviews", reviewData);
+      await clientAxios.post("/reviews", reviewData);
 
       setSubmitMessage({
         type: "success",

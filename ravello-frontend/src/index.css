@@ -56,3 +56,13 @@
             var(--color-secondary-sand) 85%,
             transparent 100%);
 }
+
+.bg-light-fade {
+    background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        var(--color-background-light) 15%,
+        var(--color-background-light) 85%,
+        transparent 100%
+    );
+}
