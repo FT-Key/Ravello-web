@@ -23,7 +23,13 @@ const Navbar = ({ position = "sticky" }) => {
     const fetchDestinos = async () => {
       try {
         const res = await clientAxios.get("/packages/destinos/list");
-        setDestinos(res.data || []);
+
+        if (res.data.success && Array.isArray(res.data.data)) {
+          setDestinos(res.data.data);
+        } else {
+          console.warn("Formato inesperado en destinos:", res.data);
+          setDestinos([]);
+        }
       } catch (err) {
         console.error("Error al cargar destinos:", err);
       }
@@ -202,7 +208,7 @@ const Navbar = ({ position = "sticky" }) => {
 
                               return (
                                 <Link
-                                onClick={handleMobileLinkClick}
+                                  onClick={handleMobileLinkClick}
                                   key={subidx}
                                   to={`/paquetes?destino=${encodeURIComponent(ciudadSola)}`}
                                   className="block px-6 py-3 text-dark hover:bg-background-light hover:text-black transition-colors border-b border-border-subtle last:border-b-0"
@@ -217,7 +223,7 @@ const Navbar = ({ position = "sticky" }) => {
                     </>
                   ) : (
                     <Link
-                    onClick={handleMobileLinkClick}
+                      onClick={handleMobileLinkClick}
                       to={item.link}
                       className={`px-4 py-2 font-medium transition-all rounded-lg ${isScrolled
                         ? "text-dark hover:text-black hover:bg-background-light"
@@ -234,7 +240,7 @@ const Navbar = ({ position = "sticky" }) => {
             {/* CTA */}
             <div className="hidden lg:flex items-center gap-3">
               <Link
-              onClick={handleMobileLinkClick}
+                onClick={handleMobileLinkClick}
                 to="/contacto"
                 className="px-6 py-2 rounded-full border-2 border-[var(--color-primary-red)] text-[var(--color-primary-red)] font-semibold hover:bg-[var(--color-primary-red)] hover:text-white transition-all duration-300"
               >
@@ -293,7 +299,7 @@ const Navbar = ({ position = "sticky" }) => {
 
                       return (
                         <Link
-                        onClick={handleMobileLinkClick}
+                          onClick={handleMobileLinkClick}
                           key={subidx}
                           to={`/paquetes?destino=${encodeURIComponent(ciudadSola)}`}
                           className="block px-4 py-2 text-sm text-light hover:text-primary-blue transition-colors"
@@ -306,7 +312,7 @@ const Navbar = ({ position = "sticky" }) => {
                 </>
               ) : (
                 <Link
-                onClick={handleMobileLinkClick}
+                  onClick={handleMobileLinkClick}
                   to={item.link}
                   className="block px-4 py-3 text-dark hover:bg-background-light hover:text-primary-blue rounded-lg transition-colors font-medium"
                 >
@@ -317,7 +323,7 @@ const Navbar = ({ position = "sticky" }) => {
           ))}
 
           <Link
-          onClick={handleMobileLinkClick}
+            onClick={handleMobileLinkClick}
             to="/contacto"
             className="w-full mt-4 px-6 py-3 rounded-full bg-primary-red text-white font-semibold hover:bg-opacity-90 transition-all"
           >
