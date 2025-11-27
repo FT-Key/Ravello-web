@@ -1,77 +1,90 @@
 import { Review } from "../models/index.js";
 
-export const getAllReviews = async (
-  filters = {},
-  pagination = null,
-  sort = { createdAt: -1 }
-) => {
+// -------------------------------------------------------------
+// GET ALL - con búsqueda y paginación
+// -------------------------------------------------------------
+export const getAll = async (queryOptions, searchFilter, pagination) => {
+  const query = {
+    ...queryOptions.filters,
+    ...searchFilter,
+  };
 
-  // Si NO hay paginación → traer TODO
-  if (!pagination) {
-    const [items, total] = await Promise.all([
-      Review.find(filters)
-        .populate("paquete", "nombre")
-        .sort(sort),
-      Review.countDocuments(filters),
-    ]);
+  console.log("🔍 Query getAll reviews:", JSON.stringify(query, null, 2));
+
+  try {
+    const total = await Review.countDocuments(query);
+
+    let mongoQuery = Review.find(query)
+      .populate("paquete", "nombre")
+      .sort(queryOptions.sort);
+
+    if (pagination) {
+      mongoQuery = mongoQuery
+        .skip(pagination.skip)
+        .limit(pagination.limit);
+    }
+
+    const items = await mongoQuery;
+
+    console.log(`✅ Reseñas encontradas: ${items.length} de ${total} total`);
 
     return {
-      items,
-      pagination: {
-        total,
-        page: null,
-        pages: 1,
-      },
-    };
-  }
-
-  // Si HAY paginación → aplicar limit/skip
-  const { page = 1, limit = 10 } = pagination;
-  const skip = (page - 1) * limit;
-
-  const [items, total] = await Promise.all([
-    Review.find(filters)
-      .populate("paquete", "nombre")
-      .sort(sort)
-      .skip(skip)
-      .limit(limit),
-    Review.countDocuments(filters),
-  ]);
-
-  return {
-    items,
-    pagination: {
       total,
-      page,
-      pages: Math.ceil(total / limit),
-    },
-  };
+      page: pagination?.page || null,
+      limit: pagination?.limit || null,
+      items
+    };
+  } catch (error) {
+    console.error("❌ Error en getAll reviews:", error);
+    throw new Error(`Error buscando reseñas: ${error.message}`);
+  }
 };
 
-export const getReviewById = async (id) => {
-  return await Review.findById(id).populate("paquete", "nombre");
+// -------------------------------------------------------------
+// GET BY ID
+// -------------------------------------------------------------
+export const getById = async (id) => {
+  const review = await Review.findById(id).populate("paquete", "nombre");
+  if (!review) throw new Error("Reseña no encontrada");
+  return review;
 };
 
-export const createReview = async (data) => {
+// -------------------------------------------------------------
+// CREATE
+// -------------------------------------------------------------
+export const create = async (data) => {
   const review = new Review(data);
   return await review.save();
 };
 
-export const updateReview = async (id, data) => {
-  return await Review.findByIdAndUpdate(id, data, { new: true });
+// -------------------------------------------------------------
+// UPDATE
+// -------------------------------------------------------------
+export const update = async (id, data) => {
+  const review = await Review.findByIdAndUpdate(id, data, { new: true });
+  if (!review) throw new Error("Reseña no encontrada");
+  return review;
 };
 
+// -------------------------------------------------------------
+// DELETE
+// -------------------------------------------------------------
 export const deleteReview = async (id) => {
-  return await Review.findByIdAndDelete(id);
+  const review = await Review.findByIdAndDelete(id);
+  if (!review) throw new Error("Reseña no encontrada");
+  return review;
 };
 
-export const moderarReview = async (id, estado) => {
-  const review = await Review.findById(id);
-  if (!review) return null;
-
+// -------------------------------------------------------------
+// MODERAR
+// -------------------------------------------------------------
+export const moderar = async (id, estado) => {
   if (!["pendiente", "aprobada", "rechazada"].includes(estado)) {
     throw new Error("Estado de moderación inválido");
   }
+
+  const review = await Review.findById(id);
+  if (!review) throw new Error("Reseña no encontrada");
 
   review.estadoModeracion = estado;
   await review.save();

@@ -1,172 +1,184 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useMemo } from "react";
 import DataTable from "../../components/admin/DataTable";
 import ReviewFilterBar from "../../components/admin/ReviewFilterBar";
 import ReviewEditModal from "../../components/admin/ReviewEditModal";
 import clientAxios from "../../api/axiosConfig";
 import { toast } from "react-hot-toast";
-
-// 🆕 utils
-import { extractResponseArray } from "../../utils/extractResponseArray";
+import { usePaginatedFetch } from "../../hooks/usePaginatedFetch";
 
 export default function ManageReviewsPage() {
-  const [reviews, setReviews] = useState([]);
-  const [query, setQuery] = useState("");
-  const [filters, setFilters] = useState({ tipo: "", estado: "" });
+  // -----------------------------------------------
+  // 🟦 Hook reutilizable: datos + filtros + paginación
+  // -----------------------------------------------
+  const {
+    data: reviews,
+    loading,
+    page,
+    limit,
+    total,
+    setFilters,
+    setPage,
+    refetch,
+  } = usePaginatedFetch("/reviews");
+
+  // -----------------------------------------------
+  // 🟦 Modal de edición
+  // -----------------------------------------------
   const [editReview, setEditReview] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-
-  // ---------------------------------------------------
-  // 🔥 Usamos extractResponseArray()
-  // ---------------------------------------------------
-  useEffect(() => {
-    const fetchReviews = async () => {
-      try {
-        const params = new URLSearchParams(filters);
-        const res = await clientAxios.get(`/reviews?${params}`);
-console.log("RESPONSE: ", res)
-        const reviewsArray = extractResponseArray(res, ["reviews"]);
-
-        setReviews(reviewsArray);
-      } catch (err) {
-        console.error("Error cargando reseñas:", err);
-        toast.error("Error cargando reseñas");
-      }
-    };
-
-    fetchReviews();
-  }, [filters]);
-  // ---------------------------------------------------
 
   const handleEdit = (review) => {
     setEditReview(review);
     setModalOpen(true);
   };
 
+  const handleSaved = () => {
+    refetch();
+    toast.success("Reseña actualizada correctamente");
+  };
+
+  // -----------------------------------------------
+  // 🗑 Eliminar
+  // -----------------------------------------------
   const handleDelete = async (review) => {
     if (!confirm(`¿Eliminar reseña de ${review.nombre}?`)) return;
 
     try {
       await clientAxios.delete(`/reviews/${review._id}`);
-      setReviews((prev) => prev.filter((x) => x._id !== review._id));
       toast.success("Reseña eliminada correctamente");
-    } catch {
+      refetch();
+    } catch (error) {
+      console.error(error);
       toast.error("Error al eliminar reseña");
     }
   };
 
-  const handleSave = async (data) => {
-    try {
-      const res = await clientAxios.put(`/reviews/${editReview._id}`, data);
-
-      setReviews((prev) =>
-        prev.map((r) => (r._id === editReview._id ? res.data : r))
-      );
-
-      toast.success("Reseña actualizada correctamente");
-      setModalOpen(false);
-    } catch {
-      toast.error("Error al actualizar reseña");
-    }
-  };
-
+  // -----------------------------------------------
+  // ✅ Moderar
+  // -----------------------------------------------
   const handleModerate = async (id, estado) => {
     try {
-      const res = await clientAxios.patch(`/reviews/${id}/moderar`, { estado });
-
-      setReviews((prev) =>
-        prev.map((r) => (r._id === id ? res.data : r))
-      );
-
+      await clientAxios.put(`/reviews/${id}/moderar`, { estado });
       toast.success(`Reseña ${estado}`);
-    } catch {
+      refetch();
+    } catch (error) {
+      console.error(error);
       toast.error("Error al moderar reseña");
     }
   };
 
-  const handleFilterChange = (key, value) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const filteredReviews = reviews.filter((r) => {
-    const matchesQuery =
-      !query ||
-      r.nombre?.toLowerCase().includes(query.toLowerCase()) ||
-      r.comentario?.toLowerCase().includes(query.toLowerCase());
-
-    return matchesQuery;
-  });
-
-  const columns = [
-    { key: "nombre", label: "Autor" },
-    { key: "tipo", label: "Tipo" },
-    {
-      key: "paquete",
-      label: "Paquete / Empresa",
-      render: (val, row) =>
-        row.tipo === "paquete" ? val?.nombre || "-" : "Empresa",
-    },
-    {
-      key: "comentario",
-      label: "Comentario",
-      render: (val) =>
-        val?.slice(0, 50) + (val?.length > 50 ? "..." : ""),
-    },
-    {
-      key: "calificacion",
-      label: "⭐ Puntuación",
-      render: (val) => `${val}/5`,
-    },
-    {
-      key: "estadoModeracion",
-      label: "Estado",
-      render: (val) =>
-        val === "pendiente"
-          ? "🕓 Pendiente"
-          : val === "aprobada"
-          ? "✅ Aprobada"
-          : "❌ Rechazada",
-    },
-  ];
+  // -----------------------------------------------
+  // 📊 Columnas de la tabla
+  // -----------------------------------------------
+  const columns = useMemo(
+    () => [
+      { key: "nombre", label: "Autor" },
+      { key: "tipo", label: "Tipo" },
+      {
+        key: "paquete",
+        label: "Paquete / Empresa",
+        render: (val, row) =>
+          row.tipo === "paquete" ? val?.nombre || "-" : "Empresa",
+      },
+      {
+        key: "comentario",
+        label: "Comentario",
+        render: (val) =>
+          val?.slice(0, 50) + (val?.length > 50 ? "..." : ""),
+      },
+      {
+        key: "calificacion",
+        label: "⭐ Puntuación",
+        render: (val) => `${val}/5`,
+      },
+      {
+        key: "estadoModeracion",
+        label: "Estado",
+        render: (val) => (
+          <span
+            className={`px-2 py-1 text-xs rounded ${
+              val === "pendiente"
+                ? "bg-yellow-100 text-yellow-700"
+                : val === "aprobada"
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+            }`}
+          >
+            {val === "pendiente"
+              ? "🕓 Pendiente"
+              : val === "aprobada"
+              ? "✅ Aprobada"
+              : "❌ Rechazada"}
+          </span>
+        ),
+      },
+    ],
+    []
+  );
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Gestión de reseñas</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Gestión de Reseñas</h1>
+        <button
+          onClick={refetch}
+          className="border px-3 py-2 rounded-md hover:bg-gray-100"
+        >
+          Recargar
+        </button>
+      </div>
 
+      {/* Barra de filtros */}
       <ReviewFilterBar
-        query={query}
-        setQuery={setQuery}
-        filters={filters}
-        onFilterChange={handleFilterChange}
+        onApply={(payload) => {
+          console.log("🔍 Aplicando filtros:", payload);
+          setFilters(payload);
+          setPage(1);
+        }}
       />
 
+      {/* Tabla con paginación REAL */}
       <DataTable
         columns={columns}
-        data={filteredReviews}
+        data={reviews}
+        loading={loading}
+        page={page}
+        limit={limit}
+        total={total}
+        onPageChange={setPage}
         onEdit={handleEdit}
         onDelete={handleDelete}
         extraActions={(row) => (
           <div className="flex gap-2">
-            <button
-              onClick={() => handleModerate(row._id, "aprobada")}
-              className="text-green-600 hover:underline"
-            >
-              Aprobar
-            </button>
-            <button
-              onClick={() => handleModerate(row._id, "rechazada")}
-              className="text-red-600 hover:underline"
-            >
-              Rechazar
-            </button>
+            {row.estadoModeracion !== "aprobada" && (
+              <button
+                onClick={() => handleModerate(row._id, "aprobada")}
+                className="text-green-600 hover:underline"
+              >
+                Aprobar
+              </button>
+            )}
+            {row.estadoModeracion !== "rechazada" && (
+              <button
+                onClick={() => handleModerate(row._id, "rechazada")}
+                className="text-red-600 hover:underline"
+              >
+                Rechazar
+              </button>
+            )}
           </div>
         )}
       />
 
+      {/* Modal */}
       <ReviewEditModal
         open={modalOpen}
         review={editReview}
-        onClose={() => setModalOpen(false)}
-        onSave={handleSave}
+        onClose={() => {
+          setModalOpen(false);
+          setEditReview(null);
+        }}
+        onSaved={handleSaved}
       />
     </div>
   );
