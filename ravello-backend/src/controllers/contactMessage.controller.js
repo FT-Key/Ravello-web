@@ -31,21 +31,12 @@ export const createMessage = async (req, res, next) => {
 /** 📬 Obtener mensajes (con paginación + búsqueda + filtros) */
 export const getMessages = async (req, res, next) => {
   try {
-    const filter = {
-      ...req.queryOptions.filters,
-      ...req.searchFilter,
-    };
-
-    const options = {
-      ...req.pagination,
-      sort: req.queryOptions.sort,
-    };
-
-    const result = await contactService.getAllMessages(filter, options);
-    res.json(result);
+    const { queryOptions, searchFilter, pagination } = req;
+    const data = await contactService.getAllMessages(queryOptions, searchFilter, pagination);
+    res.json({ success: true, ...data });
   } catch (err) {
     console.error("❌ Error al obtener mensajes:", err);
-    next(err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -53,11 +44,13 @@ export const getMessages = async (req, res, next) => {
 export const getMessage = async (req, res, next) => {
   try {
     const message = await contactService.getMessageById(req.params.id);
-    if (!message)
-      return res.status(404).json({ error: "Mensaje no encontrado" });
-    res.json(message);
+    if (!message) {
+      return res.status(404).json({ success: false, error: "Mensaje no encontrado" });
+    }
+    res.json({ success: true, data: message });
   } catch (err) {
-    next(err);
+    console.error("❌ Error en getMessage:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -65,15 +58,17 @@ export const getMessage = async (req, res, next) => {
 export const markAsRead = async (req, res, next) => {
   try {
     const updated = await contactService.markAsRead(req.params.id);
-    if (!updated)
-      return res.status(404).json({ error: "Mensaje no encontrado" });
+    if (!updated) {
+      return res.status(404).json({ success: false, error: "Mensaje no encontrado" });
+    }
     res.json({
       success: true,
       message: "Mensaje marcado como leído",
       data: updated,
     });
   } catch (err) {
-    next(err);
+    console.error("❌ Error en markAsRead:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -83,6 +78,7 @@ export const deleteMessage = async (req, res, next) => {
     await contactService.deleteMessage(req.params.id);
     res.json({ success: true, message: "Mensaje eliminado correctamente" });
   } catch (err) {
-    next(err);
+    console.error("❌ Error en deleteMessage:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };

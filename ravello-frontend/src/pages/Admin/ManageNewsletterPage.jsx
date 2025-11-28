@@ -1,150 +1,122 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useMemo } from "react";
+import DataTable from "../../components/admin/DataTable";
+import NewsletterFilterBar from "../../components/admin/NewsletterFilterBar";
+import NewsletterEditModal from "../../components/admin/NewsletterEditModal";
+import { toast } from "react-hot-toast";
 import clientAxios from "../../api/axiosConfig";
-import { extractResponseArray } from "../../utils/extractResponseArray"; // ✅ IMPORTANTE
+import { usePaginatedFetch } from "../../hooks/usePaginatedFetch";
 
 export default function ManageNewsletterPage() {
-  const [subscribers, setSubscribers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const {
+    data: emails,
+    loading,
+    page,
+    limit,
+    total,
+    setFilters,
+    setPage,
+    refetch,
+  } = usePaginatedFetch("/newsletter");
 
-  // --------------------------------------------
-  // 📬 Cargar suscriptores
-  // --------------------------------------------
-  const fetchSubscribers = async () => {
-    try {
-      setLoading(true);
+  const [editing, setEditing] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
-      const res = await clientAxios.get("/newsletter");
-      const arr = extractResponseArray(res, ["newsletter"]); // ✅ AHORA ESTÁ CENTRALIZADO
-
-      setSubscribers(arr);
-      setError("");
-    } catch (err) {
-      console.error("Error al cargar newsletter:", err);
-      setError("Error al cargar los suscriptores");
-    } finally {
-      setLoading(false);
-    }
+  const handleEdit = (item) => {
+    setEditing(item);
+    setModalOpen(true);
   };
 
-  useEffect(() => {
-    fetchSubscribers();
-  }, []);
+  const handleCreate = () => {
+    setEditing(null);
+    setModalOpen(true);
+  };
 
-  // --------------------------------------------
-  // 🔄 Activar / desactivar suscriptor
-  // --------------------------------------------
-  const toggleSubscription = async (id, currentStatus) => {
+  const handleSaved = () => {
+    refetch();
+    toast.success("Elemento guardado correctamente");
+  };
+
+  const handleDelete = async (item) => {
+    if (!confirm(`¿Eliminar "${item.email}"?`)) return;
+
     try {
-      await clientAxios.put(`/newsletter/${id}`, {
-        active: !currentStatus,
-      });
-
-      setSubscribers((prev) =>
-        prev.map((s) =>
-          s._id === id ? { ...s, active: !currentStatus } : s
-        )
-      );
+      await clientAxios.delete(`/newsletter/${item._id}`);
+      toast.success(`"${item.email}" eliminado`);
+      refetch();
     } catch (err) {
       console.error(err);
-      alert("No se pudo actualizar el estado del suscriptor");
+      toast.error("Error al eliminar");
     }
   };
 
-  // --------------------------------------------
-  // ❌ Eliminar suscriptor
-  // --------------------------------------------
-  const deleteSubscriber = async (id) => {
-    if (!confirm("¿Seguro que deseas eliminar este correo?")) return;
+  const columns = useMemo(
+    () => [
+      { key: "email", label: "Correo", sortable: true },
 
-    try {
-      await clientAxios.delete(`/newsletter/${id}`);
-      setSubscribers((prev) => prev.filter((s) => s._id !== id));
-    } catch (err) {
-      console.error(err);
-      alert("Error al eliminar el suscriptor");
-    }
-  };
+      {
+        key: "active",
+        label: "Estado",
+        render: (val) => (
+          <span
+            className={`px-2 py-1 text-xs rounded ${
+              val
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+            }`}
+          >
+            {val ? "Activo" : "Inactivo"}
+          </span>
+        ),
+      },
 
-  // --------------------------------------------
-  // 🖼 Renderizado
-  // --------------------------------------------
+      {
+        key: "createdAt",
+        label: "Fecha suscripción",
+        render: (val) =>
+          val ? new Date(val).toLocaleDateString() : "—",
+      },
+    ],
+    []
+  );
+
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">
-          📬 Gestión de suscriptores
-        </h1>
-
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Newsletter - Suscriptores</h1>
         <button
-          onClick={fetchSubscribers}
+          onClick={refetch}
           className="border px-3 py-2 rounded-md hover:bg-gray-100"
         >
           Recargar
         </button>
       </div>
 
-      {loading ? (
-        <p className="text-gray-500">Cargando suscriptores...</p>
-      ) : error ? (
-        <p className="text-red-600">{error}</p>
-      ) : subscribers.length === 0 ? (
-        <p className="text-gray-600">No hay suscriptores aún.</p>
-      ) : (
-        <div className="overflow-x-auto bg-white shadow-md rounded-lg border border-gray-200">
-          <table className="min-w-full text-sm text-left">
-            <thead className="bg-gray-100 text-gray-700 uppercase">
-              <tr>
-                <th className="py-3 px-4">Email</th>
-                <th className="py-3 px-4 text-center">Estado</th>
-                <th className="py-3 px-4 text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {subscribers.map((sub) => (
-                <tr
-                  key={sub._id}
-                  className="border-t hover:bg-gray-50 transition"
-                >
-                  <td className="py-2 px-4">{sub.email}</td>
+      <NewsletterFilterBar
+        onApply={(payload) => {
+          setFilters(payload);
+          setPage(1);
+        }}
+        onCreate={handleCreate}
+      />
 
-                  <td className="py-2 px-4 text-center">
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-medium ${
-                        sub.active
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {sub.active ? "Activo" : "Inactivo"}
-                    </span>
-                  </td>
+      <DataTable
+        columns={columns}
+        data={emails}
+        loading={loading}
+        page={page}
+        limit={limit}
+        total={total}
+        onPageChange={setPage}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
 
-                  <td className="py-2 px-4 text-center space-x-2">
-                    <button
-                      onClick={() => toggleSubscription(sub._id, sub.active)}
-                      className={`px-3 py-1 rounded text-white text-xs font-medium ${
-                        sub.active
-                          ? "bg-yellow-500 hover:bg-yellow-600"
-                          : "bg-green-600 hover:bg-green-700"
-                      }`}
-                    >
-                      {sub.active ? "Desactivar" : "Activar"}
-                    </button>
-
-                    <button
-                      onClick={() => deleteSubscriber(sub._id)}
-                      className="px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-xs font-medium"
-                    >
-                      Eliminar
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <NewsletterEditModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        item={editing}
+        onSaved={handleSaved}
+      />
     </div>
   );
 }
