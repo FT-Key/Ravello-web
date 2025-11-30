@@ -69,63 +69,69 @@ Recibido el: ${new Date().toLocaleString()}
   return { message, emailStatus };
 }
 
-/** Obtener mensajes con filtros y paginación */
-export async function getAllMessages(filter = {}, { sort = "-createdAt", page, limit } = {}) {
+/** 
+ * Obtener mensajes con filtros y paginación 
+ * Parámetros consistentes con user.service y package.service
+ */
+export async function getAllMessages(queryOptions, searchFilter, pagination) {
+  const query = {
+    ...queryOptions.filters,
+    ...searchFilter,
+  };
 
-  // ==============================
-  // 🟢 SIN PAGINACIÓN → traer todos
-  // ==============================
-  if (!page || !limit) {
-    const items = await ContactMessage.find(filter).sort(sort);
+  console.log("🔍 Query getAllMessages:", JSON.stringify(query, null, 2));
+
+  try {
+    const total = await ContactMessage.countDocuments(query);
+
+    let mongoQuery = ContactMessage.find(query)
+      .sort(queryOptions.sort);
+
+    if (pagination) {
+      mongoQuery = mongoQuery
+        .skip(pagination.skip)
+        .limit(pagination.limit);
+    }
+
+    const items = await mongoQuery;
+
+    console.log(`✅ Mensajes encontrados: ${items.length} de ${total} total`);
 
     return {
-      items,
-      pagination: {
-        total: items.length,
-        page: null,
-        limit: null,
-        totalPages: null,
-      },
-    };
-  }
-
-  // ==============================
-  // 🔵 CON PAGINACIÓN
-  // ==============================
-  const _page = Number(page);
-  const _limit = Number(limit);
-  const skip = (_page - 1) * _limit;
-
-  const [items, total] = await Promise.all([
-    ContactMessage.find(filter)
-      .sort(sort)
-      .skip(skip)
-      .limit(_limit),
-    ContactMessage.countDocuments(filter)
-  ]);
-
-  return {
-    items,
-    pagination: {
       total,
-      page: _page,
-      limit: _limit,
-      totalPages: Math.ceil(total / _limit),
-    },
-  };
+      page: pagination?.page || null,
+      limit: pagination?.limit || null,
+      items
+    };
+  } catch (error) {
+    console.error("❌ Error en getAllMessages:", error);
+    throw new Error(`Error buscando mensajes: ${error.message}`);
+  }
 }
 
 /** Obtener uno por ID */
 export async function getMessageById(id) {
-  return await ContactMessage.findById(id);
+  const message = await ContactMessage.findById(id);
+  if (!message) throw new Error("Mensaje no encontrado");
+  return message;
 }
 
 /** Marcar mensaje como leído */
 export async function markAsRead(id) {
-  return await ContactMessage.findByIdAndUpdate(id, { leido: true }, { new: true });
+  const message = await ContactMessage.findById(id);
+  if (!message) throw new Error("Mensaje no encontrado");
+  
+  message.leido = true;
+  await message.save();
+  
+  return message;
 }
 
 /** Eliminar mensaje */
 export async function deleteMessage(id) {
-  return await ContactMessage.findByIdAndDelete(id);
+  const message = await ContactMessage.findById(id);
+  if (!message) throw new Error("Mensaje no encontrado");
+  
+  await message.deleteOne();
+  return message;
 }

@@ -38,18 +38,30 @@ export default function DashboardPage() {
         ]);
 
         console.log("Respuestas: ", usersRes, packagesRes, reviewsRes, contactsRes, offersRes, newsletterRes, packageDatesRes)
+        console.log("paquetes: ", packagesRes)
 
         const extractTotal = (response) => {
           if (!response || typeof response !== "object") return 0;
+
           const payload = response.data;
-          if (Array.isArray(payload)) return payload.length;
+
           if (!payload) return 0;
-          if (payload.pagination?.total) return payload.pagination.total;
-          const keys = ["items", "packages", "users", "data", "results"];
+
+          // Caso importante: los endpoints con paginación usan total
+          if (typeof payload.total === "number") return payload.total;
+
+          // Si tiene items paginados
+          if (Array.isArray(payload.items)) return payload.items.length;
+
+          // Si devuelve directamente un array
+          if (Array.isArray(payload)) return payload.length;
+
+          // Otras estructuras posibles
+          const keys = ["packages", "users", "data", "results"];
           for (const k of keys) {
             if (Array.isArray(payload[k])) return payload[k].length;
           }
-          if (typeof payload.total === "number") return payload.total;
+
           return 0;
         };
 
@@ -87,9 +99,21 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Dashboard de Administración</h1>
+      <h1 className="text-3xl font-bold mb-8 text-center sm:text-left">
+        Dashboard de Administración
+      </h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-6">
+      <div
+        className="
+        grid 
+        grid-cols-1 
+        sm:grid-cols-2 
+        md:grid-cols-3 
+        lg:grid-cols-4
+        xl:grid-cols-7
+        gap-6
+      "
+      >
         <DashboardCard
           label="Usuarios"
           value={stats.users}
@@ -133,7 +157,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="mt-6 text-gray-500 text-sm">
+      <div className="mt-8 text-gray-500 text-sm text-center sm:text-left">
         Última actualización: {new Date().toLocaleString()}
       </div>
     </div>

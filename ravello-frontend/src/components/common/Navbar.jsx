@@ -11,6 +11,9 @@ import {
 import { FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
 import clientAxios from "../../api/axiosConfig";
 
+// ✅ Importamos el siteConfig
+import { siteConfig } from "../../config/siteConfig";
+
 const Navbar = ({ position = "sticky" }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -23,7 +26,13 @@ const Navbar = ({ position = "sticky" }) => {
     const fetchDestinos = async () => {
       try {
         const res = await clientAxios.get("/packages/destinos/list");
-        setDestinos(res.data || []);
+
+        if (res.data.success && Array.isArray(res.data.data)) {
+          setDestinos(res.data.data);
+        } else {
+          console.warn("Formato inesperado en destinos:", res.data);
+          setDestinos([]);
+        }
       } catch (err) {
         console.error("Error al cargar destinos:", err);
       }
@@ -68,8 +77,8 @@ const Navbar = ({ position = "sticky" }) => {
     <nav className={`${position} top-0 left-0 right-0 z-50 min-h-[115px] transition-all duration-500`}>
       <div
         className={`transition-all duration-500 ${getNavbarBackground()} ${!isScrolled && position !== "fixed"
-          ? "bg-[url('/navbar/nav-bg.jpg')] bg-cover bg-bottom"
-          : ""
+            ? "bg-[url('/navbar/nav-bg.jpg')] bg-cover bg-bottom"
+            : ""
           }`}
       >
 
@@ -79,32 +88,31 @@ const Navbar = ({ position = "sticky" }) => {
             }`}
         >
           <div className="max-w-7xl mx-auto px-4">
-            {/* Contenedor principal: justify-between y items-center para centrar verticalmente */}
             <div className="flex justify-between items-center text-sm py-2 border-b border-white border-opacity-20 min-h-[56px]">
 
-              {/* IZQUIERDA: Teléfono + Correo (responsive) */}
+              {/* IZQUIERDA — Teléfono + Email */}
               <div className="flex-1 flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-6 text-white">
 
                 <a
-                  href="tel:+5491123456789"
+                  href={`tel:${siteConfig.contact.phone}`}
                   className="flex items-center gap-2 hover:text-secondary-cyan transition-colors text-sm"
                 >
                   <Phone size={16} />
-                  <span className="leading-tight">+54 911 2345-6789</span>
+                  <span className="leading-tight">{siteConfig.contact.phone}</span>
                 </a>
 
                 <a
-                  href="mailto:info@ravello.com"
+                  href={`mailto:${siteConfig.contact.email}`}
                   className="flex items-center gap-2 hover:text-secondary-cyan transition-colors text-sm"
                 >
                   <Mail size={16} />
-                  <span className="leading-tight">info@ravello.com</span>
+                  <span className="leading-tight">{siteConfig.contact.email}</span>
                 </a>
               </div>
 
-              {/* DERECHA: Idioma + Redes (CENTRADOS verticalmente) */}
+              {/* DERECHA — Idioma + Redes */}
               <div className="flex items-center gap-4 text-white ml-4">
-                {/* Idioma */}
+
                 <button
                   aria-label="Cambiar idioma"
                   className="hover:text-secondary-cyan transition-colors flex items-center gap-1 text-sm"
@@ -113,30 +121,32 @@ const Navbar = ({ position = "sticky" }) => {
                   <span>ES</span>
                 </button>
 
-                {/* Redes - evita wrap en móviles */}
                 <div className="flex items-center gap-3 whitespace-nowrap">
                   <a
-                    href="#facebook"
+                    href={siteConfig.social.facebook}
                     aria-label="Facebook"
                     className="hover:text-secondary-cyan transition-colors"
                   >
                     <FaFacebook size={20} />
                   </a>
+
                   <a
-                    href="#instagram"
+                    href={siteConfig.social.instagram}
                     aria-label="Instagram"
                     className="hover:text-secondary-cyan transition-colors"
                   >
                     <FaInstagram size={20} />
                   </a>
+
                   <a
-                    href="#twitter"
+                    href={siteConfig.social.twitter}
                     aria-label="Twitter"
                     className="hover:text-secondary-cyan transition-colors"
                   >
                     <FaTwitter size={20} />
                   </a>
                 </div>
+
               </div>
             </div>
           </div>
@@ -202,7 +212,7 @@ const Navbar = ({ position = "sticky" }) => {
 
                               return (
                                 <Link
-                                onClick={handleMobileLinkClick}
+                                  onClick={handleMobileLinkClick}
                                   key={subidx}
                                   to={`/paquetes?destino=${encodeURIComponent(ciudadSola)}`}
                                   className="block px-6 py-3 text-dark hover:bg-background-light hover:text-black transition-colors border-b border-border-subtle last:border-b-0"
@@ -217,7 +227,7 @@ const Navbar = ({ position = "sticky" }) => {
                     </>
                   ) : (
                     <Link
-                    onClick={handleMobileLinkClick}
+                      onClick={handleMobileLinkClick}
                       to={item.link}
                       className={`px-4 py-2 font-medium transition-all rounded-lg ${isScrolled
                         ? "text-dark hover:text-black hover:bg-background-light"
@@ -234,7 +244,7 @@ const Navbar = ({ position = "sticky" }) => {
             {/* CTA */}
             <div className="hidden lg:flex items-center gap-3">
               <Link
-              onClick={handleMobileLinkClick}
+                onClick={handleMobileLinkClick}
                 to="/contacto"
                 className="px-6 py-2 rounded-full border-2 border-[var(--color-primary-red)] text-[var(--color-primary-red)] font-semibold hover:bg-[var(--color-primary-red)] hover:text-white transition-all duration-300"
               >
@@ -293,7 +303,7 @@ const Navbar = ({ position = "sticky" }) => {
 
                       return (
                         <Link
-                        onClick={handleMobileLinkClick}
+                          onClick={handleMobileLinkClick}
                           key={subidx}
                           to={`/paquetes?destino=${encodeURIComponent(ciudadSola)}`}
                           className="block px-4 py-2 text-sm text-light hover:text-primary-blue transition-colors"
@@ -306,7 +316,7 @@ const Navbar = ({ position = "sticky" }) => {
                 </>
               ) : (
                 <Link
-                onClick={handleMobileLinkClick}
+                  onClick={handleMobileLinkClick}
                   to={item.link}
                   className="block px-4 py-3 text-dark hover:bg-background-light hover:text-primary-blue rounded-lg transition-colors font-medium"
                 >
@@ -317,7 +327,7 @@ const Navbar = ({ position = "sticky" }) => {
           ))}
 
           <Link
-          onClick={handleMobileLinkClick}
+            onClick={handleMobileLinkClick}
             to="/contacto"
             className="w-full mt-4 px-6 py-3 rounded-full bg-primary-red text-white font-semibold hover:bg-opacity-90 transition-all"
           >

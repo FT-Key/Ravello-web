@@ -1,52 +1,57 @@
-import { userService } from "../services/index.js";
+import * as userService from "../services/user.service.js";
 
-export const getUsers = async (req, res, next) => {
+// GET /api/users
+export const getUsers = async (req, res) => {
   try {
-    const { query, pagination, search } = req;
-    const filter = { ...query };
-    const options = { ...pagination, search };
-    const users = await userService.getAllUsers(filter, options);
-    res.json(users);
-  } catch (err) {
-    next(err);
+    const { queryOptions, searchFilter, pagination } = req;
+    const data = await userService.getAll(queryOptions, searchFilter, pagination);
+    res.json({ success: true, ...data });
+  } catch (error) {
+    console.error("❌ Error en getUsers:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-export const getUserById = async (req, res, next) => {
+// GET /api/users/:id
+export const getUserById = async (req, res) => {
   try {
-    const user = await userService.getUserById(req.params.id);
-    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
-    res.json(user);
-  } catch (err) {
-    next(err);
+    const data = await userService.getById(req.params.id);
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error("❌ Error en getUserById:", error);
+    res.status(404).json({ success: false, message: error.message });
   }
 };
 
-export const createUser = async (req, res, next) => {
+// POST /api/users
+export const createUser = async (req, res) => {
   try {
-    const user = await userService.createUser(req.body);
-    res.status(201).json(user);
-  } catch (err) {
-    next(err);
+    const data = await userService.create(req.body);
+    res.status(201).json({ success: true, data });
+  } catch (error) {
+    console.error("❌ Error en createUser:", error);
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
-export const updateUser = async (req, res, next) => {
+// PUT /api/users/:id
+export const updateUser = async (req, res) => {
   try {
-    const user = await userService.updateUser(req.params.id, req.body);
-    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
-    res.json(user);
-  } catch (err) {
-    next(err);
+    const data = await userService.update(req.params.id, req.body);
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error("❌ Error en updateUser:", error);
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
-export const deleteUser = async (req, res, next) => {
+// DELETE /api/users/:id
+export const deleteUser = async (req, res) => {
   try {
-    const user = await userService.deleteUser(req.params.id);
-    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
-    res.json({ message: "Usuario eliminado correctamente" });
-  } catch (err) {
-    next(err);
+    await userService.deleteUser(req.params.id);
+    res.json({ success: true, message: "Usuario eliminado correctamente" });
+  } catch (error) {
+    console.error("❌ Error en deleteUser:", error);
+    res.status(400).json({ success: false, message: error.message });
   }
 };

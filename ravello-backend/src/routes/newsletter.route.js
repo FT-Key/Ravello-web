@@ -1,23 +1,54 @@
 import express from "express";
 import { newsletterController } from "../controllers/index.js";
-import { validateRequest } from "../middlewares/index.js";
+import {
+  queryMiddleware,
+  searchMiddleware,
+  paginationMiddleware,
+  validateRequest
+} from "../middlewares/index.js";
 import { newsletterSchema } from "../validations/index.js";
 
 const router = express.Router();
 
-// GET /api/newsletter → todos los suscriptores
-router.get("/", newsletterController.getAll);
+/** ===========================
+ *   LISTAR SUSCRIPTORES
+ * =========================== */
 
-// POST /api/newsletter → crear suscriptor
-router.post("/", validateRequest(newsletterSchema), newsletterController.create);
+// GET /api/newsletter → listado con paginación y filtros
+router.get(
+  "/",
+  queryMiddleware,
+  searchMiddleware,
+  paginationMiddleware,
+  newsletterController.getAll
+);
 
-// POST /api/newsletter/unsubscribe → desuscribirse
+/** ===========================
+ *   CREAR SUSCRIPTOR
+ * =========================== */
+
+router.post(
+  "/",
+  validateRequest(newsletterSchema),
+  newsletterController.create
+);
+
+/** ===========================
+ *   DESUSCRIBIR POR EMAIL
+ * =========================== */
+
 router.post("/unsubscribe", newsletterController.unsubscribe);
 
-// PATCH /api/newsletter/:id/status → activar/desactivar
+/** ===========================
+ *   ACTIVAR / DESACTIVAR
+ * =========================== */
+
 router.patch("/:id/status", newsletterController.toggleStatus);
 
-// DELETE /api/newsletter/:id → eliminar suscriptor
+/** ===========================
+ *   ELIMINAR SUSCRIPTOR
+ * =========================== */
+
 router.delete("/:id", newsletterController.remove);
 
 export default router;

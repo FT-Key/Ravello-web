@@ -1,67 +1,71 @@
 import { User } from "../models/index.js";
 import argon2 from "argon2";
 
-// === LISTAR TODOS LOS USUARIOS ===
-export const getAllUsers = async (filter = {}, options = {}) => {
-  const { search } = options;
+// -------------------------------------------------------------
+// GET ALL - con búsqueda y paginación
+// -------------------------------------------------------------
+export const getAll = async (queryOptions, searchFilter, pagination) => {
+  const query = {
+    ...queryOptions.filters,
+    ...searchFilter,
+  };
 
-  const page = options.page ? parseInt(options.page) : null;
-  const limit = options.limit ? parseInt(options.limit) : null;
+  console.log("🔍 Query getAll users:", JSON.stringify(query, null, 2));
 
-  const query = {};
+  try {
+    const total = await User.countDocuments(query);
 
-  if (filter.rol) query.rol = filter.rol;
-  if (filter.activo !== undefined) query.activo = filter.activo;
-
-  if (search) {
-    query.$or = [
-      { nombre: { $regex: search, $options: "i" } },
-      { email: { $regex: search, $options: "i" } },
-    ];
-  }
-
-  // === Si NO hay paginación → traer todo ===
-  if (!page || !limit) {
-    const data = await User.find(query)
+    let mongoQuery = User.find(query)
       .select("-password")
-      .sort({ createdAt: -1 });
+      .sort(queryOptions.sort);
+
+    if (pagination) {
+      mongoQuery = mongoQuery
+        .skip(pagination.skip)
+        .limit(pagination.limit);
+    }
+
+    const items = await mongoQuery;
+
+    console.log(`✅ Usuarios encontrados: ${items.length} de ${total} total`);
 
     return {
-      total: data.length,
-      page: null,
-      limit: null,
-      data,
+      total,
+      page: pagination?.page || null,
+      limit: pagination?.limit || null,
+      items
     };
+  } catch (error) {
+    console.error("❌ Error en getAll users:", error);
+    throw new Error(`Error buscando usuarios: ${error.message}`);
   }
-
-  // === Con paginación ===
-  const skip = (page - 1) * limit;
-  const total = await User.countDocuments(query);
-  const data = await User.find(query)
-    .select("-password")
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit);
-
-  return { total, page, limit, data };
 };
 
-// === OBTENER USUARIO POR ID ===
-export const getUserById = async (id) => {
-  return await User.findById(id).select("-password");
+// -------------------------------------------------------------
+// GET BY ID
+// -------------------------------------------------------------
+export const getById = async (id) => {
+  const user = await User.findById(id).select("-password");
+  if (!user) throw new Error("Usuario no encontrado");
+  return user;
 };
 
-// === CREAR NUEVO USUARIO ===
-export const createUser = async (data) => {
+// -------------------------------------------------------------
+// CREATE
+// -------------------------------------------------------------
+export const create = async (data) => {
   const user = new User(data);
   return await user.save();
 };
 
-// === ACTUALIZAR USUARIO ===
-export const updateUser = async (id, data) => {
+// -------------------------------------------------------------
+// UPDATE
+// -------------------------------------------------------------
+export const update = async (id, data) => {
   const user = await User.findById(id);
-  if (!user) return null;
+  if (!user) throw new Error("Usuario no encontrado");
 
+  // Hash password si se está actualizando
   if (data.password) {
     data.password = await argon2.hash(data.password);
   }
@@ -72,12 +76,16 @@ export const updateUser = async (id, data) => {
   return user.toObject({ getters: true, virtuals: false });
 };
 
-// === ELIMINAR USUARIO ===
+// -------------------------------------------------------------
+// DELETE
+// -------------------------------------------------------------
 export const deleteUser = async (id) => {
   const user = await User.findById(id);
-  if (!user) return null;
-  if (user.esPrincipal)
+  if (!user) throw new Error("Usuario no encontrado");
+  
+  if (user.esPrincipal) {
     throw new Error("No se puede eliminar el usuario principal.");
+  }
 
   await user.deleteOne();
   return user;

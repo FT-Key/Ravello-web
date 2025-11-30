@@ -4,7 +4,6 @@ import { useUserStore } from "../stores/useUserStore";
 import HomePage from "../pages/Home/HomePage";
 import PackagesListPage from "../pages/Packages/PackagesListPage";
 import PackageDetailPage from "../pages/Packages/PackageDetailPage";
-import AboutPage from "../pages/About/AboutPage";
 import ContactPage from "../pages/Contact/ContactPage";
 import LoginPage from "../pages/Auth/LoginPage";
 import RegisterPage from "../pages/Auth/RegisterPage";
@@ -22,6 +21,7 @@ import ManageNewsletterPage from "../pages/Admin/ManageNewsletterPage";
 import ScrollToTop from "../utils/scrollToTop";
 import ReviewPage from "../pages/Reviews/ReviewPage";
 import ManagePackageDatesPage from "../pages/Admin/ManagePackageDatesPage";
+import AboutUsPage from "../pages/AboutUs/AboutUsPage";
 
 function AppRouterInner() {
   const location = useLocation();
@@ -49,7 +49,7 @@ function AppRouterInner() {
         <Route path="/paquetes" element={<PackagesListPage />} />
         <Route path="/paquetes/:id" element={<PackageDetailPage />} />
         <Route path="/opiniones" element={<ReviewPage />} />
-        <Route path="/sobre-nosotros" element={<AboutPage />} />
+        <Route path="/sobre-nosotros" element={<AboutUsPage />} />
         <Route path="/contacto" element={<ContactPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/registro" element={<RegisterPage />} />
