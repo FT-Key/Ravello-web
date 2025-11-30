@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import { FaFacebook, FaInstagram, FaTwitter, FaLinkedin } from "react-icons/fa";
 
+// 👉 Importamos tu configuración global
+import { siteConfig } from "../../config/siteConfig";
+
 const Footer = () => {
   const destinations = [
     "Europa",
@@ -35,6 +38,8 @@ const Footer = () => {
     "Términos y condiciones",
     "Política de privacidad",
   ];
+
+  const { contact, location, social } = siteConfig;
 
   return (
     <footer className="bg-gradient-to-br from-blue-600 via-blue-800 to-blue-600 text-white">
@@ -104,30 +109,30 @@ const Footer = () => {
               {/* Redes sociales */}
               <div className="flex gap-3">
                 <a
-                  href="#"
+                  target="_blank"
+                  href={social.facebook}
                   className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition-all hover:scale-110"
-                  aria-label="Facebook"
                 >
                   <FaFacebook size={20} color="black" />
                 </a>
                 <a
-                  href="#"
+                  target="_blank"
+                  href={social.instagram}
                   className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition-all hover:scale-110"
-                  aria-label="Instagram"
                 >
                   <FaInstagram size={20} color="black" />
                 </a>
                 <a
-                  href="#"
+                  target="_blank"
+                  href={social.twitter}
                   className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition-all hover:scale-110"
-                  aria-label="Twitter"
                 >
                   <FaTwitter size={20} color="black" />
                 </a>
                 <a
-                  href="#"
+                  target="_blank"
+                  href={social.linkedin}
                   className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition-all hover:scale-110"
-                  aria-label="LinkedIn"
                 >
                   <FaLinkedin size={20} color="black" />
                 </a>
@@ -205,14 +210,15 @@ const Footer = () => {
                 <div>
                   <h5 className="font-semibold mb-1">Teléfono</h5>
                   <a
-                    href="tel:+5491123456789"
+                    href={contact.phoneHref}
                     className="text-sm opacity-90 hover:text-cyan-400"
                   >
-                    +54 911 2345-6789
+                    {contact.phone}
                   </a>
-                  <p className="text-xs opacity-70 mt-1">Lun a Vie 9-19hs</p>
+                  <p className="text-xs opacity-70 mt-1">{contact.horario}</p>
                 </div>
               </div>
+
               <div className="flex items-start gap-3">
                 <div className="w-12 h-12 rounded-full bg-white bg-opacity-20 flex items-center justify-center flex-shrink-0">
                   <Mail size={20} color="black" />
@@ -220,24 +226,23 @@ const Footer = () => {
                 <div>
                   <h5 className="font-semibold mb-1">Email</h5>
                   <a
-                    href="mailto:info@ravello.com"
+                    href={contact.emailHref}
                     className="text-sm opacity-90 hover:text-cyan-400"
                   >
-                    info@ravello.com
+                    {contact.email}
                   </a>
                   <p className="text-xs opacity-70 mt-1">Respuesta en 24hs</p>
                 </div>
               </div>
+
               <div className="flex items-start gap-3">
                 <div className="w-12 h-12 rounded-full bg-white bg-opacity-20 flex items-center justify-center flex-shrink-0">
                   <MapPin size={20} color="black" />
                 </div>
                 <div>
                   <h5 className="font-semibold mb-1">Oficinas</h5>
-                  <p className="text-sm opacity-90">Av. Corrientes 1234, CABA</p>
-                  <p className="text-xs opacity-70 mt-1">
-                    Buenos Aires, Argentina
-                  </p>
+                  <p className="text-sm opacity-90">{location.address}</p>
+                  <p className="text-xs opacity-70 mt-1">{location.city}</p>
                 </div>
               </div>
             </div>

@@ -44,8 +44,8 @@ export default function PackageDetailPage() {
       try {
         setLoading(true);
         const response = await clientAxios.get(`/packages/${id}`);
-        console.log("Paquete: ", response.data);
-        setPkg(response.data);
+        console.log("Paquete: ", response?.data);
+        setPkg(response?.data?.data);
         setSelectedImage(0);
       } catch (err) {
         console.error("❌ Error al cargar el paquete:", err);
@@ -187,6 +187,8 @@ export default function PackageDetailPage() {
       (img) => img.url !== pkg.imagenPrincipal?.url
     ),
   ];
+
+  console.log("AllImages: ", allImages)
 
   return (
     <div className="min-h-screen bg-background-light">

@@ -14,54 +14,6 @@ export const packageService = {
   },
 
   // -------------------------------------------------------------
-  // CONTROLADORES
-  // -------------------------------------------------------------
-  async getPackagesController(queryOptions, searchFilter, pagination) {
-    const filters = {
-      ...queryOptions.filters,
-      ...searchFilter,
-    };
-    return await this.getPackages(filters, queryOptions.sort, pagination);
-  },
-
-  async getPackageByIdController(id) {
-    const pack = await this.getPackageById(id);
-    if (!pack) throw { status: 404, message: "Paquete no encontrado" };
-    return pack;
-  },
-
-  async createPackageController(body, files) {
-    const parsedBody = this.parseBody(body);
-    this.validateDurations(parsedBody.destinos || [], parsedBody.duracionReserva);
-    return await this.createWithImages(parsedBody, files);
-  },
-
-  async updatePackageController(id, body, files) {
-    const parsedBody = this.parseBody(body);
-    this.validateDurations(parsedBody.destinos || [], parsedBody.duracionReserva);
-    return await this.updateWithImages(id, parsedBody, files);
-  },
-
-  async deletePackageController(id) {
-    return await this.deleteWithImages(id);
-  },
-
-  async getPromotionsController(queryOptions, searchFilter, pagination) {
-    const filters = {
-      activo: true,
-      visibleEnWeb: true,
-      etiquetas: { $in: ["oferta"] },
-      ...queryOptions.filters,
-      ...searchFilter,
-    };
-    return await this.getPromotions(filters, queryOptions.sort, pagination);
-  },
-
-  async getDestinosUnicosController() {
-    return await this.getDestinosUnicos();
-  },
-
-  // -------------------------------------------------------------
   // SAFE BODY PARSER
   // -------------------------------------------------------------
   parseBody(body) {
@@ -84,56 +36,121 @@ export const packageService = {
   },
 
   // -------------------------------------------------------------
-  // CRUD
+  // CRUD - getAll con búsqueda y paginación
   // -------------------------------------------------------------
-  async getPackages(filters = {}, sort = "-createdAt", pagination = null) {
-    let mongoQuery = Package.find(filters).sort(sort);
-
-    let page = null;
-    let limit = null;
-    let skip = null;
-
-    if (pagination) {
-      ({ limit, skip, page } = pagination);
-      mongoQuery = mongoQuery.skip(skip).limit(limit);
-    }
-
-    const [items, total] = await Promise.all([
-      mongoQuery,
-      Package.countDocuments(filters),
-    ]);
-
-    return {
-      items,
-      pagination: {
-        total,
-        page,
-        pages: pagination ? Math.ceil(total / limit) : null,
-        limit: pagination ? limit : null
-      },
+  async getAll(queryOptions, searchFilter, pagination) {
+    const query = {
+      ...queryOptions.filters,
+      ...searchFilter,
     };
+
+    console.log("🔍 Query getAll packages:", JSON.stringify(query, null, 2));
+
+    try {
+      const total = await Package.countDocuments(query);
+
+      let mongoQuery = Package.find(query).sort(queryOptions.sort);
+
+      if (pagination) {
+        mongoQuery = mongoQuery
+          .skip(pagination.skip)
+          .limit(pagination.limit);
+      }
+
+      const items = await mongoQuery;
+
+      console.log(`✅ Paquetes encontrados: ${items.length} de ${total} total`);
+
+      return {
+        total,
+        page: pagination?.page || null,
+        limit: pagination?.limit || null,
+        items
+      };
+    } catch (error) {
+      console.error("❌ Error en getAll packages:", error);
+      throw new Error(`Error buscando paquetes: ${error.message}`);
+    }
   },
 
-  getPackageById(id) {
-    return Package.findById(id);
+  // -------------------------------------------------------------
+  // GET BY ID
+  // -------------------------------------------------------------
+  async getById(id) {
+    const pack = await Package.findById(id);
+    if (!pack) throw new Error("Paquete no encontrado");
+    return pack;
   },
 
-  createPackage(data) {
-    return Package.create(data);
+  // -------------------------------------------------------------
+  // CREATE
+  // -------------------------------------------------------------
+  async create(body, files) {
+    const parsedBody = this.parseBody(body);
+    this.validateDurations(parsedBody.destinos || [], parsedBody.duracionReserva);
+    return await this.createWithImages(parsedBody, files);
   },
 
-  updatePackage(id, data) {
-    return Package.findByIdAndUpdate(id, data, { new: true });
+  // -------------------------------------------------------------
+  // UPDATE
+  // -------------------------------------------------------------
+  async update(id, body, files) {
+    const parsedBody = this.parseBody(body);
+    this.validateDurations(parsedBody.destinos || [], parsedBody.duracionReserva);
+    return await this.updateWithImages(id, parsedBody, files);
   },
 
-  deletePackage(id) {
-    return Package.findByIdAndDelete(id);
+  // -------------------------------------------------------------
+  // DELETE
+  // -------------------------------------------------------------
+  async delete(id) {
+    return await this.deleteWithImages(id);
   },
 
-  getPromotions(filters, sort, pagination) {
-    return this.getPackages(filters, sort, pagination);
+  // -------------------------------------------------------------
+  // PROMOCIONES - con búsqueda y paginación
+  // -------------------------------------------------------------
+  async getPromotions(queryOptions, searchFilter, pagination) {
+    const query = {
+      activo: true,
+      visibleEnWeb: true,
+      etiquetas: { $in: ["oferta"] },
+      ...queryOptions.filters,
+      ...searchFilter,
+    };
+
+    console.log("🔍 Query promociones:", JSON.stringify(query, null, 2));
+
+    try {
+      const total = await Package.countDocuments(query);
+
+      let mongoQuery = Package.find(query).sort(queryOptions.sort);
+
+      if (pagination) {
+        mongoQuery = mongoQuery
+          .skip(pagination.skip)
+          .limit(pagination.limit);
+      }
+
+      const items = await mongoQuery;
+
+      console.log(`✅ Promociones encontradas: ${items.length} de ${total} total`);
+
+      return {
+        total,
+        page: pagination?.page || null,
+        limit: pagination?.limit || null,
+        items
+      };
+    } catch (error) {
+      console.error("❌ Error en getPromotions:", error);
+      throw new Error(`Error buscando promociones: ${error.message}`);
+    }
   },
 
+  // -------------------------------------------------------------
+  // DESTINOS ÚNICOS
+  // -------------------------------------------------------------
   async getDestinosUnicos() {
     return await Package.aggregate([
       { $unwind: "$destinos" },
@@ -182,7 +199,7 @@ export const packageService = {
         imagenes: images.map((i) => ({ url: i.url, path: i.path })),
       };
 
-      return await this.createPackage(data);
+      return await Package.create(data);
     } catch (err) {
       await imageService.rollback(uploads);
       throw err;
@@ -190,7 +207,7 @@ export const packageService = {
   },
 
   async updateWithImages(id, body, files) {
-    const existing = await this.getPackageById(id);
+    const existing = await Package.findById(id);
     if (!existing) throw new Error("Paquete no encontrado");
 
     const newMain = files?.imagenPrincipal?.[0];
@@ -231,7 +248,7 @@ export const packageService = {
         imagenes: imagenesArr,
       };
 
-      return await this.updatePackage(id, updateData);
+      return await Package.findByIdAndUpdate(id, updateData, { new: true });
     } catch (err) {
       await imageService.rollback(uploads);
       throw err;
@@ -239,7 +256,7 @@ export const packageService = {
   },
 
   async deleteWithImages(id) {
-    const existing = await this.getPackageById(id);
+    const existing = await Package.findById(id);
     if (!existing) throw new Error("Paquete no encontrado");
 
     const paths = [];
@@ -250,7 +267,7 @@ export const packageService = {
     }
 
     await imageService.deletePaths(paths);
-    await this.deletePackage(id);
+    await Package.findByIdAndDelete(id);
 
     return { message: "Paquete eliminado" };
   },

@@ -9,13 +9,13 @@ import PackageCarousel from "../../components/packages/PackageCarousel";
 import { getQueryParams } from "../../utils/getQueryParams";
 
 const PackageListPage = () => {
-  const navigate = useNavigate(); // 🔹 Hook de navegación
+  const navigate = useNavigate();
   const [packages, setPackages] = useState([]);
   const [filters, setFilters] = useState({});
   const [pagination, setPagination] = useState({ page: 1, pages: 1 });
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Pre cargar filtros desde la URL
+  // Pre cargar filtros desde la URL
   useEffect(() => {
     const params = getQueryParams();
     const initial = {};
@@ -32,7 +32,7 @@ const PackageListPage = () => {
     }
   }, []);
 
-  // 🔹 Petición principal
+  // Petición principal
   const fetchPackages = async (params = {}) => {
     try {
       setLoading(true);
@@ -42,19 +42,55 @@ const PackageListPage = () => {
         visibleEnWeb: true,
       };
 
+      // Búsqueda por texto (nombre o ciudad)
       if (filters.search) {
         apiFilters.$or = [
-          { titulo: { $regex: filters.search, $options: "i" } },
+          { nombre: { $regex: filters.search, $options: "i" } },
           { "destinos.ciudad": { $regex: filters.search, $options: "i" } },
         ];
       }
 
-      if (filters.tipo) apiFilters.tipo = filters.tipo;
-      if (filters.etiqueta) apiFilters.etiquetas = filters.etiqueta;
-      if (filters.maxPrecio)
+      // Filtro por tipo (nacional/internacional)
+      if (filters.tipo) {
+        apiFilters.tipo = filters.tipo;
+      }
+
+      // Filtro por etiqueta
+      if (filters.etiqueta) {
+        apiFilters.etiquetas = filters.etiqueta;
+      }
+
+      // Filtro por precio máximo
+      if (filters.maxPrecio) {
         apiFilters.precioBase = { $lte: Number(filters.maxPrecio) };
-      if (filters.minDias)
-        apiFilters["destinos.diasEstadia"] = { $gte: Number(filters.minDias) };
+      }
+
+      // Filtro por duración mínima (ahora usando duracionTotal)
+      if (filters.minDias) {
+        apiFilters.duracionTotal = { $gte: Number(filters.minDias) };
+      }
+
+      // Filtro por ciudad específica
+      if (filters.ciudad) {
+        apiFilters["destinos.ciudad"] = { $regex: filters.ciudad, $options: "i" };
+      }
+
+      // Filtro por pensión (régimen alimenticio)
+      if (filters.pension) {
+        // Busca en hospedaje principal O en hospedajes de destinos
+        apiFilters.$or = [
+          { "hospedaje.gastronomia.pension": filters.pension },
+          { "destinos.hospedaje.gastronomia.pension": filters.pension }
+        ];
+      }
+
+      // Filtro por categoría de hotel
+      if (filters.categoria) {
+        apiFilters.$or = [
+          { "hospedaje.categoria": filters.categoria },
+          { "destinos.hospedaje.categoria": filters.categoria }
+        ];
+      }
 
       const queryParams = {
         sort: "-createdAt",
@@ -74,14 +110,14 @@ const PackageListPage = () => {
     }
   };
 
-  // 🔹 Ejecutar búsqueda cuando cambien filtros
+  // Ejecutar búsqueda cuando cambien filtros
   useEffect(() => {
     if (Object.keys(filters).length > 0) {
       fetchPackages();
     }
   }, [filters]);
 
-  // 🔹 Navegación SPA usando navigate
+  // Navegación SPA
   const handleView = (id) => {
     navigate(`/paquetes/${id}`);
   };
@@ -98,13 +134,28 @@ const PackageListPage = () => {
 
       {/* Resultados */}
       {loading ? (
-        <div className="text-center py-12">Cargando paquetes...</div>
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Cargando paquetes...</p>
+        </div>
       ) : packages.length === 0 ? (
-        <p className="text-center text-gray-500">
-          No hay paquetes que coincidan con tu búsqueda.
-        </p>
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <p className="text-gray-500 text-lg">
+            No hay paquetes que coincidan con tu búsqueda.
+          </p>
+          <button
+            onClick={() => setFilters({})}
+            className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+          >
+            Limpiar todos los filtros
+          </button>
+        </div>
       ) : (
         <>
+          <div className="mb-4 text-sm text-gray-600">
+            Mostrando {packages.length} de {pagination.total || packages.length} paquetes
+          </div>
+
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {packages.map((pkg) => (
               <PackageCard key={pkg._id} pkg={pkg} onView={handleView} />

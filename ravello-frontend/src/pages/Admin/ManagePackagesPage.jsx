@@ -1,77 +1,31 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import DataTable from "../../components/admin/DataTable";
 import PackageEditModal from "../../components/admin/PackageEditModal";
 import PackageFilterBar from "../../components/admin/PackageFilterBar";
-import { useUserStore } from "../../stores/useUserStore";
 import { toast } from "react-hot-toast";
 import clientAxios from "../../api/axiosConfig";
-
-// 🆕 Import extractor centralizado
-import { extractResponseArray } from "../../utils/extractResponseArray";
+import { usePaginatedFetch } from "../../hooks/usePaginatedFetch";
 
 export default function ManagePackagesPage() {
-  const { user } = useUserStore();
-  const [packages, setPackages] = useState([]);
-  const [filtered, setFiltered] = useState([]);
-  const [loading, setLoading] = useState(false);
+  // -----------------------------------------------
+  // 🟦 Hook reutilizable: datos + filtros + paginación
+  // -----------------------------------------------
+  const {
+    data: packages,
+    loading,
+    page,
+    limit,
+    total,
+    setFilters,
+    setPage,
+    refetch,
+  } = usePaginatedFetch("/packages");
 
+  // -----------------------------------------------
+  // 🟦 Modal de edición
+  // -----------------------------------------------
   const [editing, setEditing] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-
-  const [query, setQuery] = useState("");
-  const [filters, setFilters] = useState({
-    tipo: "",
-    visibleEnWeb: "",
-    activo: "",
-  });
-
-  // -------------------------------
-  // 📦 Cargar paquetes
-  // -------------------------------
-  const loadPackages = async () => {
-    try {
-      setLoading(true);
-
-      const params = new URLSearchParams(filters);
-      const res = await clientAxios.get(`/packages?${params}`);
-
-      const arr = extractResponseArray(res, ["packages"]); // ✅ AHORA CENTRALIZADO
-
-      setPackages(arr);
-      setFiltered(arr);
-    } catch (err) {
-      console.error("Error cargando paquetes:", err);
-      toast.error("Error cargando paquetes");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadPackages();
-  }, [filters]);
-
-  // -------------------------------
-  // 🔍 Búsqueda y filtros
-  // -------------------------------
-  useEffect(() => {
-    let result = [...packages];
-
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      result = result.filter((p) =>
-        Object.values(p).some((v) => String(v).toLowerCase().includes(q))
-      );
-    }
-
-    setFiltered(result);
-  }, [packages, query]);
-
-  // -------------------------------
-  // Handlers
-  // -------------------------------
-  const handleFilterChange = (key, value) =>
-    setFilters((prev) => ({ ...prev, [key]: value }));
 
   const handleEdit = (pkg) => {
     setEditing(pkg);
@@ -83,20 +37,14 @@ export default function ManagePackagesPage() {
     setModalOpen(true);
   };
 
-  const handleSaved = (saved) => {
-    setPackages((prev) => {
-      const idx = prev.findIndex((p) => p._id === saved._id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = saved;
-        return copy;
-      }
-      return [saved, ...prev];
-    });
-
+  const handleSaved = () => {
+    refetch(); // vuelve a cargar la página actual
     toast.success("Paquete guardado correctamente");
   };
 
+  // -----------------------------------------------
+  // 🗑 Eliminar
+  // -----------------------------------------------
   const handleDelete = async (pkg) => {
     if (pkg.visibleEnWeb) {
       toast.error("No puedes eliminar un paquete visible en la web. Ocúltalo primero.");
@@ -106,17 +54,17 @@ export default function ManagePackagesPage() {
 
     try {
       await clientAxios.delete(`/packages/${pkg._id}`);
-      setPackages((prev) => prev.filter((x) => x._id !== pkg._id));
       toast.success(`Paquete "${pkg.nombre}" eliminado`);
+      refetch();
     } catch (err) {
       console.error(err);
       toast.error("Ocurrió un error al eliminar el paquete");
     }
   };
 
-  // -------------------------------
+  // -----------------------------------------------
   // 📊 Columnas tabla
-  // -------------------------------
+  // -----------------------------------------------
   const columns = useMemo(
     () => [
       { key: "nombre", label: "Nombre", sortable: true },
@@ -161,50 +109,54 @@ export default function ManagePackagesPage() {
       {
         key: "fechas",
         label: "Fechas",
-        render: (val) =>
-          val?.salida && val?.regreso
-            ? `${new Date(val.salida).toLocaleDateString()} → ${new Date(val.regreso).toLocaleDateString()}`
+        render: (_, row) =>
+          row.salida && row.regreso
+            ? `${new Date(row.salida).toLocaleDateString()} → ${new Date(row.regreso).toLocaleDateString()}`
             : "No definidas",
       },
     ],
     []
   );
 
-  // -------------------------------
+  // -----------------------------------------------
   // Render
-  // -------------------------------
+  // -----------------------------------------------
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Gestión de Paquetes</h1>
         <button
-          onClick={loadPackages}
+          onClick={refetch}
           className="border px-3 py-2 rounded-md hover:bg-gray-100"
         >
           Recargar
         </button>
       </div>
 
+      {/* Barra de filtros */}
       <PackageFilterBar
-        query={query}
-        setQuery={setQuery}
+        onApply={(payload) => {
+          console.log("🔍 Aplicando filtros:", payload);
+          setFilters(payload);
+          setPage(1);
+        }}
         onCreate={handleCreate}
-        onFilterChange={handleFilterChange}
       />
 
-      {loading ? (
-        <div className="text-center py-8 text-gray-500">
-          Cargando paquetes...
-        </div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={filtered}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-      )}
+      {/* Tabla con paginación REAL */}
+      <DataTable
+        columns={columns}
+        data={packages}
+        loading={loading}
+        page={page}
+        limit={limit}
+        total={total}
+        onPageChange={setPage}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
 
+      {/* Modal */}
       <PackageEditModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
