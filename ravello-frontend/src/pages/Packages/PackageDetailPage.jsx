@@ -19,6 +19,7 @@ import {
   Heart,
   MessageSquare,
   AlertCircle,
+  Info,
 } from "lucide-react";
 import clientAxios from "../../api/axiosConfig";
 import ReviewForm from "../../components/reviews/ReviewForm";
@@ -69,12 +70,9 @@ export default function PackageDetailPage() {
           },
         });
 
-        console.log(response)
-        
         const dates = response.data.items || response.data || [];
         setPackageDates(dates);
-        
-        // Seleccionar la primera fecha por defecto
+
         if (dates.length > 0) {
           setSelectedDate(dates[0]);
         }
@@ -166,29 +164,27 @@ export default function PackageDetailPage() {
       "mas vendido": "bg-blue-500 text-white",
       recomendado: "bg-purple-500 text-white",
       exclusivo: "bg-yellow-500 text-dark",
+      "ultimo momento": "bg-orange-500 text-white",
     };
 
     return (
       <span
         key={etiqueta}
-        className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
-          styles[etiqueta] || "bg-gray-500 text-white"
-        }`}
+        className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${styles[etiqueta] || "bg-gray-500 text-white"
+          }`}
       >
         {etiqueta}
       </span>
     );
   };
 
-  // Lista de imágenes para thumbnails: principal primero
+  // Lista de imágenes para thumbnails
   const allImages = [
     pkg.imagenPrincipal,
     ...(pkg.imagenes || []).filter(
       (img) => img.url !== pkg.imagenPrincipal?.url
     ),
   ];
-
-  console.log("AllImages: ", allImages)
 
   return (
     <div className="min-h-screen bg-background-light">
@@ -208,11 +204,10 @@ export default function PackageDetailPage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsFavorite(!isFavorite)}
-                className={`p-2 rounded-full transition-all ${
-                  isFavorite
+                className={`p-2 rounded-full transition-all ${isFavorite
                     ? "bg-red-50 text-red-500"
                     : "bg-background-light text-light hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
               </button>
@@ -243,6 +238,14 @@ export default function PackageDetailPage() {
                   {pkg.etiquetas.map(renderEtiqueta)}
                 </div>
               )}
+
+              {pkg.categoria && (
+                <div className="absolute bottom-4 right-4">
+                  <span className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-dark capitalize">
+                    {pkg.categoria}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Thumbnails */}
@@ -251,15 +254,14 @@ export default function PackageDetailPage() {
                 <div
                   key={idx}
                   onClick={() => setSelectedImage(idx)}
-                  className={`relative h-36 lg:h-60 rounded-xl overflow-hidden cursor-pointer transition-all ${
-                    selectedImage === idx
+                  className={`relative h-36 lg:h-60 rounded-xl overflow-hidden cursor-pointer transition-all ${selectedImage === idx
                       ? "ring-4 ring-primary-blue"
                       : "hover:opacity-80"
-                  }`}
+                    }`}
                 >
                   <img
                     src={img.url}
-                    alt={`${pkg.nombre} ${idx + 1}`}
+                    alt={img.descripcion || `${pkg.nombre} ${idx + 1}`}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -299,253 +301,293 @@ export default function PackageDetailPage() {
                   </div>
                 )}
               </div>
-              
+
               {pkg.descripcionCorta && (
                 <p className="text-lg text-dark mb-3 font-medium">
                   {pkg.descripcionCorta}
                 </p>
               )}
-              
-              {pkg.descripcion && (
-                <p className="text-light leading-relaxed">{pkg.descripcion}</p>
-              )}
-              
+
               {pkg.descripcionDetallada && (
-                <p className="text-light leading-relaxed mt-3">
+                <p className="text-light leading-relaxed">
                   {pkg.descripcionDetallada}
                 </p>
               )}
             </div>
 
-            {/* Destinos */}
+            {/* Itinerario de destinos */}
             {pkg.destinos && pkg.destinos.length > 0 && (
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-2xl font-bold text-dark mb-4 flex items-center gap-2">
                   <MapPin className="text-primary-blue" />
-                  Destinos incluidos ({pkg.duracionTotal || 0} días totales)
+                  Itinerario del viaje ({pkg.duracionTotal || 0} días totales)
                 </h2>
-                <div className="space-y-4">
-                  {pkg.destinos.map((destino, idx) => (
-                    <div
-                      key={idx}
-                      className="border border-border-subtle rounded-xl p-4 hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="bg-primary-blue text-white rounded-full w-10 h-10 flex items-center justify-center font-bold flex-shrink-0">
-                          {idx + 1}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-dark text-lg mb-2">
-                            {destino.ciudad}
-                            {destino.pais && `, ${destino.pais}`}
-                          </h3>
-                          
-                          {destino.descripcion && (
-                            <p className="text-sm text-light mb-3">
-                              {destino.descripcion}
-                            </p>
-                          )}
-                          
-                          <div className="flex items-center gap-4 text-sm text-light mb-3">
-                            <div className="flex items-center gap-1">
-                              <Clock size={16} className="text-primary-blue" />
-                              <span className="font-medium">
-                                {destino.diasEstadia} días
-                              </span>
-                            </div>
+                <div className="space-y-6">
+                  {pkg.destinos
+                    .sort((a, b) => a.orden - b.orden)
+                    .map((destino, idx) => (
+                      <div
+                        key={idx}
+                        className="border border-border-subtle rounded-xl p-5 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className="bg-primary-blue text-white rounded-full w-10 h-10 flex items-center justify-center font-bold flex-shrink-0">
+                            {destino.orden}
                           </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-dark text-lg mb-2">
+                              {destino.ciudad}
+                              {destino.pais && `, ${destino.pais}`}
+                            </h3>
 
-                          {/* Hospedaje del destino */}
-                          {destino.hospedaje && (
-                            <div className="bg-background-light rounded-lg p-3 mb-3">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Hotel size={16} className="text-primary-blue" />
-                                <h4 className="font-semibold text-dark text-sm">
-                                  {destino.hospedaje.nombre}
-                                </h4>
+                            <div className="flex items-center gap-4 text-sm text-light mb-3">
+                              <div className="flex items-center gap-1">
+                                <Clock size={16} className="text-primary-blue" />
+                                <span className="font-medium">
+                                  {destino.diasEstadia} días
+                                </span>
                               </div>
-                              {destino.hospedaje.categoria && (
-                                <p className="text-xs text-light mb-1">
-                                  {destino.hospedaje.categoria}
-                                </p>
-                              )}
-                              {destino.hospedaje.ubicacion && (
-                                <p className="text-xs text-light mb-2">
-                                  📍 {destino.hospedaje.ubicacion}
-                                </p>
-                              )}
-                              {destino.hospedaje.caracteristicas &&
-                                destino.hospedaje.caracteristicas.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mt-2">
-                                    {destino.hospedaje.caracteristicas.map(
-                                      (c, i) => (
-                                        <span
-                                          key={i}
-                                          className="text-xs bg-white px-2 py-1 rounded"
-                                        >
-                                          {c}
-                                        </span>
-                                      )
-                                    )}
-                                  </div>
-                                )}
-                              {destino.hospedaje.gastronomia && (
-                                <div className="mt-2 pt-2 border-t border-gray-200">
-                                  <div className="flex items-center gap-1 text-xs">
-                                    <Utensils size={14} className="text-primary-blue" />
-                                    <span className="font-medium capitalize">
-                                      {destino.hospedaje.gastronomia.pension}
-                                    </span>
-                                  </div>
-                                  {destino.hospedaje.gastronomia.descripcion && (
-                                    <p className="text-xs text-light mt-1">
-                                      {destino.hospedaje.gastronomia.descripcion}
-                                    </p>
-                                  )}
+                              {destino.fechaInicio && destino.fechaFin && (
+                                <div className="flex items-center gap-1">
+                                  <Calendar size={16} className="text-primary-blue" />
+                                  <span className="text-xs">
+                                    {formatDate(destino.fechaInicio)} - {formatDate(destino.fechaFin)}
+                                  </span>
                                 </div>
                               )}
                             </div>
-                          )}
 
-                          {/* Actividades del destino */}
-                          {destino.actividades &&
-                            destino.actividades.length > 0 && (
-                              <div className="space-y-2">
-                                <h4 className="font-semibold text-dark text-sm flex items-center gap-1">
-                                  <Camera size={16} className="text-primary-blue" />
-                                  Actividades
-                                </h4>
-                                {destino.actividades.map((act, i) => (
-                                  <div
-                                    key={i}
-                                    className="flex items-start gap-2 text-sm"
-                                  >
-                                    <CheckCircle
-                                      size={16}
-                                      className="text-green-600 flex-shrink-0 mt-0.5"
-                                    />
+                            {destino.descripcion && (
+                              <p className="text-sm text-light mb-4">
+                                {destino.descripcion}
+                              </p>
+                            )}
+
+                            {/* Traslado de salida desde este destino */}
+                            {destino.trasladoSalida && (
+                              <div className="bg-blue-50 rounded-lg p-3 mb-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Plane size={16} className="text-primary-blue" />
+                                  <h4 className="font-semibold text-dark text-sm">
+                                    Traslado desde {destino.ciudad}
+                                  </h4>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3 text-xs">
+                                  {destino.trasladoSalida.salida && (
                                     <div>
+                                      <p className="text-light mb-1">Salida</p>
                                       <p className="font-medium text-dark">
-                                        {act.nombre}
+                                        {destino.trasladoSalida.salida.lugar}
                                       </p>
-                                      {act.descripcion && (
-                                        <p className="text-xs text-light">
-                                          {act.descripcion}
-                                        </p>
-                                      )}
-                                      {act.duracion && (
-                                        <p className="text-xs text-light">
-                                          Duración: {act.duracion}
+                                      {destino.trasladoSalida.salida.hora && (
+                                        <p className="text-light">
+                                          {destino.trasladoSalida.salida.hora}
                                         </p>
                                       )}
                                     </div>
-                                  </div>
-                                ))}
+                                  )}
+                                  {destino.trasladoSalida.llegada && (
+                                    <div>
+                                      <p className="text-light mb-1">Llegada</p>
+                                      <p className="font-medium text-dark">
+                                        {destino.trasladoSalida.llegada.lugar}
+                                      </p>
+                                      {destino.trasladoSalida.llegada.hora && (
+                                        <p className="text-light">
+                                          {destino.trasladoSalida.llegada.hora}
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                                {destino.trasladoSalida.compania && (
+                                  <p className="text-xs text-light mt-2">
+                                    <span className="font-medium capitalize">
+                                      {destino.trasladoSalida.tipo}
+                                    </span>
+                                    {" - "}
+                                    {destino.trasladoSalida.compania}
+                                  </p>
+                                )}
                               </div>
                             )}
+
+                            {/* Hospedaje del destino */}
+                            {destino.hospedaje && (
+                              <div className="bg-background-light rounded-lg p-4 mb-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Hotel size={16} className="text-primary-blue" />
+                                  <h4 className="font-semibold text-dark text-sm">
+                                    {destino.hospedaje.nombre}
+                                  </h4>
+                                </div>
+                                {destino.hospedaje.categoria && (
+                                  <p className="text-xs text-light mb-1 capitalize">
+                                    {destino.hospedaje.categoria}
+                                  </p>
+                                )}
+                                {destino.hospedaje.ubicacion && (
+                                  <p className="text-xs text-light mb-2">
+                                    📍 {destino.hospedaje.ubicacion}
+                                  </p>
+                                )}
+                                {destino.hospedaje.caracteristicas &&
+                                  destino.hospedaje.caracteristicas.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-2">
+                                      {destino.hospedaje.caracteristicas.map(
+                                        (c, i) => (
+                                          <span
+                                            key={i}
+                                            className="text-xs bg-white px-2 py-1 rounded"
+                                          >
+                                            {c}
+                                          </span>
+                                        )
+                                      )}
+                                    </div>
+                                  )}
+                                {destino.hospedaje.gastronomia && (
+                                  <div className="mt-3 pt-3 border-t border-gray-200">
+                                    <div className="flex items-center gap-1 text-xs">
+                                      <Utensils size={14} className="text-primary-blue" />
+                                      <span className="font-medium capitalize">
+                                        {destino.hospedaje.gastronomia.pension}
+                                      </span>
+                                    </div>
+                                    {destino.hospedaje.gastronomia.descripcion && (
+                                      <p className="text-xs text-light mt-1">
+                                        {destino.hospedaje.gastronomia.descripcion}
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Actividades del destino */}
+                            {destino.actividades &&
+                              destino.actividades.length > 0 && (
+                                <div className="space-y-2">
+                                  <h4 className="font-semibold text-dark text-sm flex items-center gap-1">
+                                    <Camera size={16} className="text-primary-blue" />
+                                    Actividades en {destino.ciudad}
+                                  </h4>
+                                  {destino.actividades.map((act, i) => (
+                                    <div
+                                      key={i}
+                                      className="flex items-start gap-2 text-sm bg-green-50 rounded-lg p-3"
+                                    >
+                                      <CheckCircle
+                                        size={16}
+                                        className={`flex-shrink-0 mt-0.5 ${act.incluido
+                                            ? "text-green-600"
+                                            : "text-orange-500"
+                                          }`}
+                                      />
+                                      <div className="flex-1">
+                                        <div className="flex items-center justify-between">
+                                          <p className="font-medium text-dark">
+                                            {act.nombre}
+                                          </p>
+                                          {!act.incluido && act.precio && (
+                                            <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
+                                              +${act.precio}
+                                            </span>
+                                          )}
+                                        </div>
+                                        {act.descripcion && (
+                                          <p className="text-xs text-light mt-1">
+                                            {act.descripcion}
+                                          </p>
+                                        )}
+                                        <div className="flex gap-3 mt-1">
+                                          {act.duracion && (
+                                            <p className="text-xs text-light">
+                                              ⏱️ {act.duracion}
+                                            </p>
+                                          )}
+                                          {act.hora && (
+                                            <p className="text-xs text-light">
+                                              🕐 {act.hora}
+                                            </p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                            {destino.notas && (
+                              <div className="mt-3 flex items-start gap-2 text-xs text-light bg-yellow-50 p-2 rounded">
+                                <Info size={14} className="flex-shrink-0 mt-0.5" />
+                                <p>{destino.notas}</p>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
             )}
 
-            {/* Traslados */}
-            {pkg.traslado && pkg.traslado.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h2 className="text-2xl font-bold text-dark mb-4 flex items-center gap-2">
-                  <Plane className="text-primary-blue" />
-                  Traslados
-                </h2>
-                <div className="space-y-3">
-                  {pkg.traslado.map((t, idx) => (
-                    <div
-                      key={idx}
-                      className="border border-border-subtle rounded-lg p-4"
-                    >
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="bg-primary-blue text-white rounded-lg px-3 py-1 text-sm font-semibold capitalize">
-                          {t.tipo}
-                        </div>
-                        {t.compania && (
-                          <span className="text-sm text-light">
-                            {t.compania}
-                          </span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        {t.salida && (
-                          <div>
-                            <p className="text-light mb-1">Salida</p>
-                            <p className="font-medium text-dark">
-                              {t.salida.lugar}
-                            </p>
-                            {t.salida.hora && (
-                              <p className="text-xs text-light">{t.salida.hora}</p>
-                            )}
-                          </div>
-                        )}
-                        {t.llegada && (
-                          <div>
-                            <p className="text-light mb-1">Llegada</p>
-                            <p className="font-medium text-dark">
-                              {t.llegada.lugar}
-                            </p>
-                            {t.llegada.hora && (
-                              <p className="text-xs text-light">
-                                {t.llegada.hora}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      {t.descripcion && (
-                        <p className="text-sm text-light mt-2">{t.descripcion}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Actividades generales */}
-            {pkg.actividades && pkg.actividades.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h2 className="text-2xl font-bold text-dark mb-4 flex items-center gap-2">
-                  <Camera className="text-primary-blue" />
-                  Actividades incluidas
-                </h2>
-                <div className="space-y-3">
-                  {pkg.actividades.map((act, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-start gap-3 p-3 bg-background-light rounded-lg"
-                    >
-                      <CheckCircle
-                        className="text-green-600 flex-shrink-0"
-                        size={20}
-                      />
+            {/* Incluye / No incluye general */}
+            {((pkg.incluyeGeneral && pkg.incluyeGeneral.length > 0) ||
+              (pkg.noIncluyeGeneral && pkg.noIncluyeGeneral.length > 0)) && (
+                <div className="bg-white rounded-2xl shadow-lg p-6">
+                  <h2 className="text-2xl font-bold text-dark mb-4">
+                    Qué incluye este paquete
+                  </h2>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {pkg.incluyeGeneral && pkg.incluyeGeneral.length > 0 && (
                       <div>
-                        <h3 className="font-semibold text-dark mb-1">
-                          {act.nombre}
+                        <h3 className="font-semibold text-dark mb-3 flex items-center gap-2">
+                          <CheckCircle className="text-green-600" size={20} />
+                          Incluye
                         </h3>
-                        {act.descripcion && (
-                          <p className="text-sm text-light mb-1">
-                            {act.descripcion}
-                          </p>
-                        )}
-                        {act.duracion && (
-                          <p className="text-xs text-light">
-                            Duración: {act.duracion}
-                          </p>
-                        )}
+                        <ul className="space-y-2">
+                          {pkg.incluyeGeneral.map((item, idx) => (
+                            <li
+                              key={idx}
+                              className="flex items-start gap-2 text-sm"
+                            >
+                              <CheckCircle
+                                size={16}
+                                className="text-green-600 flex-shrink-0 mt-0.5"
+                              />
+                              <span className="text-light">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-                    </div>
-                  ))}
+                    )}
+
+                    {pkg.noIncluyeGeneral && pkg.noIncluyeGeneral.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold text-dark mb-3 flex items-center gap-2">
+                          <XCircle className="text-red-600" size={20} />
+                          No incluye
+                        </h3>
+                        <ul className="space-y-2">
+                          {pkg.noIncluyeGeneral.map((item, idx) => (
+                            <li
+                              key={idx}
+                              className="flex items-start gap-2 text-sm"
+                            >
+                              <XCircle
+                                size={16}
+                                className="text-red-600 flex-shrink-0 mt-0.5"
+                              />
+                              <span className="text-light">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Coordinadores */}
             {pkg.coordinadores && pkg.coordinadores.length > 0 && (
@@ -567,6 +609,11 @@ export default function PackageDetailPage() {
                         <h3 className="font-semibold text-dark">
                           {coord.nombre}
                         </h3>
+                        {coord.rol && (
+                          <p className="text-xs text-light capitalize">
+                            {coord.rol}
+                          </p>
+                        )}
                         {coord.telefono && (
                           <p className="text-sm text-light">📞 {coord.telefono}</p>
                         )}
@@ -706,6 +753,17 @@ export default function PackageDetailPage() {
                     {pkg.tipo || "Internacional"}
                   </span>
                 </div>
+                {pkg.categoria && (
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-light">
+                      <Star size={16} />
+                      <span>Categoría</span>
+                    </div>
+                    <span className="font-semibold text-dark capitalize">
+                      {pkg.categoria}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2 text-light">
                     <DollarSign size={16} />
@@ -716,8 +774,19 @@ export default function PackageDetailPage() {
                   </span>
                 </div>
                 {pkg.plazoPagoTotalDias && (
-                  <div className="text-xs text-light mt-2">
-                    Plazo de pago total: {pkg.plazoPagoTotalDias} días antes de la salida
+                  <div className="text-xs text-light mt-2 bg-blue-50 p-2 rounded">
+                    💡 Plazo de pago total: {pkg.plazoPagoTotalDias} días antes de la salida
+                  </div>
+                )}
+                {pkg.capacidadMinima && pkg.capacidadMaxima && (
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-light">
+                      <Users size={16} />
+                      <span>Grupo</span>
+                    </div>
+                    <span className="font-semibold text-dark">
+                      {pkg.capacidadMinima} - {pkg.capacidadMaxima} personas
+                    </span>
                   </div>
                 )}
               </div>
@@ -725,9 +794,8 @@ export default function PackageDetailPage() {
               {/* Botones de acción */}
               <div className="space-y-3">
                 <Link
-                  to={`/contacto?paquete=${pkg._id}${
-                    selectedDate ? `&fecha=${selectedDate._id}` : ""
-                  }`}
+                  to={`/contacto?paquete=${pkg._id}${selectedDate ? `&fecha=${selectedDate._id}` : ""
+                    }`}
                   className="w-full block text-center px-6 py-3 bg-primary-red text-white font-semibold rounded-lg hover:bg-opacity-90 transition-all shadow-md hover:shadow-lg"
                 >
                   Reservar ahora
@@ -761,6 +829,34 @@ export default function PackageDetailPage() {
                   </a>
                 </div>
               </div>
+
+              {/* Información adicional */}
+              {pkg.fechasDisponibles && pkg.fechasDisponibles.length > 0 && (
+                <div className="mt-6 pt-6 border-t border-border-subtle">
+                  <h3 className="text-sm font-semibold text-dark mb-3">
+                    Próximas salidas disponibles
+                  </h3>
+                  <div className="space-y-2">
+                    {pkg.fechasDisponibles.slice(0, 3).map((fecha, idx) => (
+                      <div
+                        key={idx}
+                        className="text-xs bg-background-light p-2 rounded"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-light">
+                            {formatDate(fecha.inicio)}
+                          </span>
+                          {fecha.cupos && (
+                            <span className="font-semibold text-primary-blue">
+                              {fecha.cupos} cupos
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

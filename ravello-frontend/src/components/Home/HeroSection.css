@@ -72,6 +72,11 @@
 
 .hero-title {
   font-size: 2rem; /* Mobile: 32px */
+/*   background-image: url("navbar/bg.png");
+  background-size: cover;
+  background-clip: text;
+  color: transparent;
+  animation: traslateX 30s linear infinite; */
   line-height: 1.1;
   font-weight: 800;
   margin: 0;
@@ -79,6 +84,11 @@
   text-shadow: 2px 4px 12px rgba(0, 0, 0, 0.3);
 }
 
+/* @keyframes traslateX {
+  to{
+    background-position-x: -1000px;
+  }
+} */
 /* ==================== SUBTÍTULO ==================== */
 
 .hero-subtitle {
