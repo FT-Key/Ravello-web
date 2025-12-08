@@ -35,11 +35,11 @@ export const usePaginatedFetch = (endpoint, initialFilters = {}, defaultLimit = 
       params.append("limit", limit);
 
       const queryString = params.toString();
-      console.log("🌐 Request URL:", `${endpoint}?${queryString}`);
+      /* console.log("🌐 Request URL:", `${endpoint}?${queryString}`); */
 
       const res = await clientAxios.get(`${endpoint}?${queryString}`);
 
-      console.log("✅ Response:", res.data);
+      /* console.log("✅ Response:", res.data); */
 
       setData(res.data.data || res.data.items || res.data.results || []);
       setTotal(res.data.total || 0);
