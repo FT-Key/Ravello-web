@@ -11,7 +11,7 @@ import {
   TabCoordinadores,
   TabPrecios,
   TabImagenes
-} from "./PackageTabs/index.js";
+} from "./packageTabs/index.js";
 
 export default function PackageEditModal({ open, onClose, pkg, onSaved }) {
   const {
