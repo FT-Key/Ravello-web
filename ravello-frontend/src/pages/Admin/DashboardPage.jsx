@@ -166,15 +166,17 @@ export default function DashboardPage() {
 
 function DashboardCard({ label, value, onClick }) {
   return (
-    <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
-      <span className="text-gray-500">{label}</span>
-      <span className="text-2xl font-bold">{value}</span>
+    <div className="bg-white rounded-lg shadow p-4 flex flex-col">
+      <span className="text-gray-500 text-center">{label}</span>
+      <div className="flex-1" />
+      <span className="text-2xl font-bold text-center mb-2">{value}</span>
       <button
         onClick={onClick}
-        className="mt-2 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+        className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition"
       >
         Administrar
       </button>
     </div>
   );
 }
+
