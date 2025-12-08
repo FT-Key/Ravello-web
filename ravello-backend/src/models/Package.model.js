@@ -1,5 +1,16 @@
 import mongoose from 'mongoose';
-import coordinatorSubSchema from './CoordinatorSubSchema.js';
+
+// --- Subesquema de coordinador
+const coordinatorSubSchema = new mongoose.Schema(
+  {
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // opcional
+    nombre: String,
+    email: String,
+    telefono: String,
+    rol: { type: String, default: 'asistente' }
+  },
+  { _id: false } // evita crear un _id extra por cada coordinador
+);
 
 // --- Subesquema de traslado
 const transferSchema = new mongoose.Schema({
@@ -48,20 +59,20 @@ const destinoSchema = new mongoose.Schema({
   ciudad: { type: String, required: true },
   pais: { type: String, required: true },
   orden: { type: Number, required: true }, // Para ordenar el itinerario
-  diasEstadia: { type: Number, required: true }, 
+  diasEstadia: { type: Number, required: true },
   fechaInicio: Date, // Opcional: si tiene fechas fijas
   fechaFin: Date,
   descripcion: String,
-  
+
   // Hospedaje ESPECÍFICO de este destino
   hospedaje: hospedajeSchema,
-  
+
   // Actividades ESPECÍFICAS de este destino
   actividades: [actividadSchema],
-  
+
   // Traslado DESDE este destino hacia el siguiente (o llegada si es el primero)
   trasladoSalida: transferSchema,
-  
+
   notas: String // Notas importantes del destino
 });
 
@@ -85,7 +96,7 @@ const packageSchema = new mongoose.Schema(
     },
 
     // ELIMINADO: descripcion redundante, usa descripcionDetallada
-    
+
     tipo: { type: String, enum: ['nacional', 'internacional'], required: true },
 
     // ITINERARIO: La secuencia de destinos
@@ -97,7 +108,7 @@ const packageSchema = new mongoose.Schema(
 
     // Incluidos generales del paquete (ej: "Seguro de viaje", "Asistencia 24/7")
     incluyeGeneral: [String],
-    
+
     // No incluidos generales (ej: "Vuelos internos", "Propinas")
     noIncluyeGeneral: [String],
 
@@ -148,7 +159,7 @@ const packageSchema = new mongoose.Schema(
     // Disponibilidad
     activo: { type: Boolean, default: true },
     visibleEnWeb: { type: Boolean, default: true },
-    
+
     // Fechas de disponibilidad (si aplica)
     fechasDisponibles: [{
       inicio: Date,
@@ -156,7 +167,7 @@ const packageSchema = new mongoose.Schema(
       cupos: Number
     }]
   },
-  { 
+  {
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
