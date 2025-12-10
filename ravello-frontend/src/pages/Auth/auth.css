@@ -1,0 +1,88 @@
+/* GRADIENT MESH ESTILO RAVELLO */
+.gradient-mesh-ravello {
+  background: radial-gradient(circle at 20% 30%, var(--color-primary-blue) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, var(--color-secondary-cyan) 0%, transparent 55%),
+    radial-gradient(circle at 60% 80%, var(--color-primary-red) 0%, transparent 50%),
+    radial-gradient(circle at 10% 90%, var(--color-secondary-sand) 0%, transparent 60%);
+  background-color: #ffffff;
+  filter: blur(40px);
+  transform: scale(1.2);
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes float-delayed {
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-15px) rotate(5deg);
+  }
+}
+
+@keyframes blob {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  25% {
+    transform: translate(20px, -50px) scale(1.1);
+  }
+
+  50% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+
+  75% {
+    transform: translate(50px, 50px) scale(1.05);
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float-delayed 8s ease-in-out infinite;
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}

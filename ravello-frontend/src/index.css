@@ -66,14 +66,3 @@
         transparent 100%
     );
 }
-
-/* GRADIENT MESH ESTILO RAVELLO */
-.gradient-mesh-ravello {
-  background: radial-gradient(circle at 20% 30%, var(--color-primary-blue) 0%, transparent 50%),
-              radial-gradient(circle at 80% 20%, var(--color-secondary-cyan) 0%, transparent 55%),
-              radial-gradient(circle at 60% 80%, var(--color-primary-red) 0%, transparent 50%),
-              radial-gradient(circle at 10% 90%, var(--color-secondary-sand) 0%, transparent 60%);
-  background-color: #ffffff;
-  filter: blur(40px);
-  transform: scale(1.2);
-}
