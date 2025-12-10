@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Phone,
   Mail,
@@ -14,6 +15,9 @@ import { FaFacebook, FaInstagram, FaTwitter, FaLinkedin } from "react-icons/fa";
 import { siteConfig } from "../../config/siteConfig";
 
 const Footer = () => {
+  const navigate = useNavigate();
+  const [clickCount, setClickCount] = useState(0);
+
   const destinations = [
     "Europa",
     "América",
@@ -40,6 +44,18 @@ const Footer = () => {
   ];
 
   const { contact, location, social } = siteConfig;
+
+  // ⭐ Triple click en el logo para acceso admin
+  useEffect(() => {
+    if (clickCount === 3) {
+      navigate('/admin');
+      setClickCount(0);
+    }
+    
+    // Reset después de 2 segundos de inactividad
+    const timer = setTimeout(() => setClickCount(0), 2000);
+    return () => clearTimeout(timer);
+  }, [clickCount, navigate]);
 
   return (
     <footer className="bg-gradient-to-br from-blue-600 via-blue-800 to-blue-600 text-white">
@@ -92,7 +108,10 @@ const Footer = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
             {/* Columna 1: Logo y descripción */}
             <div className="lg:col-span-2">
-              <div className="flex items-center gap-2 mb-4">
+              <div 
+                className="flex items-center gap-2 mb-4 cursor-pointer select-none"
+                onClick={() => setClickCount(prev => prev + 1)}
+              >
                 <img
                   src="/ravello-mini-logo.svg"
                   alt="Logo"
@@ -110,6 +129,7 @@ const Footer = () => {
               <div className="flex gap-3">
                 <a
                   target="_blank"
+                  rel="noopener noreferrer"
                   href={social.facebook}
                   className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition-all hover:scale-110"
                 >
@@ -117,6 +137,7 @@ const Footer = () => {
                 </a>
                 <a
                   target="_blank"
+                  rel="noopener noreferrer"
                   href={social.instagram}
                   className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition-all hover:scale-110"
                 >
@@ -124,6 +145,7 @@ const Footer = () => {
                 </a>
                 <a
                   target="_blank"
+                  rel="noopener noreferrer"
                   href={social.twitter}
                   className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition-all hover:scale-110"
                 >
@@ -131,6 +153,7 @@ const Footer = () => {
                 </a>
                 <a
                   target="_blank"
+                  rel="noopener noreferrer"
                   href={social.linkedin}
                   className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition-all hover:scale-110"
                 >
