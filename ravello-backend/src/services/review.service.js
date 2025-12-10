@@ -4,41 +4,42 @@ import { Review } from "../models/index.js";
 // GET ALL - con búsqueda y paginación
 // -------------------------------------------------------------
 export const getAll = async (queryOptions, searchFilter, pagination) => {
+  const allowedRawFilters = ["paquete", "estadoModeracion", "tipo"];
+
+  const rawFilters = Object.fromEntries(
+    Object.entries(queryOptions.raw).filter(([key]) =>
+      allowedRawFilters.includes(key)
+    )
+  );
+
   const query = {
     ...queryOptions.filters,
+    ...rawFilters,
     ...searchFilter,
   };
 
-  console.log("🔍 Query getAll reviews:", JSON.stringify(query, null, 2));
+  const total = await Review.countDocuments(query);
 
-  try {
-    const total = await Review.countDocuments(query);
+  let mongoQuery = Review.find(query)
+    .populate("paquete", "nombre")
+    .sort(queryOptions.sort);
 
-    let mongoQuery = Review.find(query)
-      .populate("paquete", "nombre")
-      .sort(queryOptions.sort);
-
-    if (pagination) {
-      mongoQuery = mongoQuery
-        .skip(pagination.skip)
-        .limit(pagination.limit);
-    }
-
-    const items = await mongoQuery;
-
-    console.log(`✅ Reseñas encontradas: ${items.length} de ${total} total`);
-
-    return {
-      total,
-      page: pagination?.page || null,
-      limit: pagination?.limit || null,
-      items
-    };
-  } catch (error) {
-    console.error("❌ Error en getAll reviews:", error);
-    throw new Error(`Error buscando reseñas: ${error.message}`);
+  if (pagination) {
+    mongoQuery = mongoQuery
+      .skip(pagination.skip)
+      .limit(pagination.limit);
   }
+
+  const items = await mongoQuery;
+
+  return {
+    total,
+    page: pagination?.page || null,
+    limit: pagination?.limit || null,
+    items,
+  };
 };
+
 
 // -------------------------------------------------------------
 // GET BY ID

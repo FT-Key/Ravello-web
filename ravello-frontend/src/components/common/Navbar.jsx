@@ -81,7 +81,6 @@ const Navbar = ({ position = "sticky" }) => {
       ${getNavbarBackground()}
       ${!isScrolled && position !== "fixed" ? "bg-[url('/navbar/nav-bg.jpg')] bg-cover bg-bottom" : ""}
       ${isScrolled ? "w-full sm:w-[95%] mx-auto rounded-b-2xl shadow-xl backdrop-blur-md border border-black/10" : "w-full"}
-      overflow-hidden
     `}
       >
 

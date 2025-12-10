@@ -48,8 +48,8 @@ export const updateReview = async (req, res) => {
 // PUT /api/reviews/:id/moderar
 export const moderarReview = async (req, res) => {
   try {
-    const { estado } = req.body;
-    const data = await reviewService.moderar(req.params.id, estado);
+    const { estadoModeracion } = req.body;
+    const data = await reviewService.moderar(req.params.id, estadoModeracion);
     res.json({ success: true, data });
   } catch (error) {
     console.error("❌ Error en moderarReview:", error);

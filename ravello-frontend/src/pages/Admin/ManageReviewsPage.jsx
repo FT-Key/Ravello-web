@@ -32,9 +32,20 @@ export default function ManageReviewsPage() {
     setModalOpen(true);
   };
 
-  const handleSaved = () => {
-    refetch();
-    toast.success("Reseña actualizada correctamente");
+  const handleSaved = async (payload) => {
+    try {
+      await clientAxios.put(`/reviews/${editReview._id}/moderar`, payload);
+
+      // Actualizar tabla y notificar
+      refetch();
+      toast.success("Reseña actualizada correctamente");
+
+      // Cerrar modal
+      setModalOpen(false);
+      setEditReview(null);
+    } catch (error) {
+      toast.error("Error al actualizar reseña");
+    }
   };
 
   // -----------------------------------------------
@@ -96,19 +107,18 @@ export default function ManageReviewsPage() {
         label: "Estado",
         render: (val) => (
           <span
-            className={`px-2 py-1 text-xs rounded ${
-              val === "pendiente"
+            className={`px-2 py-1 text-xs rounded ${val === "pendiente"
                 ? "bg-yellow-100 text-yellow-700"
                 : val === "aprobada"
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
-            }`}
+                  ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-700"
+              }`}
           >
             {val === "pendiente"
               ? "🕓 Pendiente"
               : val === "aprobada"
-              ? "✅ Aprobada"
-              : "❌ Rechazada"}
+                ? "✅ Aprobada"
+                : "❌ Rechazada"}
           </span>
         ),
       },
@@ -178,7 +188,7 @@ export default function ManageReviewsPage() {
           setModalOpen(false);
           setEditReview(null);
         }}
-        onSaved={handleSaved}
+        onSave={handleSaved}
       />
     </div>
   );
