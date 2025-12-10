@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import clientAxios from "../../api/axiosConfig";
+import { useNavigate } from "react-router-dom";
 
 export default function Unsubscribe() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState("loading"); // "loading" | "success" | "error" | "manual"
+  const [status, setStatus] = useState("loading");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -22,12 +24,12 @@ export default function Unsubscribe() {
       const res = await clientAxios.post("/newsletter/unsubscribe", { email: emailToUnsub });
 
       setStatus("success");
-      setMessage(res.data.message || "Tu suscripción fue cancelada correctamente ✅");
+      setMessage(res.data.message || "Tu suscripción fue cancelada correctamente");
     } catch (err) {
       console.error(err);
       setStatus("error");
       setMessage(
-        err.response?.data?.error || "Error al conectar con el servidor ❌"
+        err.response?.data?.error || "Error al conectar con el servidor"
       );
     }
   };
@@ -52,8 +54,7 @@ export default function Unsubscribe() {
         {status === "manual" && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <p className="text-gray-600">
-              Ingresá tu email para cancelar tu suscripción a nuestra
-              newsletter.
+              Ingresá tu email para cancelar tu suscripción a nuestra newsletter.
             </p>
             <input
               type="email"
@@ -76,16 +77,17 @@ export default function Unsubscribe() {
           <div className="space-y-3">
             <p className="text-green-600 font-medium">{message}</p>
             <p className="text-sm text-gray-500">
-              Lamentamos verte partir 😔.
+              Lamentamos verte partir.
               <br />
               Podés volver a suscribirte en cualquier momento desde nuestra web.
             </p>
-            <a
-              href="/"
+
+            <button
+              onClick={() => navigate("/")}
               className="inline-block mt-4 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition"
             >
               Volver al inicio
-            </a>
+            </button>
           </div>
         )}
 

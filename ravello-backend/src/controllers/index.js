@@ -6,6 +6,7 @@ import * as featuredController from './featured.controller.js';
 import * as offerController from './offer.controller.js';
 import * as featuredPromotionsController from './featuredPromotions.controller.js';
 import * as newsletterController from './newsletter.controller.js';
+import * as authController from './auth.controller.js';
 
 export {
   packageController,
@@ -16,4 +17,5 @@ export {
   offerController,
   featuredPromotionsController,
   newsletterController,
+  authController,
 };

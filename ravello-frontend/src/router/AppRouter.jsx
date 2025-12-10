@@ -1,43 +1,86 @@
+// src/router/AppRouter.jsx
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { useUserStore } from "../stores/useUserStore";
 
+// Páginas públicas
 import HomePage from "../pages/Home/HomePage";
 import PackagesListPage from "../pages/Packages/PackagesListPage";
 import PackageDetailPage from "../pages/Packages/PackageDetailPage";
 import ContactPage from "../pages/Contact/ContactPage";
 import LoginPage from "../pages/Auth/LoginPage";
 import RegisterPage from "../pages/Auth/RegisterPage";
+import ReviewPage from "../pages/Reviews/ReviewPage";
+import AboutUsPage from "../pages/AboutUs/AboutUsPage";
+import UnsubscribePage from "../pages/Newsletter/Unsubscribe";
+import NotFoundPage from "../pages/NotFound/NotFound";
+
+// Páginas Admin
 import DashboardPage from "../pages/Admin/DashboardPage";
 import ManagePackagesPage from "../pages/Admin/ManagePackagesPage";
 import ManageReviewsPage from "../pages/Admin/ManageReviewsPage";
 import ManageContactsPage from "../pages/Admin/ManageContactsPage";
 import ManageUsersPage from "../pages/Admin/ManageUsersPage";
 import ManageFeaturedPromotions from "../pages/Admin/ManageFeaturedPromotions";
-import UnsubscribePage from "../pages/Newsletter/Unsubscribe"; // o el path donde lo pongas
+import ManageNewsletterPage from "../pages/Admin/ManageNewsletterPage";
+import ManagePackageDatesPage from "../pages/Admin/ManagePackageDatesPage";
 
+// Componentes comunes
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
-import ManageNewsletterPage from "../pages/Admin/ManageNewsletterPage";
 import ScrollToTop from "../utils/scrollToTop";
-import ReviewPage from "../pages/Reviews/ReviewPage";
-import ManagePackageDatesPage from "../pages/Admin/ManagePackageDatesPage";
-import AboutUsPage from "../pages/AboutUs/AboutUsPage";
+
+function PrivateRoute({ children }) {
+  const { user, token, loadingUser } = useUserStore();
+
+  // Evita redirecciones mientras /auth/me está cargando
+  if (loadingUser) return null;
+
+  if (!user || !token) return <Navigate to="/login" replace />;
+
+  return children;
+}
+
+export function AdminRoute({ children }) {
+  const { user, token, loadingUser } = useUserStore();
+
+  // Mientras carga, no redirigir
+  if (loadingUser) return null;
+
+  if (!token || !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user.rol !== "admin") {
+    return <Navigate to="/perfil" replace />;
+  }
+
+  return children;
+}
 
 function AppRouterInner() {
   const location = useLocation();
-  const user = useUserStore((state) => state.user);
-
   const isHome = location.pathname === "/";
 
-  const AdminRoute = ({ children }) => {
-    /* if (!user || user.role !== "admin") return <Navigate to="/login" />; */
-    return children;
-  };
+  // ⭐ AGREGAR ESTO: Esperar a que termine de cargar el usuario
+  const { loadingUser } = useUserStore();
 
-  const PrivateRoute = ({ children }) => {
-    if (!user) return <Navigate to="/login" />;
-    return children;
-  };
+  // Mostrar un loading mientras se verifica la sesión
+  if (loadingUser) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        gap: '1rem'
+      }}>
+        <div className="spinner"></div>
+        <p>Verificando sesión...</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -55,10 +98,17 @@ function AppRouterInner() {
         <Route path="/registro" element={<RegisterPage />} />
         <Route path="/unsubscribe" element={<UnsubscribePage />} />
 
-        {/* Páginas privadas */}
-        <Route path="/perfil" element={<PrivateRoute><h1>Perfil del usuario</h1></PrivateRoute>} />
+        {/* Ruta privada del usuario */}
+        <Route
+          path="/perfil"
+          element={
+            <PrivateRoute>
+              <h1>Perfil del usuario</h1>
+            </PrivateRoute>
+          }
+        />
 
-        {/* Admin */}
+        {/* Rutas ADMIN */}
         <Route path="/admin" element={<AdminRoute><DashboardPage /></AdminRoute>} />
         <Route path="/admin/paquetes" element={<AdminRoute><ManagePackagesPage /></AdminRoute>} />
         <Route path="/admin/paquetes-fechas" element={<AdminRoute><ManagePackageDatesPage /></AdminRoute>} />
@@ -68,15 +118,8 @@ function AppRouterInner() {
         <Route path="/admin/boletin" element={<AdminRoute><ManageNewsletterPage /></AdminRoute>} />
         <Route path="/admin/ofertas-imperdibles" element={<AdminRoute><ManageFeaturedPromotions /></AdminRoute>} />
 
-        {/* Ruta 404 */}
-        <Route
-          path="*"
-          element={
-            <h1 style={{ textAlign: "center", marginTop: "2rem" }}>
-              404 - Página no encontrada
-            </h1>
-          }
-        />
+        {/* NotFound */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
 
       <Footer />
@@ -85,6 +128,12 @@ function AppRouterInner() {
 }
 
 export default function AppRouter() {
+  const loadUserFromToken = useUserStore((state) => state.loadUserFromToken);
+
+  useEffect(() => {
+    loadUserFromToken();
+  }, [loadUserFromToken]); // ⭐ Agregar dependencia
+
   return (
     <BrowserRouter>
       <ScrollToTop />
