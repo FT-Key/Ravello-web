@@ -6,6 +6,7 @@ import * as featuredService from './featured.service.js';
 import * as offerService from './offer.service.js';
 import * as featuredPromotionsService from './featuredPromotions.service.js';
 import * as newsletterService from './newsletter.service.js';
+import * as authService from './auth.service.js';
 
 export {
   packageService,
@@ -16,4 +17,5 @@ export {
   offerService,
   featuredPromotionsService,
   newsletterService,
+  authService,
 };

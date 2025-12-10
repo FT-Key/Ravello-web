@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useUserStore } from "../../stores/useUserStore";
 import toast from "react-hot-toast";
 import clientAxios from "../../api/axiosConfig";
+import { useNavigate } from "react-router-dom";
 
 export default function DashboardPage() {
   const { user } = useUserStore();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     users: 0,
     packages: 0,
@@ -12,7 +14,7 @@ export default function DashboardPage() {
     contacts: 0,
     offers: 0,
     newsletter: 0,
-    packageDates: 0, // 👈 NUEVO
+    packageDates: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -26,7 +28,7 @@ export default function DashboardPage() {
           contactsRes,
           offersRes,
           newsletterRes,
-          packageDatesRes, // 👈 NUEVO
+          packageDatesRes,
         ] = await Promise.all([
           clientAxios.get("/users"),
           clientAxios.get("/packages"),
@@ -34,29 +36,21 @@ export default function DashboardPage() {
           clientAxios.get("/contacts"),
           clientAxios.get("/featured-promotions"),
           clientAxios.get("/newsletter"),
-          clientAxios.get("/package-dates"), // 👈 NUEVO endpoint
+          clientAxios.get("/package-dates"),
         ]);
-
-        console.log("Respuestas: ", usersRes, packagesRes, reviewsRes, contactsRes, offersRes, newsletterRes, packageDatesRes)
-        console.log("paquetes: ", packagesRes)
 
         const extractTotal = (response) => {
           if (!response || typeof response !== "object") return 0;
 
           const payload = response.data;
-
           if (!payload) return 0;
 
-          // Caso importante: los endpoints con paginación usan total
           if (typeof payload.total === "number") return payload.total;
 
-          // Si tiene items paginados
           if (Array.isArray(payload.items)) return payload.items.length;
 
-          // Si devuelve directamente un array
           if (Array.isArray(payload)) return payload.length;
 
-          // Otras estructuras posibles
           const keys = ["packages", "users", "data", "results"];
           for (const k of keys) {
             if (Array.isArray(payload[k])) return payload[k].length;
@@ -76,7 +70,7 @@ export default function DashboardPage() {
             offersRes?.data?.packages?.length ||
             0,
           newsletter: extractTotal(newsletterRes),
-          packageDates: extractTotal(packageDatesRes), // 👈 NUEVO
+          packageDates: extractTotal(packageDatesRes),
         });
       } catch (err) {
         console.error("❌ Error cargando estadísticas:", err);
@@ -117,43 +111,43 @@ export default function DashboardPage() {
         <DashboardCard
           label="Usuarios"
           value={stats.users}
-          onClick={() => (window.location.href = "/admin/usuarios")}
+          onClick={() => navigate("/admin/usuarios")}
         />
 
         <DashboardCard
           label="Paquetes"
           value={stats.packages}
-          onClick={() => (window.location.href = "/admin/paquetes")}
+          onClick={() => navigate("/admin/paquetes")}
         />
 
         <DashboardCard
           label="Fechas de Paquetes"
           value={stats.packageDates}
-          onClick={() => (window.location.href = "/admin/paquetes-fechas")}
+          onClick={() => navigate("/admin/paquetes-fechas")}
         />
 
         <DashboardCard
           label="Ofertas imperdibles"
           value={stats.offers}
-          onClick={() => (window.location.href = "/admin/ofertas-imperdibles")}
+          onClick={() => navigate("/admin/ofertas-imperdibles")}
         />
 
         <DashboardCard
           label="Reseñas"
           value={stats.reviews}
-          onClick={() => (window.location.href = "/admin/resenias")}
+          onClick={() => navigate("/admin/resenias")}
         />
 
         <DashboardCard
           label="Mensajes de contacto"
           value={stats.contacts}
-          onClick={() => (window.location.href = "/admin/contactos")}
+          onClick={() => navigate("/admin/contactos")}
         />
 
         <DashboardCard
           label="Newsletter"
           value={stats.newsletter}
-          onClick={() => (window.location.href = "/admin/boletin")}
+          onClick={() => navigate("/admin/boletin")}
         />
       </div>
 
@@ -179,4 +173,3 @@ function DashboardCard({ label, value, onClick }) {
     </div>
   );
 }
-

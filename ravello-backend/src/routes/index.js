@@ -10,6 +10,9 @@ import offerRoutes from './offer.route.js';
 import featuredPromotionsRoutes from './featuredPromotions.route.js';
 import newsletterRoutes from './newsletter.route.js';
 
+// 🔹 IMPORTANTE: rutas de autenticación
+import authRoutes from './auth.route.js';
+
 const router = express.Router();
 
 // --------------------------------------------------
@@ -28,13 +31,17 @@ router.get("/health", (req, res) => {
 // --------------------------------------------------
 const publicRouter = express.Router();
 
-// Ejemplo de ruta pública
 publicRouter.get("/info", (req, res) => {
   res.json({ message: "API pública funcionando" });
 });
 
 // Montar public
 router.use("/public", publicRouter);
+
+// --------------------------------------------------
+// 🟢 AUTH ROUTES (login, registro, perfil, etc.)
+// --------------------------------------------------
+router.use("/auth", authRoutes);
 
 // --------------------------------------------------
 // 🟢 API ROUTES
