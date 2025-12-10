@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { useUserStore } from "../stores/useUserStore";
+import { useAdminShortcut } from "../hooks/useAdminShortcut"; // ⭐ Importar
 
 // Páginas públicas
 import HomePage from "../pages/Home/HomePage";
@@ -61,6 +62,8 @@ export function AdminRoute({ children }) {
 function AppRouterInner() {
   const location = useLocation();
   const isHome = location.pathname === "/";
+
+  useAdminShortcut(); // ⭐ Activar shortcut Ctrl + Shift + A AQUÍ
 
   // ⭐ AGREGAR ESTO: Esperar a que termine de cargar el usuario
   const { loadingUser } = useUserStore();
@@ -132,7 +135,7 @@ export default function AppRouter() {
 
   useEffect(() => {
     loadUserFromToken();
-  }, [loadUserFromToken]); // ⭐ Agregar dependencia
+  }, [loadUserFromToken]);
 
   return (
     <BrowserRouter>
