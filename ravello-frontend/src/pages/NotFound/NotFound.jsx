@@ -5,7 +5,7 @@ import './NotFound'
 export default function NotFoundPage() {
   return (
     <div 
-      className="relative min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 overflow-hidden"
+      className="relative min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 overflow-hidden select-none"
       style={{
         WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
         maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)'
@@ -13,7 +13,7 @@ export default function NotFoundPage() {
     >
       
       {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Floating clouds */}
         <div className="absolute top-20 left-10 w-32 h-20 bg-white/40 rounded-full blur-xl animate-float"></div>
         <div className="absolute top-40 right-20 w-40 h-24 bg-white/30 rounded-full blur-xl animate-float-delayed"></div>
@@ -32,7 +32,7 @@ export default function NotFoundPage() {
       </div>
 
       {/* Flying plane path */}
-      <div className="absolute top-1/3 left-0 w-full h-1 opacity-10">
+      <div className="absolute top-1/3 left-0 w-full h-1 opacity-10 pointer-events-none">
         <div className="relative w-full h-full">
           <svg className="absolute top-0 left-0 w-full h-full" viewBox="0 0 1000 100">
             <path
@@ -56,16 +56,16 @@ export default function NotFoundPage() {
           
           <div className="text-center mb-12">
             
-            {/* Animated 404 with travel theme */}
+            {/* Animated 404 */}
             <div className="relative inline-block mb-8">
               
               {/* Main 404 */}
               <div className="relative">
-                <h1 className="text-[180px] md:text-[220px] font-black leading-none bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent select-none">
+                <h1 className="text-[180px] md:text-[220px] font-black leading-none bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
                   404
                 </h1>
                 
-                {/* Floating travel icons around 404 */}
+                {/* Icons */}
                 <div className="absolute -top-8 left-1/4 transform -translate-x-1/2 animate-float">
                   <div className="w-16 h-16 bg-white rounded-2xl shadow-lg flex items-center justify-center transform rotate-12">
                     <Compass size={32} className="text-blue-600" />
@@ -91,13 +91,13 @@ export default function NotFoundPage() {
                 </div>
               </div>
 
-              {/* Dotted path decoration */}
+              {/* Dotted path */}
               <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-64 h-1 opacity-20">
                 <div className="w-full h-full border-t-2 border-dashed border-blue-600"></div>
               </div>
             </div>
 
-            {/* Headline */}
+            {/* Text */}
             <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
               ¡Vaya! Te saliste del mapa
             </h2>
@@ -111,11 +111,11 @@ export default function NotFoundPage() {
               Pero no te preocupes, siempre hay un camino de regreso.
             </p>
 
-            {/* Action buttons */}
+            {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
                 to="/"
-                className="group inline-flex items-center gap-2 px-8 py-4 rounded-2xl
+                className="select-text group inline-flex items-center gap-2 px-8 py-4 rounded-2xl
                            bg-gradient-to-r from-blue-600 to-indigo-600 
                            hover:from-blue-700 hover:to-indigo-700
                            text-white font-semibold shadow-lg shadow-blue-500/30 
@@ -128,7 +128,7 @@ export default function NotFoundPage() {
               
               <Link
                 to="/paquetes"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl
+                className="select-text inline-flex items-center gap-2 px-8 py-4 rounded-2xl
                            bg-white text-slate-700 font-semibold 
                            border-2 border-slate-200 hover:border-blue-500
                            hover:bg-blue-50 hover:text-blue-600
@@ -141,10 +141,10 @@ export default function NotFoundPage() {
             </div>
           </div>
 
-          {/* Travel suggestions cards */}
+          {/* Cards */}
           <div className="grid md:grid-cols-3 gap-4 mt-16 max-w-4xl mx-auto">
             
-            <Link to="/" className="group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <Link to="/" className="select-text group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg transform group-hover:rotate-12 transition-transform">
                 <span className="text-2xl">🏠</span>
               </div>
@@ -152,7 +152,7 @@ export default function NotFoundPage() {
               <p className="text-sm text-slate-600">Volvé a la página principal</p>
             </Link>
 
-            <Link to="/paquetes" className="group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <Link to="/paquetes" className="select-text group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg transform group-hover:rotate-12 transition-transform">
                 <span className="text-2xl">✈️</span>
               </div>
@@ -160,7 +160,7 @@ export default function NotFoundPage() {
               <p className="text-sm text-slate-600">Explorá nuestros destinos</p>
             </Link>
 
-            <Link to="/contacto" className="group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <Link to="/contacto" className="select-text group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg transform group-hover:rotate-12 transition-transform">
                 <span className="text-2xl">💬</span>
               </div>
@@ -173,9 +173,8 @@ export default function NotFoundPage() {
         </div>
       </div>
 
-      {/* Decorative elements at bottom */}
+      {/* Bottom decorations */}
       <div className="absolute bottom-0 left-0 right-0 pointer-events-none">
-        {/* Mountains silhouette */}
         <svg viewBox="0 0 1440 120" className="w-full h-auto">
           <path
             fill="rgba(59, 130, 246, 0.1)"
