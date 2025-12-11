@@ -20,11 +20,17 @@ export default function NewsletterSection() {
   };
 
   return (
-    <section className="newsletter-section bg-sand-fade">
+    <section className="newsletter-section bg-sand-fade no-select">
       <div className="newsletter-container">
         <div className="newsletter-content" data-aos="zoom-in">
-          <h2 className="newsletter-title">Recibí nuestras mejores ofertas</h2>
-          <p className="newsletter-subtitle">
+          
+          {/* TÍTULO */}
+          <h2 className="newsletter-title no-select">
+            Recibí nuestras mejores ofertas
+          </h2>
+
+          {/* SUBTÍTULO */}
+          <p className="newsletter-subtitle no-select">
             Suscribite y no te pierdas ninguna promoción exclusiva
           </p>
 
@@ -43,30 +49,33 @@ export default function NewsletterSection() {
               required
               className="newsletter-input"
             />
+
             <button
               type="submit"
               disabled={status === "loading"}
-              className={`newsletter-button ${
-                status === "loading" ? "loading" : ""
-              }`}
+              className={`newsletter-button ${status === "loading" ? "loading" : ""}`}
             >
-              {status === "loading" ? "Enviando..." : "Suscribirse"}
+              <span className="no-select">
+                {status === "loading" ? "Enviando..." : "Suscribirse"}
+              </span>
             </button>
           </form>
 
           {/* MENSAJES */}
           {status === "success" && (
-            <p className="newsletter-message success">
+            <p className="newsletter-message success no-select">
               ✅ ¡Te suscribiste correctamente!
             </p>
           )}
+
           {status === "error" && (
-            <p className="newsletter-message error">
+            <p className="newsletter-message error no-select">
               ❌ Ocurrió un error. Verificá tu email.
             </p>
           )}
 
-          <p className="newsletter-footnote">
+          {/* FOOTNOTE */}
+          <p className="newsletter-footnote no-select">
             No spam. Solo las mejores ofertas para tu próximo viaje.
           </p>
         </div>

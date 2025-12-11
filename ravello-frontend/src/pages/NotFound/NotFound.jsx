@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Plane, MapPin, Compass, Navigation, Map } from "lucide-react";
+import './NotFound'
 
 export default function NotFoundPage() {
   return (
@@ -186,70 +187,6 @@ export default function NotFoundPage() {
           />
         </svg>
       </div>
-
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-        
-        @keyframes float-delayed {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-25px) rotate(5deg); }
-        }
-
-        @keyframes bounce-slow {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-15px); }
-        }
-
-        @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-
-        @keyframes dash {
-          to { stroke-dashoffset: -20; }
-        }
-
-        @keyframes fly-across {
-          0% {
-            left: -5%;
-            top: 50%;
-          }
-          50% {
-            top: 20%;
-          }
-          100% {
-            left: 105%;
-            top: 50%;
-          }
-        }
-
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-        
-        .animate-float-delayed {
-          animation: float-delayed 8s ease-in-out infinite;
-        }
-
-        .animate-bounce-slow {
-          animation: bounce-slow 3s ease-in-out infinite;
-        }
-
-        .animate-spin-slow {
-          animation: spin-slow 20s linear infinite;
-        }
-
-        .animate-dash {
-          animation: dash 2s linear infinite;
-        }
-
-        .animate-fly-across {
-          animation: fly-across 15s linear infinite;
-        }
-      `}</style>
     </div>
   );
 }
