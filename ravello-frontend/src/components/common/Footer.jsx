@@ -10,8 +10,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { FaFacebook, FaInstagram, FaTwitter, FaLinkedin } from "react-icons/fa";
-
-// 👉 Importamos tu configuración global
+import { toast } from "react-hot-toast";
 import { siteConfig } from "../../config/siteConfig";
 
 const Footer = () => {
@@ -45,21 +44,34 @@ const Footer = () => {
 
   const { contact, location, social } = siteConfig;
 
-  // ⭐ Triple click en el logo para acceso admin
   useEffect(() => {
     if (clickCount === 3) {
       navigate('/admin');
       setClickCount(0);
     }
-    
-    // Reset después de 2 segundos de inactividad
+
     const timer = setTimeout(() => setClickCount(0), 2000);
     return () => clearTimeout(timer);
   }, [clickCount, navigate]);
 
+  const handleCopy = async (text, label) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} copiado`);
+    } catch {
+      toast.error("No se pudo copiar");
+    }
+  };
+
+  const handleOpenMaps = () => {
+    const encoded = encodeURIComponent(`${location.address}, ${location.city}`);
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encoded}`, "_blank");
+  };
+
   return (
-    <footer className="bg-gradient-to-br from-blue-600 via-blue-800 to-blue-600 text-white">
-      {/* Wave superior */}
+    <footer className="bg-gradient-to-br from-blue-600 via-blue-800 to-blue-600 text-white select-none">
+
+      {/* Wave */}
       <div className="relative">
         <svg
           className="w-full h-16"
@@ -74,8 +86,8 @@ const Footer = () => {
         </svg>
       </div>
 
-      {/* Confianza y seguridad */}
-      <div className="border-b border-white border-opacity-20 py-8">
+      {/* Confianza */}
+      <div className="border-b border-white border-opacity-20 py-8 select-none">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div className="flex flex-col items-center text-center">
@@ -83,16 +95,19 @@ const Footer = () => {
               <h4 className="font-semibold mb-1">Compra Segura</h4>
               <p className="text-sm opacity-80">Certificado SSL</p>
             </div>
+
             <div className="flex flex-col items-center text-center">
               <Award size={32} className="mb-2 text-cyan-400" />
               <h4 className="font-semibold mb-1">+15 años</h4>
               <p className="text-sm opacity-80">De experiencia</p>
             </div>
+
             <div className="flex flex-col items-center text-center">
               <Clock size={32} className="mb-2 text-cyan-400" />
               <h4 className="font-semibold mb-1">Atención 24/7</h4>
               <p className="text-sm opacity-80">Siempre disponibles</p>
             </div>
+
             <div className="flex flex-col items-center text-center">
               <CreditCard size={32} className="mb-2 text-cyan-400" />
               <h4 className="font-semibold mb-1">Financiación</h4>
@@ -102,14 +117,15 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* Enlaces principales */}
+      {/* Enlaces */}
       <div className="py-16">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-            {/* Columna 1: Logo y descripción */}
+
+            {/* Logo + descripción */}
             <div className="lg:col-span-2">
-              <div 
-                className="flex items-center gap-2 mb-4 cursor-pointer select-none"
+              <div
+                className="flex items-center gap-2 mb-4 cursor-pointer"
                 onClick={() => setClickCount(prev => prev + 1)}
               >
                 <img
@@ -119,14 +135,15 @@ const Footer = () => {
                 />
                 <h3 className="text-2xl font-bold">Ravello</h3>
               </div>
+
               <p className="text-sm opacity-90 leading-relaxed mb-4">
                 Agencia de viajes con más de 15 años conectando personas con sus
                 destinos soñados. Experiencia, confianza y las mejores ofertas
                 del mercado.
               </p>
 
-              {/* Redes sociales */}
-              <div className="flex gap-3">
+              {/* Redes */}
+              <div className="flex gap-3 select-none">
                 <a
                   target="_blank"
                   rel="noopener noreferrer"
@@ -162,8 +179,8 @@ const Footer = () => {
               </div>
             </div>
 
-            {/* Columna 2: Destinos */}
-            <div>
+            {/* Destinos */}
+            <div className="select-none">
               <h4 className="font-bold text-lg mb-4 relative inline-block">
                 Destinos
                 <span className="absolute bottom-0 left-0 w-12 h-0.5 bg-red-500"></span>
@@ -173,7 +190,7 @@ const Footer = () => {
                   <li key={idx}>
                     <a
                       href="#"
-                      className="text-sm opacity-90 hover:opacity-100 hover:text-cyan-400 transition-all inline-block hover:translate-x-1"
+                      className="text-sm opacity-90 hover:opacity-100 hover:text-cyan-400 transition-all inline-block hover:translate-x-1 select-text"
                     >
                       {dest}
                     </a>
@@ -182,8 +199,8 @@ const Footer = () => {
               </ul>
             </div>
 
-            {/* Columna 3: Servicios */}
-            <div>
+            {/* Servicios */}
+            <div className="select-none">
               <h4 className="font-bold text-lg mb-4 relative inline-block">
                 Servicios
                 <span className="absolute bottom-0 left-0 w-12 h-0.5 bg-red-500"></span>
@@ -193,7 +210,7 @@ const Footer = () => {
                   <li key={idx}>
                     <a
                       href="#"
-                      className="text-sm opacity-90 hover:opacity-100 hover:text-cyan-400 transition-all inline-block hover:translate-x-1"
+                      className="text-sm opacity-90 hover:opacity-100 hover:text-cyan-400 transition-all inline-block hover:translate-x-1 select-text"
                     >
                       {service}
                     </a>
@@ -202,8 +219,8 @@ const Footer = () => {
               </ul>
             </div>
 
-            {/* Columna 4: Empresa */}
-            <div>
+            {/* Empresa */}
+            <div className="select-none">
               <h4 className="font-bold text-lg mb-4 relative inline-block">
                 Empresa
                 <span className="absolute bottom-0 left-0 w-12 h-0.5 bg-red-500"></span>
@@ -213,7 +230,7 @@ const Footer = () => {
                   <li key={idx}>
                     <a
                       href="#"
-                      className="text-sm opacity-90 hover:opacity-100 hover:text-cyan-400 transition-all inline-block hover:translate-x-1"
+                      className="text-sm opacity-90 hover:opacity-100 hover:text-cyan-400 transition-all inline-block hover:translate-x-1 select-text"
                     >
                       {item}
                     </a>
@@ -225,70 +242,92 @@ const Footer = () => {
 
           {/* Contacto */}
           <div className="mt-12 pt-8 border-t border-white border-opacity-20">
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="flex items-start gap-3">
+
+              {/* Teléfono */}
+              <div className="flex items-start gap-3 select-none">
                 <div className="w-12 h-12 rounded-full bg-white bg-opacity-20 flex items-center justify-center flex-shrink-0">
                   <Phone size={20} color="black" />
                 </div>
                 <div>
                   <h5 className="font-semibold mb-1">Teléfono</h5>
-                  <a
-                    href={contact.phoneHref}
-                    className="text-sm opacity-90 hover:text-cyan-400"
+
+                  <button
+                    onClick={() => handleCopy(contact.phone, "Teléfono")}
+                    className="text-sm opacity-90 hover:text-cyan-400 cursor-pointer select-text"
                   >
                     {contact.phone}
-                  </a>
-                  <p className="text-xs opacity-70 mt-1">{contact.horario}</p>
+                  </button>
+
+                  <p className="text-xs opacity-70 mt-1 select-none">{contact.horario}</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3">
+              {/* Email */}
+              <div className="flex items-start gap-3 select-none">
                 <div className="w-12 h-12 rounded-full bg-white bg-opacity-20 flex items-center justify-center flex-shrink-0">
                   <Mail size={20} color="black" />
                 </div>
                 <div>
                   <h5 className="font-semibold mb-1">Email</h5>
-                  <a
-                    href={contact.emailHref}
-                    className="text-sm opacity-90 hover:text-cyan-400"
+
+                  <button
+                    onClick={() => handleCopy(contact.email, "Email")}
+                    className="text-sm opacity-90 hover:text-cyan-400 cursor-pointer select-text"
                   >
                     {contact.email}
-                  </a>
-                  <p className="text-xs opacity-70 mt-1">Respuesta en 24hs</p>
+                  </button>
+
+                  <p className="text-xs opacity-70 mt-1 select-none">Respuesta en 24hs</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3">
+              {/* Ubicación */}
+              <div className="flex items-start gap-3 select-none">
                 <div className="w-12 h-12 rounded-full bg-white bg-opacity-20 flex items-center justify-center flex-shrink-0">
                   <MapPin size={20} color="black" />
                 </div>
                 <div>
                   <h5 className="font-semibold mb-1">Oficinas</h5>
-                  <p className="text-sm opacity-90">{location.address}</p>
-                  <p className="text-xs opacity-70 mt-1">{location.city}</p>
+
+                  <button
+                    onClick={handleOpenMaps}
+                    className="text-sm opacity-90 hover:text-cyan-400 cursor-pointer select-text text-left"
+                  >
+                    {location.address}
+                  </button>
+
+                  <p className="text-xs opacity-70 mt-1 select-text cursor-pointer" onClick={handleOpenMaps}>
+                    {location.city}
+                  </p>
                 </div>
               </div>
+
             </div>
           </div>
+
         </div>
       </div>
 
-      {/* Copyright */}
+      {/* Derechos */}
       <div className="border-t border-white border-opacity-20 py-6">
         <div className="max-w-7xl mx-auto px-4">
+
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm opacity-80 text-center md:text-left">
+            <p className="text-sm opacity-80 text-center md:text-left select-text">
               © 2025 Ravello Turismo. Todos los derechos reservados. | Legajo
               EVyT N° 12345
             </p>
-            <div className="flex items-center gap-2 flex-wrap justify-center">
+
+            <div className="flex items-center gap-2 flex-wrap justify-center select-none">
               <span className="text-xs opacity-70">Aceptamos:</span>
               <div className="flex gap-2">
                 {["Visa", "Mastercard", "Amex", "Mercado Pago"].map(
                   (payment, idx) => (
                     <div
                       key={idx}
-                      className="px-3 py-1 rounded bg-blue-900 text-white text-xs font-semibold border border-white border-opacity-30"
+                      className="px-3 py-1 rounded bg-blue-900 text-white text-xs font-semibold border border-white border-opacity-30 select-none"
                     >
                       {payment}
                     </div>
@@ -296,9 +335,12 @@ const Footer = () => {
                 )}
               </div>
             </div>
+
           </div>
+
         </div>
       </div>
+
     </footer>
   );
 };

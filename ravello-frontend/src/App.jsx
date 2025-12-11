@@ -3,6 +3,7 @@ import "aos/dist/aos.css";
 import AOS from "aos";
 import { useEffect } from "react";
 import LoaderManager from "./components/ui/LoaderManager";
+import { Toaster } from "react-hot-toast";
 
 export default function App() {
   useEffect(() => {
@@ -11,6 +12,12 @@ export default function App() {
 
   return (
     <>
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 2000,
+        }}
+      />
       <LoaderManager />
       <AppRouter />
     </>
