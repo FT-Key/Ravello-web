@@ -7,10 +7,16 @@ export default function NotFound({
   linkTo = "/" 
 }) {
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center select-none">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-dark mb-4">{message}</h2>
-        <Link to={linkTo} className="text-primary-blue hover:underline">
+        <h2 className="text-2xl font-bold text-dark mb-4">
+          {message}
+        </h2>
+
+        <Link 
+          to={linkTo} 
+          className="text-primary-blue hover:underline cursor-pointer select-text"
+        >
           {linkText}
         </Link>
       </div>
