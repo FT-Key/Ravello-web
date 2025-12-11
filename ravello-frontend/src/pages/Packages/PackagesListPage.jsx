@@ -65,22 +65,21 @@ const PackageListPage = () => {
         apiFilters.precioBase = { $lte: Number(filters.maxPrecio) };
       }
 
-      // Filtro por duración mínima (ahora usando duracionTotal)
+      // Filtro por duración mínima
       if (filters.minDias) {
         apiFilters.duracionTotal = { $gte: Number(filters.minDias) };
       }
 
-      // Filtro por ciudad específica
+      // Filtro por ciudad
       if (filters.ciudad) {
         apiFilters["destinos.ciudad"] = { $regex: filters.ciudad, $options: "i" };
       }
 
-      // Filtro por pensión (régimen alimenticio)
+      // Filtro por pensión
       if (filters.pension) {
-        // Busca en hospedaje principal O en hospedajes de destinos
         apiFilters.$or = [
           { "hospedaje.gastronomia.pension": filters.pension },
-          { "destinos.hospedaje.gastronomia.pension": filters.pension }
+          { "destinos.hospedaje.gastronomia.pension": filters.pension },
         ];
       }
 
@@ -88,7 +87,7 @@ const PackageListPage = () => {
       if (filters.categoria) {
         apiFilters.$or = [
           { "hospedaje.categoria": filters.categoria },
-          { "destinos.hospedaje.categoria": filters.categoria }
+          { "destinos.hospedaje.categoria": filters.categoria },
         ];
       }
 
@@ -117,62 +116,66 @@ const PackageListPage = () => {
     }
   }, [filters]);
 
-  // Navegación SPA
   const handleView = (id) => {
     navigate(`/paquetes/${id}`);
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 no-select">
       <PackageCarousel />
 
       {/* Barra de filtros */}
-      <PackageFilterBar filters={filters} onChange={setFilters} />
+      <div className="no-select">
+        <PackageFilterBar filters={filters} onChange={setFilters} />
+      </div>
 
       {/* Filtros avanzados */}
-      <PackageFilters filters={filters} onChange={setFilters} />
+      <div className="no-select">
+        <PackageFilters filters={filters} onChange={setFilters} />
+      </div>
 
       {/* Resultados */}
       {loading ? (
-        <div className="text-center py-12">
+        <div className="text-center py-12 no-select">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           <p className="mt-4 text-gray-600">Cargando paquetes...</p>
         </div>
       ) : packages.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <div className="text-center py-12 bg-gray-50 rounded-lg no-select">
           <p className="text-gray-500 text-lg">
             No hay paquetes que coincidan con tu búsqueda.
           </p>
           <button
             onClick={() => setFilters({})}
-            className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+            className="mt-4 text-blue-600 hover:text-blue-700 font-medium no-select"
           >
             Limpiar todos los filtros
           </button>
         </div>
       ) : (
         <>
-          <div className="mb-4 text-sm text-gray-600">
+          <div className="mb-4 text-sm text-gray-600 no-select">
             Mostrando {packages.length} de {pagination.total || packages.length} paquetes
           </div>
 
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {packages.map((pkg) => (
-              <PackageCard key={pkg._id} pkg={pkg} onView={handleView} />
+              <div key={pkg._id} className="no-select">
+                <PackageCard pkg={pkg} onView={handleView} />
+              </div>
             ))}
           </div>
 
           {pagination.pages > 1 && (
-            <div className="flex justify-center mt-10 space-x-3">
+            <div className="flex justify-center mt-10 space-x-3 no-select">
               {Array.from({ length: pagination.pages }).map((_, i) => (
                 <button
                   key={i}
                   onClick={() => fetchPackages({ page: i + 1 })}
-                  className={`px-3 py-1 rounded ${
-                    pagination.page === i + 1
+                  className={`px-3 py-1 rounded no-select ${pagination.page === i + 1
                       ? "bg-blue-600 text-white"
                       : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                  }`}
+                    }`}
                 >
                   {i + 1}
                 </button>

@@ -15,7 +15,6 @@ import FeaturedDestinations from "../../components/Home/FeaturedDestinations";
 import PromotionsSection from "../../components/Home/PromotionsSection";
 import TestimonialsSection from "../../components/Home/TestimonialsSection";
 import NewsletterSection from "../../components/Home/NewsletterSection";
-
 // ==================== EXPERIENCES SECTION ====================
 const ExperiencesSection = () => {
   const experiences = [
@@ -50,16 +49,17 @@ const ExperiencesSection = () => {
   ];
 
   return (
-    <section className="py-20 bg-background-light">
+    <section className="py-20 bg-background-light no-select">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-12" data-aos="fade-up">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-primary-blue">
+        <div className="text-center mb-12 no-select" data-aos="fade-up">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-primary-blue no-select">
             Experiencias únicas
           </h2>
-          <p className="text-lg text-light">
+          <p className="text-lg text-light no-select">
             Elegí el tipo de viaje perfecto para vos
           </p>
         </div>
+
         <div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
           data-aos="zoom-in-up"
@@ -71,17 +71,18 @@ const ExperiencesSection = () => {
                 key={idx}
                 data-aos="fade-up"
                 data-aos-delay={idx * 150}
-                className="text-center p-6 rounded-3xl h-full bg-white experience-card cursor-pointer hover:shadow-xl"
+                className="text-center p-6 rounded-3xl h-full bg-white experience-card cursor-pointer hover:shadow-xl no-select"
               >
                 <div
-                  className={`w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center ${exp.bgClass}`}
+                  className={`w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center ${exp.bgClass} no-select`}
                 >
-                  <IconComponent size={40} className={exp.colorClass} />
+                  <IconComponent size={40} className={`${exp.colorClass} no-select`} />
                 </div>
-                <h3 className="text-xl font-bold mb-2 text-dark">
+
+                <h3 className="text-xl font-bold mb-2 text-dark no-select">
                   {exp.title}
                 </h3>
-                <p className="text-light">{exp.description}</p>
+                <p className="text-light no-select">{exp.description}</p>
               </div>
             );
           })}
@@ -117,16 +118,20 @@ const WhyRavello = () => {
   ];
 
   return (
-    <section className="py-20 bg-primary-blue">
+    <section className="py-20 bg-primary-blue no-select">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-12 text-white" data-aos="fade-up">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
+        <div
+          className="text-center mb-12 text-white no-select"
+          data-aos="fade-up"
+        >
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 no-select">
             ¿Por qué elegir Ravello?
           </h2>
-          <p className="text-lg opacity-90">
+          <p className="text-lg opacity-90 no-select">
             Tu próxima aventura merece el mejor servicio
           </p>
         </div>
+
         <div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
           data-aos="zoom-in-up"
@@ -138,13 +143,16 @@ const WhyRavello = () => {
                 key={idx}
                 data-aos="fade-up"
                 data-aos-delay={idx * 150}
-                className="text-center text-white"
+                className="text-center text-white no-select"
               >
-                <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center bg-white">
-                  <IconComponent size={40} className="text-primary-blue" />
+                <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center bg-white no-select">
+                  <IconComponent size={40} className="text-primary-blue no-select" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                <p className="opacity-90">{feature.description}</p>
+
+                <h3 className="text-xl font-bold mb-3 no-select">
+                  {feature.title}
+                </h3>
+                <p className="opacity-90 no-select">{feature.description}</p>
               </div>
             );
           })}

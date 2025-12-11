@@ -379,7 +379,7 @@ const seedData = async () => {
       }));
 
     await Featured.create({
-      tituloSeccion: "Destinos Destacados ✨",
+      tituloSeccion: "Destinos Destacados",
       descripcion:
         "Una selección especial de los destinos más populares y valorados por nuestros viajeros.",
       items: destacados,

@@ -32,7 +32,7 @@ const HeroSection = () => {
   };
 
   return (
-    <div ref={heroRef} className="hero-section">
+    <div ref={heroRef} className="hero-section no-select">
       {/* Background con imagen, gradiente y parallax */}
       <div className="hero-bg-wrapper">
         <div className="hero-bg" />
@@ -41,13 +41,14 @@ const HeroSection = () => {
 
       {/* Contenido principal */}
       <div className="hero-content" data-aos="fade-up">
+        
         {/* Título */}
-        <h1 className="hero-title">
+        <h1 className="hero-title no-select">
           Viajá donde siempre soñaste
         </h1>
 
         {/* Subtítulo */}
-        <p className="hero-subtitle">
+        <p className="hero-subtitle no-select">
           Paquetes exclusivos, precios increíbles, atención personalizada
         </p>
 
@@ -62,15 +63,15 @@ const HeroSection = () => {
               className="hero-search-input"
             />
             <button type="submit" className="hero-search-button">
-              <Search className="hero-search-icon" />
-              <span className="hero-search-text">Buscar</span>
+              <Search className="hero-search-icon no-select" />
+              <span className="hero-search-text no-select">Buscar</span>
             </button>
           </form>
         </div>
       </div>
 
       {/* Indicador de scroll */}
-      <div className="hero-scroll-indicator">
+      <div className="hero-scroll-indicator no-select">
         <div className="hero-scroll-mouse">
           <div className="hero-scroll-wheel" />
         </div>
