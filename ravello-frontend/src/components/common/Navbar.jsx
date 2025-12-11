@@ -68,10 +68,15 @@ const Navbar = ({ position = "sticky" }) => {
   };
 
   const getNavbarBackground = () => {
-    if (isScrolled) return "bg-white shadow-lg";
-    if (position === "fixed") return "bg-transparent";
-    return "bg-black/90 backdrop-blur-md border-b border-black/60";
-  };
+  if (isScrolled)
+    return "bg-white/20 backdrop-blur-xl border border-white/10 shadow-lg";
+
+  if (position === "fixed")
+    return "bg-transparent";
+
+  return "bg-black/90 backdrop-blur-md border-b border-black/60";
+};
+
 
   return (
     <nav className={`${position} top-0 left-0 right-0 z-50 min-h-[115px] transition-all duration-500`}>
