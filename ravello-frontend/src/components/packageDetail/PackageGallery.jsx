@@ -14,7 +14,7 @@ export default function PackageGallery({ pkg, selectedImage, setSelectedImage })
     return (
       <span
         key={etiqueta}
-        className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
+        className={`px-3 py-1 rounded-full text-xs font-semibold uppercase no-select ${
           styles[etiqueta] || "bg-gray-500 text-white"
         }`}
       >
@@ -31,10 +31,11 @@ export default function PackageGallery({ pkg, selectedImage, setSelectedImage })
   ];
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-8 no-select">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 no-select">
+
         {/* Imagen principal */}
-        <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden">
+        <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden no-select">
           <img
             src={allImages[selectedImage]?.url || "/placeholder-package.jpg"}
             alt={pkg.nombre}
@@ -42,14 +43,14 @@ export default function PackageGallery({ pkg, selectedImage, setSelectedImage })
           />
 
           {pkg.etiquetas && pkg.etiquetas.length > 0 && (
-            <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+            <div className="absolute top-4 left-4 flex flex-wrap gap-2 no-select">
               {pkg.etiquetas.map(renderEtiqueta)}
             </div>
           )}
 
           {pkg.categoria && (
-            <div className="absolute bottom-4 right-4">
-              <span className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-dark capitalize">
+            <div className="absolute bottom-4 right-4 no-select">
+              <span className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-dark capitalize no-select">
                 {pkg.categoria}
               </span>
             </div>
@@ -71,11 +72,12 @@ export default function PackageGallery({ pkg, selectedImage, setSelectedImage })
               <img
                 src={img.url}
                 alt={img.descripcion || `${pkg.nombre} ${idx + 1}`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover no-select"
               />
             </div>
           ))}
         </div>
+
       </div>
     </div>
   );

@@ -19,7 +19,7 @@ export default function PackageBookingSidebar({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
+    <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-24 select-none">
       {/* Precio */}
       <div className="mb-6">
         <p className="text-sm text-light mb-1">Precio desde</p>
