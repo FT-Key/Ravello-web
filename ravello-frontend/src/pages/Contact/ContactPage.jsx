@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Send, MapPin, Plane, Sparkles, CheckCircle2, Mail, User, Phone, MessageSquare, Compass } from "lucide-react";
+import './ContactPage.css'
 
 export default function ContactForm() {
   const [formData, setFormData] = useState({
@@ -76,7 +77,7 @@ export default function ContactForm() {
   };
 
   return (
-    <div className="no-select relative w-full min-h-screen py-20 px-4 overflow-hidden bg-gradient-to-br from-[#F7F7F7] via-[#FFFFFF] to-[#F5E0B3]">
+    <div className="no-select fade-top-bottom relative w-full min-h-screen py-20 px-4 overflow-hidden bg-gradient-to-br from-[#F7F7F7] via-[#FFFFFF] to-[#F5E0B3]">
       
       {/* Imagen de fondo con overlay */}
       <div className="absolute inset-0 opacity-5">
@@ -370,35 +371,6 @@ export default function ContactForm() {
 
 
       </div>
-
-      <style>{`
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px) rotate(0deg);
-          }
-          50% {
-            transform: translateY(-30px) rotate(10deg);
-          }
-        }
-        
-        @keyframes shimmer {
-          0% {
-            background-position: 200% center;
-          }
-          100% {
-            background-position: -200% center;
-          }
-        }
-        
-        @keyframes bounce {
-          0%, 100% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.1);
-          }
-        }
-      `}</style>
     </div>
   );
 }
