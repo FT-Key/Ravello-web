@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 
 export default function AboutUsPage() {
   const [activeFounder, setActiveFounder] = useState(0);
@@ -37,23 +36,23 @@ export default function AboutUsPage() {
       </div>
 
       {/* Hero Section con glassmorphism */}
-      <section className="relative min-h-screen flex items-center justify-center px-6 py-20">
+      <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
         {/* Decorative circles */}
-        <div className="absolute top-20 left-10 w-72 h-72 rounded-full opacity-20 blur-3xl"
+        <div className="absolute top-10 sm:top-20 left-5 sm:left-10 w-48 h-48 sm:w-64 sm:h-64 md:w-72 md:h-72 rounded-full opacity-20 blur-3xl"
           style={{ background: 'var(--color-primary-blue)' }}></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full opacity-15 blur-3xl"
+        <div className="absolute bottom-10 sm:bottom-20 right-5 sm:right-10 w-56 h-56 sm:w-72 sm:h-72 md:w-96 md:h-96 rounded-full opacity-15 blur-3xl"
           style={{ background: 'var(--color-secondary-cyan)' }}></div>
 
-        <div className="max-w-5xl mx-auto relative z-10">
-          <div className="backdrop-blur-xl bg-white/40 rounded-3xl p-12 border border-white/50 shadow-2xl">
-            <div className="inline-block px-4 py-2 rounded-full mb-6"
+        <div className="max-w-5xl mx-auto relative z-10 w-full">
+          <div className="backdrop-blur-xl bg-white/40 rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 lg:p-12 border border-white/50 shadow-2xl">
+            <div className="inline-block px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-6"
               style={{ backgroundColor: 'var(--color-secondary-sand)' }}>
-              <span className="text-sm font-semibold" style={{ color: 'var(--color-primary-blue)' }}>
+              <span className="text-xs sm:text-sm font-semibold" style={{ color: 'var(--color-primary-blue)' }}>
                 Desde 2018
               </span>
             </div>
 
-            <h1 className="text-6xl font-bold mb-6 leading-tight"
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight"
               style={{ color: 'var(--color-text-dark)' }}>
               Ravello:<br />
               <span style={{ color: 'var(--color-primary-blue)' }}>Administramos</span>
@@ -61,7 +60,7 @@ export default function AboutUsPage() {
               <span style={{ color: 'var(--color-primary-red)' }}>Buenos momentos.</span>
             </h1>
 
-            <p className="text-xl leading-relaxed mb-8"
+            <p className="text-base sm:text-lg md:text-xl leading-relaxed mb-6 sm:mb-8"
               style={{ color: 'var(--color-text-light)' }}>
               Somos más que una agencia de viajes. Somos arquitectos de experiencias,
               diseñadores de momentos inolvidables y tu aliado perfecto para convertir
@@ -72,26 +71,26 @@ export default function AboutUsPage() {
       </section>
 
       {/* Story Section - Layout envolvente */}
-      <section className="relative py-32 px-6">
+      <section className="relative py-16 sm:py-20 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8">
         <div className="absolute inset-0 bg-light-fade"></div>
 
         <div className="max-w-7xl mx-auto relative">
           {/* Left flowing shape */}
-          <div className="absolute -left-32 top-0 w-96 h-full rounded-r-full opacity-30"
+          <div className="absolute -left-32 top-0 w-96 h-full rounded-r-full opacity-30 hidden lg:block"
             style={{ background: `linear-gradient(90deg, var(--color-secondary-sand), transparent)` }}>
           </div>
 
           {/* Right flowing shape */}
-          <div className="absolute -right-32 top-40 w-96 h-96 rounded-l-full opacity-20"
+          <div className="absolute -right-32 top-40 w-96 h-96 rounded-l-full opacity-20 hidden lg:block"
             style={{ background: `linear-gradient(-90deg, var(--color-secondary-cyan), transparent)` }}>
           </div>
 
-          <div className="relative z-10 grid md:grid-cols-2 gap-16 items-center">
+          <div className="relative z-10 grid md:grid-cols-2 gap-8 sm:gap-10 md:gap-12 lg:gap-16 items-center">
             <div>
-              <h2 className="text-5xl font-bold mb-6" style={{ color: 'var(--color-primary-blue)' }}>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6" style={{ color: 'var(--color-primary-blue)' }}>
                 Nuestra Historia
               </h2>
-              <div className="space-y-6 text-lg leading-relaxed" style={{ color: 'var(--color-text-light)' }}>
+              <div className="space-y-4 sm:space-y-6 text-sm sm:text-base md:text-lg leading-relaxed" style={{ color: 'var(--color-text-light)' }}>
                 <p>
                   Todo comenzó en 2018, cuando tres apasionados del viaje se encontraron en una pequeña
                   cafetería de Buenos Aires. Isabella, Marco y Sofia compartían una frustración común:
@@ -112,8 +111,8 @@ export default function AboutUsPage() {
               </div>
             </div>
 
-            <div className="relative">
-              <div className="aspect-square rounded-3xl overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-500">
+            <div className="relative mt-8 md:mt-0">
+              <div className="aspect-square rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-500">
                 <img
                   src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&h=800&fit=crop"
                   alt="Equipo Ravello"
@@ -121,7 +120,7 @@ export default function AboutUsPage() {
                 />
               </div>
               {/* Decorative accent */}
-              <div className="absolute -bottom-6 -right-6 w-40 h-40 rounded-3xl -z-10"
+              <div className="absolute -bottom-4 sm:-bottom-6 -right-4 sm:-right-6 w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-2xl sm:rounded-3xl -z-10"
                 style={{ backgroundColor: 'var(--color-primary-red)', opacity: 0.3 }}></div>
             </div>
           </div>
@@ -129,14 +128,14 @@ export default function AboutUsPage() {
       </section>
 
       {/* Values Section - Cards envolventes */}
-      <section className="relative py-32 px-6">
+      <section className="relative py-16 sm:py-20 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-5xl font-bold text-center mb-20"
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-10 sm:mb-14 md:mb-16 lg:mb-20"
             style={{ color: 'var(--color-primary-blue)' }}>
             Lo que nos define
           </h2>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {[
               {
                 icon: "✈️",
@@ -162,13 +161,13 @@ export default function AboutUsPage() {
                     filter: 'blur(20px)'
                   }}></div>
 
-                <div className="relative backdrop-blur-sm bg-white/80 rounded-2xl p-8 border border-gray-100 
+                <div className="relative backdrop-blur-sm bg-white/80 rounded-xl sm:rounded-2xl p-6 sm:p-8 border border-gray-100 
                               transform group-hover:-translate-y-2 transition-all duration-300 shadow-lg">
-                  <div className="text-5xl mb-4">{value.icon}</div>
-                  <h3 className="text-2xl font-bold mb-4" style={{ color: 'var(--color-primary-blue)' }}>
+                  <div className="text-4xl sm:text-5xl mb-3 sm:mb-4">{value.icon}</div>
+                  <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4" style={{ color: 'var(--color-primary-blue)' }}>
                     {value.title}
                   </h3>
-                  <p className="leading-relaxed" style={{ color: 'var(--color-text-light)' }}>
+                  <p className="text-sm sm:text-base leading-relaxed" style={{ color: 'var(--color-text-light)' }}>
                     {value.desc}
                   </p>
                 </div>
@@ -179,19 +178,19 @@ export default function AboutUsPage() {
       </section>
 
       {/* Founders Section - Interactive */}
-      <section className="relative py-32 px-6">
+      <section className="relative py-16 sm:py-20 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8">
         <div className="absolute inset-0 bg-sand-fade"></div>
 
         <div className="max-w-7xl mx-auto relative z-10">
-          <h2 className="text-5xl font-bold text-center mb-6"
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-3 sm:mb-4 md:mb-6"
             style={{ color: 'var(--color-primary-blue)' }}>
             Conoce a nuestros fundadores
           </h2>
-          <p className="text-center text-xl mb-16" style={{ color: 'var(--color-text-light)' }}>
+          <p className="text-center text-base sm:text-lg md:text-xl mb-10 sm:mb-12 md:mb-16 px-4" style={{ color: 'var(--color-text-light)' }}>
             Las mentes detrás de cada experiencia inolvidable
           </p>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-10 md:mb-12">
             {founders.map((founder, idx) => (
               <button
                 key={idx}
@@ -199,7 +198,7 @@ export default function AboutUsPage() {
                 className={`relative group transition-all duration-300 ${activeFounder === idx ? 'scale-105' : 'scale-100 opacity-60 hover:opacity-100'
                   }`}
               >
-                <div className="relative overflow-hidden rounded-2xl shadow-xl">
+                <div className="relative overflow-hidden rounded-xl sm:rounded-2xl shadow-xl">
                   <img
                     src={founder.image}
                     alt={founder.name}
@@ -210,13 +209,13 @@ export default function AboutUsPage() {
                     : 'bg-gradient-to-t from-black/60 to-transparent'
                     }`}></div>
 
-                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                    <h3 className="text-2xl font-bold mb-1">{founder.name}</h3>
-                    <p className="text-sm opacity-90">{founder.role}</p>
+                  <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 md:p-6 text-white">
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-1">{founder.name}</h3>
+                    <p className="text-xs sm:text-sm opacity-90">{founder.role}</p>
                   </div>
 
                   {activeFounder === idx && (
-                    <div className="absolute top-4 right-4 w-3 h-3 rounded-full animate-pulse"
+                    <div className="absolute top-3 sm:top-4 right-3 sm:right-4 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full animate-pulse"
                       style={{ backgroundColor: 'var(--color-primary-red)' }}></div>
                   )}
                 </div>
@@ -225,8 +224,8 @@ export default function AboutUsPage() {
           </div>
 
           {/* Founder story card */}
-          <div className="backdrop-blur-xl bg-white/60 rounded-3xl p-10 border border-white/50 shadow-2xl max-w-4xl mx-auto">
-            <p className="text-xl leading-relaxed text-center"
+          <div className="backdrop-blur-xl bg-white/60 rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 border border-white/50 shadow-2xl max-w-4xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl leading-relaxed text-center"
               style={{ color: 'var(--color-text-dark)' }}>
               {founders[activeFounder].story}
             </p>
@@ -235,9 +234,9 @@ export default function AboutUsPage() {
       </section>
 
       {/* Stats Section */}
-      <section className="relative py-32 px-6">
+      <section className="relative py-16 sm:py-20 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 md:gap-10">
             {[
               { number: "50K+", label: "Viajeros Felices" },
               { number: "127", label: "Destinos" },
@@ -249,12 +248,12 @@ export default function AboutUsPage() {
                   <div className="absolute inset-0 blur-2xl opacity-30 group-hover:opacity-50 transition-opacity"
                     style={{ backgroundColor: idx % 2 === 0 ? 'var(--color-primary-blue)' : 'var(--color-primary-red)' }}>
                   </div>
-                  <div className="relative text-6xl font-bold mb-3"
+                  <div className="relative text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-2 sm:mb-3"
                     style={{ color: idx % 2 === 0 ? 'var(--color-primary-blue)' : 'var(--color-primary-red)' }}>
                     {stat.number}
                   </div>
                 </div>
-                <div className="text-lg font-medium" style={{ color: 'var(--color-text-light)' }}>
+                <div className="text-sm sm:text-base md:text-lg font-medium px-2" style={{ color: 'var(--color-text-light)' }}>
                   {stat.label}
                 </div>
               </div>
@@ -264,23 +263,22 @@ export default function AboutUsPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="relative py-32 px-6">
+      <section className="relative py-16 sm:py-20 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="backdrop-blur-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-3xl p-16 border border-white/50 shadow-2xl">
-            <h2 className="text-5xl font-bold mb-6" style={{ color: 'var(--color-primary-blue)' }}>
+          <div className="backdrop-blur-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-2xl sm:rounded-3xl p-8 sm:p-10 md:p-12 lg:p-16 border border-white/50 shadow-2xl">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-5 md:mb-6" style={{ color: 'var(--color-primary-blue)' }}>
               Tu próxima aventura comienza aquí
             </h2>
-            <p className="text-xl mb-10" style={{ color: 'var(--color-text-light)' }}>
+            <p className="text-base sm:text-lg md:text-xl mb-8 sm:mb-9 md:mb-10 px-2" style={{ color: 'var(--color-text-light)' }}>
               Déjanos diseñar el viaje perfecto para ti. Sin complicaciones, sin estrés, solo experiencias increíbles.
             </p>
-            <Link
-              to="/paquetes"
-              className="px-10 py-4 rounded-full text-white text-lg font-semibold 
+            <a
+              href="/paquetes"
+              className="inline-block px-6 sm:px-8 md:px-10 py-3 sm:py-3.5 md:py-4 rounded-full text-white text-sm sm:text-base md:text-lg font-semibold 
              transform hover:scale-105 transition-transform duration-300 shadow-xl"
-              style={{ backgroundColor: 'var(--color-primary-red)' }}
-            >
+              style={{ backgroundColor: 'var(--color-primary-red)' }}>
               Planifica tu viaje →
-            </Link>
+            </a>
 
           </div>
         </div>
