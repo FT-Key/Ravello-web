@@ -5,11 +5,7 @@ import './NotFound'
 export default function NotFoundPage() {
   return (
     <div 
-      className="relative min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 overflow-hidden select-none"
-      style={{
-        WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
-        maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)'
-      }}
+      className="relative min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 overflow-hidden select-none fade-top-bottom"
     >
       
       {/* Animated Background Elements */}
