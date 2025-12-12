@@ -11,6 +11,7 @@ const Navbar = ({ position = "sticky" }) => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [mobileDropdowns, setMobileDropdowns] = useState({});
   const [destinos, setDestinos] = useState([]);
+  const [topbarClickable, setTopbarClickable] = useState(true);
 
   useEffect(() => {
     const fetchDestinos = async () => {
@@ -28,6 +29,15 @@ const Navbar = ({ position = "sticky" }) => {
     };
     fetchDestinos();
   }, []);
+
+  useEffect(() => {
+    if (!isScrolled) {
+      setTopbarClickable(false);
+      const timer = setTimeout(() => setTopbarClickable(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isScrolled]);
+
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 0);
@@ -77,8 +87,7 @@ const Navbar = ({ position = "sticky" }) => {
 
         {/* Topbar */}
         <div
-          className={`transition-all duration-500 overflow-hidden ${isScrolled ? "max-h-0 opacity-0" : "max-h-24 opacity-100"
-            }`}
+          className={`transition-all duration-500 overflow-hidden ${isScrolled ? "max-h-0 opacity-0" : "max-h-24 opacity-100"} ${topbarClickable ? "pointer-events-auto" : "pointer-events-none"}`}
         >
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex justify-between items-center text-sm py-2 border-b border-white border-opacity-20 min-h-[56px]">
@@ -151,8 +160,8 @@ const Navbar = ({ position = "sticky" }) => {
                     <>
                       <button
                         className={`px-4 py-2 font-medium transition-all rounded-lg flex items-center gap-1 no-select ${isScrolled
-                            ? "text-dark hover:text-black hover:bg-background-light"
-                            : "text-white hover:text-black hover:bg-white hover:bg-opacity-10"
+                          ? "text-dark hover:text-black hover:bg-background-light"
+                          : "text-white hover:text-black hover:bg-white hover:bg-opacity-10"
                           }`}
                       >
                         {item.label}
