@@ -218,8 +218,8 @@ export default function PromotionsSection() {
               >
                 <div
                   className={`relative rounded-3xl overflow-hidden shadow-2xl transition-all duration-700 ease-in-out group ${isHovered && window.innerWidth >= 1024
-                      ? "shadow-[0_20px_80px_rgba(28,119,183,0.4)]"
-                      : ""
+                    ? "shadow-[0_20px_80px_rgba(28,119,183,0.4)]"
+                    : ""
                     }`}
                   style={{
                     height:
@@ -240,8 +240,8 @@ export default function PromotionsSection() {
 
                   <div
                     className={`absolute inset-0 transition-all duration-700 ease-in-out ${isHovered && window.innerWidth >= 1024
-                        ? "bg-gradient-to-r from-black/85 via-black/70 to-black/50"
-                        : "bg-gradient-to-t from-black/80 via-black/50 to-transparent"
+                      ? "bg-gradient-to-r from-black/85 via-black/70 to-black/50"
+                      : "bg-gradient-to-t from-black/80 via-black/50 to-transparent"
                       }`}
                   />
 
@@ -259,14 +259,14 @@ export default function PromotionsSection() {
 
                   <div
                     className={`relative z-10 h-full p-6 md:p-8 lg:p-10 text-white transition-all duration-700 ease-in-out ${isHovered && window.innerWidth >= 1024
-                        ? "flex flex-col lg:flex-row lg:items-center lg:justify-between"
-                        : "flex flex-col justify-end"
+                      ? "flex flex-col lg:flex-row lg:items-center lg:justify-between"
+                      : "flex flex-col justify-end"
                       }`}
                   >
                     <div
                       className={`transition-all duration-700 ease-in-out ${isHovered && window.innerWidth >= 1024
-                          ? "lg:max-w-2xl"
-                          : "w-full"
+                        ? "lg:max-w-2xl"
+                        : "w-full"
                         }`}
                     >
                       {badge && (
@@ -278,18 +278,21 @@ export default function PromotionsSection() {
                       )}
 
                       <h3
-                        className={`font-bold mb-3 transition-all duration-700 ease-in-out no-select ${isHovered && window.innerWidth >= 1024
-                            ? "text-4xl lg:text-5xl"
-                            : "text-2xl md:text-3xl"
-                          }`}
+                        className={`font-bold mb-3 transition-all duration-700 ease-in-out no-select break-words break-all ${isHovered && window.innerWidth >= 1024 ? "text-4xl lg:text-5xl" : "text-2xl md:text-3xl"}`}
+                        style={{
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden"
+                        }}
                       >
                         {pkg.nombre}
                       </h3>
 
                       <p
                         className={`text-base md:text-lg mb-4 transition-all duration-700 ease-in-out no-select ${isHovered && window.innerWidth >= 1024
-                            ? "lg:text-xl"
-                            : ""
+                          ? "lg:text-xl"
+                          : ""
                           }`}
                         style={{
                           display: "-webkit-box",
@@ -352,8 +355,8 @@ export default function PromotionsSection() {
 
                       <button
                         className={`rounded-full px-6 md:px-8 py-2 md:py-3 text-sm md:text-base font-bold border-2 transition-all duration-300 no-select ${isHovered && window.innerWidth >= 1024
-                            ? "bg-primary-red border-primary-red text-white hover:bg-red-700 hover:border-red-700 shadow-xl"
-                            : "border-white bg-transparent text-white hover:bg-white hover:text-blue-900"
+                          ? "bg-primary-red border-primary-red text-white hover:bg-red-700 hover:border-red-700 shadow-xl"
+                          : "border-white bg-transparent text-white hover:bg-white hover:text-blue-900"
                           }`}
                       >
                         {isHovered && window.innerWidth >= 1024
