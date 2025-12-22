@@ -2,6 +2,13 @@
 import mongoose from 'mongoose';
 
 const paymentSchema = new mongoose.Schema({
+  // Número de pago único
+  numeroPago: {
+    type: String,
+    unique: true,  // ✅ Esto ya crea el índice automáticamente
+    required: true
+  },
+
   // Relación con reserva
   reserva: {
     type: mongoose.Schema.Types.ObjectId,
@@ -9,72 +16,200 @@ const paymentSchema = new mongoose.Schema({
     required: true
   },
 
-  // Monto
+  // 💰 MONTO
   monto: { type: Number, required: true, min: 0 },
   moneda: { type: String, enum: ['ARS', 'USD', 'EUR'], default: 'ARS' },
 
-  // Tipo de pago
+  // 🏷️ CLASIFICACIÓN DEL PAGO
   tipoPago: {
     type: String,
-    enum: ['senia', 'total', 'parcial', 'saldo'],
+    enum: ['senia', 'cuota', 'saldo', 'total'],
     required: true
   },
 
-  // Método de pago
+  // Cuota relacionada (si aplica)
+  numeroCuota: Number,
+
+  // 💳 MÉTODO DE PAGO
   metodoPago: {
     type: String,
-    enum: ['mercadopago', 'transferencia', 'efectivo', 'tarjeta'],
+    enum: ['mercadopago', 'efectivo', 'tarjeta_presencial', 'transferencia', 'cheque'],
     required: true
   },
 
-  // Estado del pago
+  // 📊 ESTADO DEL PAGO
   estado: {
     type: String,
-    enum: ['pendiente', 'aprobado', 'rechazado', 'cancelado', 'reembolsado'],
+    enum: ['pendiente', 'aprobado', 'rechazado', 'cancelado', 'reembolsado', 'en_revision'],
     default: 'pendiente'
   },
 
-  // Datos de MercadoPago
+  // ============================================
+  // 🛒 MERCADOPAGO (Checkout Pro)
+  // ============================================
   mercadopago: {
-    paymentId: String,          // ID del pago en MP
-    preferenceId: String,        // ID de la preferencia
-    merchantOrderId: String,     // ID de orden de comercio
-    externalReference: String,   // Referencia externa
-    status: String,              // approved, rejected, etc
-    statusDetail: String,        // Detalle del estado
-    paymentType: String,         // credit_card, debit_card, etc
-    installments: Number,        // Cuotas
-    transactionAmount: Number,   // Monto de la transacción
-    netReceivedAmount: Number,   // Monto neto recibido (después de comisiones)
+    // IDs de MercadoPago
+    preferenceId: String,        // ID de la preferencia creada
+    paymentId: String,            // ID del pago (cuando se completa)
+    merchantOrderId: String,      // ID de la orden
+    externalReference: String,    // Nuestra referencia (puede ser el numeroPago)
+
+    // Estado de MP
+    status: String,               // approved, rejected, pending, etc.
+    statusDetail: String,         // Detalles del estado
+
+    // Tipo de pago
+    paymentTypeId: String,        // credit_card, debit_card, ticket, etc.
+    paymentMethodId: String,      // visa, mastercard, rapipago, etc.
+
+    // Cuotas (si paga con tarjeta)
+    installments: Number,         // Cantidad de cuotas
+    installmentAmount: Number,    // Monto por cuota
+
+    // Montos
+    transactionAmount: Number,    // Monto de la transacción
+    netReceivedAmount: Number,    // Monto neto (después de comisiones MP)
+    totalPaidAmount: Number,      // Monto total pagado por el usuario
+
+    // Comisión de MercadoPago
+    feeDetails: [{
+      type: String,
+      amount: Number,
+      feePayer: String
+    }],
 
     // Datos del pagador
     payer: {
+      id: String,
       email: String,
+      firstName: String,
+      lastName: String,
       identification: {
         type: String,
+        number: String
+      },
+      phone: {
+        areaCode: String,
         number: String
       }
     },
 
-    // Fecha de pago
-    dateApproved: Date,
+    // Fechas
+    dateCreated: Date,            // Fecha de creación en MP
+    dateApproved: Date,           // Fecha de aprobación
+    dateLastUpdated: Date,        // Última actualización
 
-    // Webhook data
+    // URL para volver
+    backUrls: {
+      success: String,
+      failure: String,
+      pending: String
+    },
+
+    // Datos completos del webhook
     webhookData: mongoose.Schema.Types.Mixed
   },
 
-  // Datos de transferencia bancaria
-  transferencia: {
-    banco: String,
-    cbu: String,
-    alias: String,
-    comprobanteUrl: String,
-    fechaTransferencia: Date
+  // ============================================
+  // 💵 PAGO PRESENCIAL (efectivo/tarjeta en oficina)
+  // ============================================
+  presencial: {
+    // Método específico
+    metodo: {
+      type: String,
+      enum: ['efectivo', 'tarjeta_debito', 'tarjeta_credito', 'mixto']
+    },
+
+    // Si es tarjeta
+    tarjeta: {
+      tipo: { type: String, enum: ['debito', 'credito'] },
+      marca: String, // Visa, Mastercard, etc.
+      ultimos4Digitos: String,
+      cuotas: Number,
+      numeroAutorizacion: String,
+      numeroTerminal: String,
+      numeroLote: String
+    },
+
+    // Si es mixto
+    detalleMixto: [{
+      metodo: String,
+      monto: Number
+    }],
+
+    // Recibo
+    numeroRecibo: String,
+    fechaRecibo: Date,
+
+    // Cajero que procesó el pago
+    usuarioRecibio: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: function () {
+        return this.metodoPago !== 'mercadopago';
+      }
+    }
   },
 
-  // Comprobante/Recibo
-  comprobanteUrl: String,
-  numeroComprobante: String,
+  // ============================================
+  // 🏦 TRANSFERENCIA BANCARIA
+  // ============================================
+  transferencia: {
+    banco: String,
+    tipoCuenta: { type: String, enum: ['CA', 'CC'] },
+    numeroCuenta: String,
+    cbu: String,
+    alias: String,
+    titular: String,
+
+    // Datos del comprobante
+    numeroComprobante: String,
+    fechaTransferencia: Date,
+    comprobanteUrl: String, // URL del comprobante subido
+
+    verificado: { type: Boolean, default: false },
+    fechaVerificacion: Date,
+    usuarioVerificacion: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  },
+
+  // ============================================
+  // 🧾 COMPROBANTE GENERAL
+  // ============================================
+  comprobante: {
+    tipo: {
+      type: String,
+      enum: ['factura_a', 'factura_b', 'factura_c', 'recibo', 'ticket', 'ninguno'],
+      default: 'recibo'
+    },
+    numero: String,
+    url: String,
+    fechaEmision: Date
+  },
+
+  // ============================================
+  // 🔄 REEMBOLSO
+  // ============================================
+  reembolso: {
+    realizado: { type: Boolean, default: false },
+    monto: Number,
+    fecha: Date,
+    motivo: String,
+    metodo: String, // mismo_medio, efectivo, transferencia
+    mercadopagoRefundId: String,
+    usuarioAutorizo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  },
+
+  // ============================================
+  // 📝 OBSERVACIONES
+  // ============================================
+  notas: String,
+  notasInternas: String,
 
   // Auditoría
   usuarioRegistro: {
@@ -82,21 +217,34 @@ const paymentSchema = new mongoose.Schema({
     ref: 'User'
   },
 
-  // Reembolso
-  reembolso: {
-    realizado: { type: Boolean, default: false },
-    monto: Number,
-    fecha: Date,
-    motivo: String,
-    mercadopagoRefundId: String
-  },
-
-  notas: String
+  fechaRegistro: { type: Date, default: Date.now }
 },
   { timestamps: true });
 
-// Índices
-paymentSchema.index({ reserva: 1 });
+// ============================================
+// MIDDLEWARE: Generar número de pago
+// ============================================
+paymentSchema.pre('save', async function (next) {
+  if (!this.numeroPago) {
+    const count = await mongoose.model('Payment').countDocuments();
+    const fecha = new Date();
+    const year = fecha.getFullYear().toString().slice(-2);
+    const month = (fecha.getMonth() + 1).toString().padStart(2, '0');
+    const numero = (count + 1).toString().padStart(5, '0');
+
+    this.numeroPago = `PAG-${year}${month}-${numero}`;
+  }
+  next();
+});
+
+// ============================================
+// ÍNDICES
+// ============================================
+// ❌ ELIMINADO: paymentSchema.index({ numeroPago: 1 }); 
+// ↑ Ya está cubierto por unique: true en la definición del campo
+
+paymentSchema.index({ reserva: 1, estado: 1 });
+paymentSchema.index({ metodoPago: 1 });
 paymentSchema.index({ estado: 1 });
 paymentSchema.index({ 'mercadopago.paymentId': 1 });
 paymentSchema.index({ createdAt: -1 });
