@@ -1,79 +1,62 @@
 import React, { useState } from "react";
+import { useForm } from "react-hook-form";
 import { Send, MapPin, Plane, Sparkles, CheckCircle2, Mail, User, Phone, MessageSquare, Compass } from "lucide-react";
-import './ContactPage.css'
+import clientAxios from "../../api/axiosConfig";
+import './ContactPage.css';
 
 export default function ContactForm() {
-  const [formData, setFormData] = useState({
-    nombre: "",
-    email: "",
-    telefono: "",
-    asunto: "",
-    mensaje: ""
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    defaultValues: {
+      nombre: "",
+      email: "",
+      telefono: "",
+      asunto: "",
+      mensaje: ""
+    }
   });
-  const [errors, setErrors] = useState({});
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [submitError, setSubmitError] = useState("");
   const [focusedField, setFocusedField] = useState(null);
 
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.nombre.trim()) {
-      newErrors.nombre = "El nombre es obligatorio";
-    }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = "El email es obligatorio";
-    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      newErrors.email = "Email inválido";
-    }
-    
-    if (formData.telefono && !/^\+?[0-9\s\-]{7,15}$/.test(formData.telefono)) {
-      newErrors.telefono = "Teléfono inválido";
-    }
-    
-    if (!formData.mensaje.trim()) {
-      newErrors.mensaje = "El mensaje es obligatorio";
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    setErrorMsg("");
-    
-    if (!validateForm()) return;
-    
+  const onSubmit = async (data) => {
     setIsSubmitting(true);
-    
+    setSubmitError("");
+
     try {
-      // Simulación de envío - reemplazar con tu API real
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      setSubmitted(true);
-      setFormData({
-        nombre: "",
-        email: "",
-        telefono: "",
-        asunto: "",
-        mensaje: ""
+      const response = await clientAxios.post("/contact", {
+        nombre: data.nombre,
+        email: data.email,
+        telefono: data.telefono || undefined,
+        asunto: data.asunto || "Consulta general",
+        mensaje: data.mensaje
       });
+
+      if (response.data.success) {
+        setSubmitted(true);
+        reset();
+      }
     } catch (error) {
-      setErrorMsg("Ocurrió un error al enviar el mensaje.");
+      console.error("Error al enviar el mensaje:", error);
+      setSubmitError(
+        error.response?.data?.message || 
+        "Ocurrió un error al enviar el mensaje. Por favor, intenta nuevamente."
+      );
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleNewMessage = () => {
+    setSubmitted(false);
+    setSubmitError("");
+    reset();
   };
 
   return (
@@ -88,13 +71,13 @@ export default function ContactForm() {
       </div>
       
       {/* Elementos decorativos animados */}
-      <div className="absolute top-10 left-[5%] opacity-10 pointer-events-none">
+      <div className="absolute top-10 left-[5%] opacity-10 pointer-events-none hidden lg:block">
         <Plane className="w-40 h-40 text-[#1C77B7]" style={{ animation: 'float 8s ease-in-out infinite' }} />
       </div>
-      <div className="absolute top-32 right-[8%] opacity-10 pointer-events-none">
+      <div className="absolute top-32 right-[8%] opacity-10 pointer-events-none hidden lg:block">
         <Compass className="w-32 h-32 text-[#34B0D9]" style={{ animation: 'float 10s ease-in-out infinite 2s' }} />
       </div>
-      <div className="absolute bottom-20 right-[10%] opacity-10 pointer-events-none">
+      <div className="absolute bottom-20 right-[10%] opacity-10 pointer-events-none hidden lg:block">
         <MapPin className="w-36 h-36 text-[#E33D35]" style={{ animation: 'float 9s ease-in-out infinite 1s' }} />
       </div>
       
@@ -149,15 +132,22 @@ export default function ContactForm() {
               Nos pondremos en contacto contigo muy pronto para comenzar a planificar tu viaje perfecto.
             </p>
             <button
-              onClick={() => setSubmitted(false)}
+              onClick={handleNewMessage}
               className="px-10 py-4 rounded-full bg-gradient-to-r from-[#1C77B7] to-[#34B0D9] text-white font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all"
             >
               Enviar otro mensaje
             </button>
           </div>
         ) : (
-          <div className="backdrop-blur-2xl bg-gradient-to-br from-white/85 to-white/70 border-2 border-white/90 shadow-2xl rounded-3xl p-8 md:p-12 space-y-8">
+          <form onSubmit={handleSubmit(onSubmit)} className="backdrop-blur-2xl bg-gradient-to-br from-white/85 to-white/70 border-2 border-white/90 shadow-2xl rounded-3xl p-8 md:p-12 space-y-8">
             
+            {/* Error general */}
+            {submitError && (
+              <div className="p-4 rounded-2xl bg-[#E33D35]/10 border-2 border-[#E33D35]/30 backdrop-blur-sm">
+                <p className="text-[#E33D35] text-sm font-bold">{submitError}</p>
+              </div>
+            )}
+
             {/* Grid de campos */}
             <div className="grid md:grid-cols-2 gap-6">
               
@@ -170,15 +160,25 @@ export default function ContactForm() {
                 <div className="relative">
                   <input
                     type="text"
-                    name="nombre"
-                    value={formData.nombre}
-                    onChange={handleChange}
+                    {...register("nombre", {
+                      required: "El nombre es obligatorio",
+                      minLength: {
+                        value: 2,
+                        message: "Debe tener al menos 2 caracteres"
+                      },
+                      maxLength: {
+                        value: 100,
+                        message: "Máximo 100 caracteres"
+                      }
+                    })}
                     onFocus={() => setFocusedField('nombre')}
                     onBlur={() => setFocusedField(null)}
                     placeholder="Juan Pérez"
                     className={`w-full px-5 py-4 rounded-2xl border-2 text-[#333333] placeholder-[#999999] shadow-md focus:shadow-xl focus:outline-none transition-all duration-300 ${
                       focusedField === 'nombre'
                         ? 'border-[#1C77B7] bg-white scale-[1.02]'
+                        : errors.nombre
+                        ? 'border-[#E33D35] bg-[#F7F7F7]/50'
                         : 'border-[#DDDDDD] bg-[#F7F7F7]/50'
                     }`}
                   />
@@ -189,7 +189,7 @@ export default function ContactForm() {
                 {errors.nombre && (
                   <p className="text-[#E33D35] text-sm mt-2 flex items-center gap-1 font-medium">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#E33D35]" />
-                    {errors.nombre}
+                    {errors.nombre.message}
                   </p>
                 )}
               </div>
@@ -203,15 +203,21 @@ export default function ContactForm() {
                 <div className="relative">
                   <input
                     type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
+                    {...register("email", {
+                      required: "El email es obligatorio",
+                      pattern: {
+                        value: /^\S+@\S+\.\S+$/,
+                        message: "Email inválido"
+                      }
+                    })}
                     onFocus={() => setFocusedField('email')}
                     onBlur={() => setFocusedField(null)}
                     placeholder="juan@ejemplo.com"
                     className={`w-full px-5 py-4 rounded-2xl border-2 text-[#333333] placeholder-[#999999] shadow-md focus:shadow-xl focus:outline-none transition-all duration-300 ${
                       focusedField === 'email'
                         ? 'border-[#1C77B7] bg-white scale-[1.02]'
+                        : errors.email
+                        ? 'border-[#E33D35] bg-[#F7F7F7]/50'
                         : 'border-[#DDDDDD] bg-[#F7F7F7]/50'
                     }`}
                   />
@@ -222,7 +228,7 @@ export default function ContactForm() {
                 {errors.email && (
                   <p className="text-[#E33D35] text-sm mt-2 flex items-center gap-1 font-medium">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#E33D35]" />
-                    {errors.email}
+                    {errors.email.message}
                   </p>
                 )}
               </div>
@@ -236,15 +242,20 @@ export default function ContactForm() {
                 <div className="relative">
                   <input
                     type="text"
-                    name="telefono"
-                    value={formData.telefono}
-                    onChange={handleChange}
+                    {...register("telefono", {
+                      pattern: {
+                        value: /^\+?[0-9\s\-]{7,15}$/,
+                        message: "Teléfono inválido (7-15 dígitos)"
+                      }
+                    })}
                     onFocus={() => setFocusedField('telefono')}
                     onBlur={() => setFocusedField(null)}
                     placeholder="+54 9 381 000 0000"
                     className={`w-full px-5 py-4 rounded-2xl border-2 text-[#333333] placeholder-[#999999] shadow-md focus:shadow-xl focus:outline-none transition-all duration-300 ${
                       focusedField === 'telefono'
                         ? 'border-[#34B0D9] bg-white scale-[1.02]'
+                        : errors.telefono
+                        ? 'border-[#E33D35] bg-[#F7F7F7]/50'
                         : 'border-[#DDDDDD] bg-[#F7F7F7]/50'
                     }`}
                   />
@@ -255,7 +266,7 @@ export default function ContactForm() {
                 {errors.telefono && (
                   <p className="text-[#E33D35] text-sm mt-2 flex items-center gap-1 font-medium">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#E33D35]" />
-                    {errors.telefono}
+                    {errors.telefono.message}
                   </p>
                 )}
               </div>
@@ -264,20 +275,25 @@ export default function ContactForm() {
               <div className="relative group">
                 <label className="block text-[#1C77B7] font-bold mb-3 text-sm uppercase tracking-wider flex items-center gap-2">
                   <MessageSquare className="w-4 h-4" />
-                  Asunto
+                  Asunto <span className="text-[#666666] text-xs normal-case font-normal ml-1">(opcional)</span>
                 </label>
                 <div className="relative">
                   <input
                     type="text"
-                    name="asunto"
-                    value={formData.asunto}
-                    onChange={handleChange}
+                    {...register("asunto", {
+                      maxLength: {
+                        value: 200,
+                        message: "Máximo 200 caracteres"
+                      }
+                    })}
                     onFocus={() => setFocusedField('asunto')}
                     onBlur={() => setFocusedField(null)}
                     placeholder="Consulta sobre viajes a Europa"
                     className={`w-full px-5 py-4 rounded-2xl border-2 text-[#333333] placeholder-[#999999] shadow-md focus:shadow-xl focus:outline-none transition-all duration-300 ${
                       focusedField === 'asunto'
                         ? 'border-[#34B0D9] bg-white scale-[1.02]'
+                        : errors.asunto
+                        ? 'border-[#E33D35] bg-[#F7F7F7]/50'
                         : 'border-[#DDDDDD] bg-[#F7F7F7]/50'
                     }`}
                   />
@@ -285,6 +301,12 @@ export default function ContactForm() {
                     <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-[#34B0D9]/20 to-[#1C77B7]/20 -z-10 blur-xl" />
                   )}
                 </div>
+                {errors.asunto && (
+                  <p className="text-[#E33D35] text-sm mt-2 flex items-center gap-1 font-medium">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#E33D35]" />
+                    {errors.asunto.message}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -296,9 +318,17 @@ export default function ContactForm() {
               </label>
               <div className="relative">
                 <textarea
-                  name="mensaje"
-                  value={formData.mensaje}
-                  onChange={handleChange}
+                  {...register("mensaje", {
+                    required: "El mensaje es obligatorio",
+                    minLength: {
+                      value: 10,
+                      message: "Debe tener al menos 10 caracteres"
+                    },
+                    maxLength: {
+                      value: 2000,
+                      message: "Máximo 2000 caracteres"
+                    }
+                  })}
                   onFocus={() => setFocusedField('mensaje')}
                   onBlur={() => setFocusedField(null)}
                   rows="6"
@@ -306,6 +336,8 @@ export default function ContactForm() {
                   className={`w-full px-5 py-4 rounded-2xl border-2 text-[#333333] placeholder-[#999999] shadow-md focus:shadow-xl focus:outline-none resize-none transition-all duration-300 ${
                     focusedField === 'mensaje'
                       ? 'border-[#1C77B7] bg-white scale-[1.01]'
+                      : errors.mensaje
+                      ? 'border-[#E33D35] bg-[#F7F7F7]/50'
                       : 'border-[#DDDDDD] bg-[#F7F7F7]/50'
                   }`}
                 />
@@ -316,21 +348,14 @@ export default function ContactForm() {
               {errors.mensaje && (
                 <p className="text-[#E33D35] text-sm mt-2 flex items-center gap-1 font-medium">
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#E33D35]" />
-                  {errors.mensaje}
+                  {errors.mensaje.message}
                 </p>
               )}
             </div>
 
-            {errorMsg && (
-              <div className="p-4 rounded-2xl bg-[#E33D35]/10 border-2 border-[#E33D35]/30 backdrop-blur-sm">
-                <p className="text-[#E33D35] text-sm font-bold">{errorMsg}</p>
-              </div>
-            )}
-
             {/* Botón de envío mejorado */}
             <button
-              type="button"
-              onClick={onSubmit}
+              type="submit"
               disabled={isSubmitting}
               className="group relative w-full py-6 rounded-2xl font-black text-xl text-white shadow-2xl overflow-hidden transform transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_20px_60px_rgba(28,119,183,0.4)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
               style={{
@@ -366,10 +391,8 @@ export default function ContactForm() {
               </p>
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#DDDDDD] to-transparent" />
             </div>
-          </div>
+          </form>
         )}
-
-
       </div>
     </div>
   );
