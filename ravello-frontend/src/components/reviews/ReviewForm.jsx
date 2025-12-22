@@ -182,7 +182,7 @@ const ReviewForm = ({ packageId, onSuccess }) => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full px-6 py-3 bg-primary-blue text-white font-semibold rounded-lg hover:bg-opacity-90 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="w-full cursor-pointer px-6 py-3 bg-primary-blue text-white font-semibold rounded-lg hover:bg-opacity-90 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {isSubmitting ? "Enviando..." : "Enviar opinión"}
         </button>
