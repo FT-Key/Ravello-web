@@ -67,7 +67,7 @@ const Navbar = ({ position = "sticky" }) => {
 
   const getNavbarBackground = () => {
     if (isScrolled)
-      return "bg-white/20 backdrop-blur-xl border border-white/10 shadow-lg";
+      return "bg-white/60 backdrop-blur-xl border border-white/10 shadow-lg";
 
     if (position === "fixed") return "bg-transparent";
 
