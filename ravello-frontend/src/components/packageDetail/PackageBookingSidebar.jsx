@@ -2,12 +2,12 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Clock, MapPin, Star, DollarSign, Users, Plane, AlertCircle } from "lucide-react";
 
-export default function PackageBookingSidebar({ 
-  pkg, 
-  packageDates, 
-  selectedDate, 
-  setSelectedDate, 
-  datesLoading 
+export default function PackageBookingSidebar({
+  pkg,
+  packageDates,
+  selectedDate,
+  setSelectedDate,
+  datesLoading
 }) {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -104,7 +104,7 @@ export default function PackageBookingSidebar({
             {pkg.duracionTotal || 0} días
           </span>
         </div>
-        
+
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2 text-light">
             <MapPin size={16} />
@@ -114,7 +114,7 @@ export default function PackageBookingSidebar({
             {pkg.tipo || "Internacional"}
           </span>
         </div>
-        
+
         {pkg.categoria && (
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2 text-light">
@@ -126,7 +126,7 @@ export default function PackageBookingSidebar({
             </span>
           </div>
         )}
-        
+
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2 text-light">
             <DollarSign size={16} />
@@ -136,13 +136,13 @@ export default function PackageBookingSidebar({
             ${pkg.montoSenia?.toLocaleString()}
           </span>
         </div>
-        
+
         {pkg.plazoPagoTotalDias && (
           <div className="text-xs text-light mt-2 bg-blue-50 p-2 rounded">
             💡 Plazo de pago total: {pkg.plazoPagoTotalDias} días antes de la salida
           </div>
         )}
-        
+
         {pkg.capacidadMinima && pkg.capacidadMaxima && (
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2 text-light">
@@ -159,19 +159,18 @@ export default function PackageBookingSidebar({
       {/* Botones de acción */}
       <div className="space-y-3">
         <Link
-          to={`/contacto?paquete=${pkg._id}${
-            selectedDate ? `&fecha=${selectedDate._id}` : ""
-          }`}
+          to={`/contacto?paquete=${pkg._id}${selectedDate ? `&fecha=${selectedDate._id}` : ""
+            }`}
           className="w-full block text-center px-6 py-3 bg-primary-red text-white font-semibold rounded-lg hover:bg-opacity-90 transition-all shadow-md hover:shadow-lg"
         >
           Reservar ahora
         </Link>
-        <Link
+        {/*  <Link
           to={`/contacto?paquete=${pkg._id}&consulta=true`}
           className="w-full block text-center px-6 py-3 border-2 border-primary-blue text-primary-blue font-semibold rounded-lg hover:bg-primary-blue hover:text-white transition-all"
         >
           Consultar disponibilidad
-        </Link>
+        </Link> */}
       </div>
 
       {/* Contacto rápido */}

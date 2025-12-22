@@ -1,9 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { X, Tag, MapPin, Info, Users, DollarSign, Image as ImageIcon } from "lucide-react";
-import clientAxios from "../../api/axiosConfig"; // Ajusta la ruta según tu estructura
-
-// Importar todos los tabs
+import clientAxios from "../../api/axiosConfig";
 import {
   TabBasico,
   TabDestinos,
@@ -11,7 +9,7 @@ import {
   TabCoordinadores,
   TabPrecios,
   TabImagenes
-} from "./packageTabs/index.js";
+} from "./packageTabs";
 
 export default function PackageEditModal({ open, onClose, pkg, onSaved }) {
   const {
@@ -60,6 +58,10 @@ export default function PackageEditModal({ open, onClose, pkg, onSaved }) {
   const [imagenesFiles, setImagenesFiles] = useState([]);
   const [activeTab, setActiveTab] = useState("basico");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Referencias para obtener paths a eliminar desde TabImagenes
+  const imagenesExistentesAEliminarRef = useRef([]);
+  const eliminarImagenPrincipalExistenteRef = useRef(false);
 
   useEffect(() => {
     if (pkg) {
@@ -112,7 +114,9 @@ export default function PackageEditModal({ open, onClose, pkg, onSaved }) {
 
     setImagenPrincipalFile(null);
     setImagenesFiles([]);
-    setActiveTab("basico"); // Resetear a la primera tab
+    imagenesExistentesAEliminarRef.current = [];
+    eliminarImagenPrincipalExistenteRef.current = false;
+    setActiveTab("basico");
   }, [pkg, reset]);
 
   const onSubmit = async (data) => {
@@ -123,7 +127,6 @@ export default function PackageEditModal({ open, onClose, pkg, onSaved }) {
 
       const formData = new FormData();
 
-      // Campos a excluir
       const excludeFields = [
         "imagenPrincipal",
         "imagenes",
@@ -135,15 +138,12 @@ export default function PackageEditModal({ open, onClose, pkg, onSaved }) {
         "duracionTotal"
       ];
 
-      // Agregar campos al FormData
       Object.keys(data).forEach((key) => {
         if (excludeFields.includes(key)) return;
 
         const value = data[key];
 
-        // Arrays y objetos complejos como JSON
         if (["destinos", "coordinadores", "incluyeGeneral", "noIncluyeGeneral", "etiquetas"].includes(key)) {
-          // CORRECCIÓN: Asegurar que siempre sea un array válido
           let arrayValue = [];
 
           if (Array.isArray(value)) {
@@ -156,7 +156,6 @@ export default function PackageEditModal({ open, onClose, pkg, onSaved }) {
           return;
         }
 
-        // Valores numéricos
         if (["precioBase", "montoSenia", "capacidadMinima", "capacidadMaxima", "descuentoNinos", "plazoPagoTotalDias"].includes(key)) {
           const numValue = Number(value);
           if (!isNaN(numValue) && value !== "" && value !== null) {
@@ -165,19 +164,16 @@ export default function PackageEditModal({ open, onClose, pkg, onSaved }) {
           return;
         }
 
-        // Booleanos
         if (typeof value === "boolean") {
           formData.append(key, value);
           return;
         }
 
-        // Valores simples
         if (value !== "" && value !== null && value !== undefined) {
           formData.append(key, value);
         }
       });
 
-      // IMPORTANTE: Asegurar que incluyeGeneral y noIncluyeGeneral existan
       if (!formData.has("incluyeGeneral")) {
         formData.append("incluyeGeneral", JSON.stringify([]));
       }
@@ -193,9 +189,18 @@ export default function PackageEditModal({ open, onClose, pkg, onSaved }) {
       if (!formData.has("coordinadores")) {
         formData.append("coordinadores", JSON.stringify([]));
       }
-      console.log("FormData: ", formData)
 
-      // Validar campos requeridos
+      // NUEVO: Agregar paths a eliminar
+      const pathsToRemove = [...imagenesExistentesAEliminarRef.current];
+      if (eliminarImagenPrincipalExistenteRef.current && pkg?.imagenPrincipal?.path) {
+        pathsToRemove.push(pkg.imagenPrincipal.path);
+      }
+      
+      if (pathsToRemove.length > 0) {
+        formData.append("removePaths", JSON.stringify(pathsToRemove));
+        console.log("🗑️ Paths a eliminar:", pathsToRemove);
+      }
+
       if (!data.precioBase || Number(data.precioBase) <= 0) {
         alert("El precio base es obligatorio y debe ser mayor a 0");
         setIsSubmitting(false);
@@ -217,13 +222,11 @@ export default function PackageEditModal({ open, onClose, pkg, onSaved }) {
         formData.append("imagenes", file);
       });
 
-      // Debug
       console.log("📤 Enviando FormData:");
       for (let pair of formData.entries()) {
         console.log("📦", pair[0], ":", pair[1]);
       }
 
-      // Llamada a la API
       const url = pkg ? `/packages/${pkg._id}` : "/packages";
       const method = pkg ? "put" : "post";
 
@@ -252,8 +255,6 @@ export default function PackageEditModal({ open, onClose, pkg, onSaved }) {
         const errorMessage = err.response.data?.message || err.response.data?.error || "Error al guardar el paquete";
 
         if (err.response.status === 400) {
-          console.error("Errores de validación:", err.response.data.errors);
-
           const errors = err.response.data.errors || [errorMessage];
           const errorList = Array.isArray(errors) ? errors.join('\n') : errors;
           alert(`Errores de validación:\n\n${errorList}`);
@@ -289,7 +290,6 @@ export default function PackageEditModal({ open, onClose, pkg, onSaved }) {
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white w-full max-w-6xl rounded-lg shadow-xl overflow-hidden flex flex-col my-8 min-h-[600px] max-h-[calc(100vh-4rem)]">
 
-        {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50 flex-shrink-0">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">
@@ -306,7 +306,6 @@ export default function PackageEditModal({ open, onClose, pkg, onSaved }) {
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="border-b bg-gray-50 overflow-x-auto flex-shrink-0">
           <div className="flex px-6 min-w-max">
             {tabs.map((tab) => (
@@ -315,10 +314,11 @@ export default function PackageEditModal({ open, onClose, pkg, onSaved }) {
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
                 disabled={isSubmitting}
-                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === tab.id
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-                  } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 <tab.icon size={16} />
                 {tab.label}
@@ -327,7 +327,6 @@ export default function PackageEditModal({ open, onClose, pkg, onSaved }) {
           </div>
         </div>
 
-        {/* Content */}
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-6">
             {activeTab === "basico" && (
@@ -380,11 +379,12 @@ export default function PackageEditModal({ open, onClose, pkg, onSaved }) {
                 setImagenPrincipalFile={setImagenPrincipalFile}
                 imagenesFiles={imagenesFiles}
                 setImagenesFiles={setImagenesFiles}
+                imagenesExistentesAEliminarRef={imagenesExistentesAEliminarRef}
+                eliminarImagenPrincipalExistenteRef={eliminarImagenPrincipalExistenteRef}
               />
             )}
           </div>
 
-          {/* Footer Buttons */}
           <div className="flex justify-end gap-3 px-6 py-4 border-t bg-white flex-shrink-0">
             <button
               type="button"
