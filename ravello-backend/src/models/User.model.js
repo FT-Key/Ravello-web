@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema(
     nombre: { type: String },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    rol: { type: String, enum: ['admin', 'editor', 'cliente'], default: 'admin' },
+    rol: { type: String, enum: ['admin', 'editor', 'cliente'], default: 'editor' },
     activo: { type: Boolean, default: true },
     esPrincipal: { type: Boolean, default: false } // protege al admin principal
   },
