@@ -32,33 +32,37 @@ const PackageCard = ({ pkg, onView }) => {
       </div>
 
       {/* Contenido */}
-      <div className="p-5 flex flex-col justify-between h-[240px] no-select">
-        <div>
-          <h3 className="text-lg font-bold text-dark mb-1">{pkg.nombre}</h3>
+      <div className="p-5 flex flex-col justify-between h-[240px]">
+        <div className="overflow-hidden">
+          <h3 className="text-lg font-bold text-dark mb-1 line-clamp-2 leading-tight">
+            {pkg.nombre}
+          </h3>
 
           {pkg?.destinos?.length > 0 && (
-            <p className="flex items-center text-gray-500 text-sm mb-2">
-              <MapPin size={14} className="mr-1" />
-              {pkg.destinos.map((d) => d.ciudad).join(", ")}
+            <p className="flex items-start text-gray-500 text-sm mb-2">
+              <MapPin size={14} className="mr-1 mt-0.5 flex-shrink-0" />
+              <span className="line-clamp-1 break-words">
+                {pkg.destinos.map((d) => d.ciudad).join(", ")}
+              </span>
             </p>
           )}
 
-          <p className="text-sm text-gray-600 line-clamp-3">
+          <p className="text-sm text-gray-600 line-clamp-3 leading-relaxed break-words">
             {pkg.descripcionCorta || pkg.descripcion || "Sin descripción"}
           </p>
         </div>
 
-        <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-100">
-          <div>
-            <p className="text-xs text-gray-500">Desde</p>
-            <p className="text-xl font-semibold text-primary-blue">
+        <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-100 flex-shrink-0">
+          <div className="overflow-hidden">
+            <p className="text-xs text-gray-500 whitespace-nowrap">Desde</p>
+            <p className="text-xl font-semibold text-primary-blue whitespace-nowrap">
               ${pkg.precioBase?.toLocaleString() ?? 0}
             </p>
           </div>
 
           <button
             onClick={() => onView(pkg._id)}
-            className="bg-primary-blue text-white font-semibold rounded-full px-5 py-2 text-sm hover:scale-105 transition-transform no-select"
+            className="bg-primary-blue text-white font-semibold rounded-full px-5 py-2 text-sm hover:scale-105 transition-transform flex-shrink-0"
           >
             Ver más
           </button>
