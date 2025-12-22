@@ -1,74 +1,64 @@
 import React, { useState } from "react";
+import { useForm } from "react-hook-form";
 import { Star, Sparkles, CheckCircle2, User, MessageSquare, Award, Heart, Plane, Compass } from "lucide-react";
-import './ReviewPage.css'
+import clientAxios from "../../api/axiosConfig";
+import './ReviewPage.css';
 
-const ReviewForm = ({ packageId, onSuccess }) => {
-  const [formData, setFormData] = useState({
-    nombre: "",
-    calificacion: 0,
-    comentario: ""
+const ReviewForm = ({ packageId, tipo = "empresa" }) => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+    watch
+  } = useForm({
+    defaultValues: {
+      nombre: "",
+      calificacion: 0,
+      comentario: "",
+      tipo: tipo,
+      paquete: packageId || null
+    }
   });
-  const [errors, setErrors] = useState({});
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [hoveredStar, setHoveredStar] = useState(0);
   const [focusedField, setFocusedField] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
 
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.nombre.trim()) {
-      newErrors.nombre = "El nombre es obligatorio";
-    } else if (formData.nombre.trim().length < 2) {
-      newErrors.nombre = "Debe tener al menos 2 caracteres";
-    }
-    
-    if (!formData.calificacion || formData.calificacion < 1) {
-      newErrors.calificacion = "Selecciona una calificación";
-    }
-    
-    if (formData.comentario && formData.comentario.length > 500) {
-      newErrors.comentario = "Máximo 500 caracteres";
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
-    }
-  };
+  const calificacion = watch("calificacion");
+  const comentario = watch("comentario");
 
   const handleStarClick = (star) => {
-    setFormData(prev => ({ ...prev, calificacion: star }));
-    if (errors.calificacion) {
-      setErrors(prev => ({ ...prev, calificacion: "" }));
-    }
+    setValue("calificacion", star, { shouldValidate: true });
   };
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    
+  const onSubmit = async (data) => {
     setIsSubmitting(true);
-    
+    setSubmitError(null);
+
     try {
-      // Simulación de envío - reemplazar con tu API real
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      setSubmitted(true);
-      setFormData({
-        nombre: "",
-        calificacion: 0,
-        comentario: ""
+      const response = await clientAxios.post("/reviews", {
+        nombre: data.nombre,
+        calificacion: data.calificacion,
+        comentario: data.comentario || "",
+        tipo: data.tipo,
+        paquete: data.paquete || undefined
       });
+
+      if (response.data.success) {
+        setSubmitted(true);
+        reset();
+        setValue("calificacion", 0);
+      }
     } catch (error) {
       console.error("Error al enviar la reseña:", error);
+      setSubmitError(
+        error.response?.data?.message || 
+        "Hubo un error al enviar tu reseña. Por favor, intenta nuevamente."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -88,7 +78,7 @@ const ReviewForm = ({ packageId, onSuccess }) => {
           <Star
             size={window.innerWidth < 640 ? 28 : 36}
             className={`${
-              star <= (hoveredStar || formData.calificacion)
+              star <= (hoveredStar || calificacion)
                 ? "text-yellow-400 fill-yellow-400 drop-shadow-lg"
                 : "text-gray-300"
             } transition-all duration-200`}
@@ -97,6 +87,13 @@ const ReviewForm = ({ packageId, onSuccess }) => {
       ))}
     </div>
   );
+
+  const handleNewReview = () => {
+    setSubmitted(false);
+    setSubmitError(null);
+    reset();
+    setValue("calificacion", 0);
+  };
 
   return (
     <div className="no-select fade-top-bottom relative w-full min-h-screen py-12 sm:py-16 md:py-20 px-4 overflow-hidden bg-gradient-to-br from-[#F7F7F7] via-[#FFFFFF] to-[#F5E0B3]">
@@ -171,15 +168,22 @@ const ReviewForm = ({ packageId, onSuccess }) => {
               Tu reseña será publicada una vez aprobada. Apreciamos que compartas tu experiencia con otros viajeros.
             </p>
             <button
-              onClick={() => setSubmitted(false)}
+              onClick={handleNewReview}
               className="px-8 sm:px-10 py-3 sm:py-4 rounded-full bg-gradient-to-r from-[#1C77B7] to-[#34B0D9] text-white font-bold text-base sm:text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all"
             >
               Dejar otra opinión
             </button>
           </div>
         ) : (
-          <div className="backdrop-blur-2xl bg-gradient-to-br from-white/85 to-white/70 border-2 border-white/90 shadow-2xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 lg:p-12 space-y-6 sm:space-y-8">
+          <form onSubmit={handleSubmit(onSubmit)} className="backdrop-blur-2xl bg-gradient-to-br from-white/85 to-white/70 border-2 border-white/90 shadow-2xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 lg:p-12 space-y-6 sm:space-y-8">
             
+            {/* Error general */}
+            {submitError && (
+              <div className="bg-[#E33D35]/10 border-2 border-[#E33D35] rounded-2xl p-4 text-[#E33D35] text-sm font-medium">
+                {submitError}
+              </div>
+            )}
+
             {/* Nombre */}
             <div className="relative group">
               <label className="block text-[#1C77B7] font-bold mb-3 text-sm uppercase tracking-wider flex items-center gap-2">
@@ -189,15 +193,25 @@ const ReviewForm = ({ packageId, onSuccess }) => {
               <div className="relative">
                 <input
                   type="text"
-                  name="nombre"
-                  value={formData.nombre}
-                  onChange={handleChange}
+                  {...register("nombre", {
+                    required: "El nombre es obligatorio",
+                    minLength: {
+                      value: 2,
+                      message: "Debe tener al menos 2 caracteres"
+                    },
+                    maxLength: {
+                      value: 100,
+                      message: "Máximo 100 caracteres"
+                    }
+                  })}
                   onFocus={() => setFocusedField('nombre')}
                   onBlur={() => setFocusedField(null)}
                   placeholder="Tu nombre"
                   className={`w-full px-4 sm:px-5 py-3 sm:py-4 rounded-2xl border-2 text-[#333333] placeholder-[#999999] shadow-md focus:shadow-xl focus:outline-none transition-all duration-300 ${
                     focusedField === 'nombre'
                       ? 'border-[#1C77B7] bg-white scale-[1.02]'
+                      : errors.nombre
+                      ? 'border-[#E33D35] bg-[#F7F7F7]/50'
                       : 'border-[#DDDDDD] bg-[#F7F7F7]/50'
                   }`}
                 />
@@ -208,7 +222,7 @@ const ReviewForm = ({ packageId, onSuccess }) => {
               {errors.nombre && (
                 <p className="text-[#E33D35] text-sm mt-2 flex items-center gap-1 font-medium">
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#E33D35]" />
-                  {errors.nombre}
+                  {errors.nombre.message}
                 </p>
               )}
             </div>
@@ -221,15 +235,21 @@ const ReviewForm = ({ packageId, onSuccess }) => {
               </label>
               
               <div className="relative p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-[#F5E0B3]/20 to-white/50 border-2 border-[#F5E0B3]/50">
+                <input
+                  type="hidden"
+                  {...register("calificacion", {
+                    validate: value => value >= 1 || "Selecciona una calificación"
+                  })}
+                />
                 {renderStars()}
                 
-                {formData.calificacion > 0 && (
+                {calificacion > 0 && (
                   <p className="text-[#1C77B7] text-sm sm:text-base mt-3 sm:mt-4 text-center font-semibold">
-                    {formData.calificacion === 5 && "⭐ ¡Excelente!"}
-                    {formData.calificacion === 4 && "😊 Muy bueno"}
-                    {formData.calificacion === 3 && "👍 Bueno"}
-                    {formData.calificacion === 2 && "😐 Regular"}
-                    {formData.calificacion === 1 && "😞 Mejorable"}
+                    {calificacion === 5 && "⭐ ¡Excelente!"}
+                    {calificacion === 4 && "😊 Muy bueno"}
+                    {calificacion === 3 && "👍 Bueno"}
+                    {calificacion === 2 && "😐 Regular"}
+                    {calificacion === 1 && "😞 Mejorable"}
                   </p>
                 )}
               </div>
@@ -237,7 +257,7 @@ const ReviewForm = ({ packageId, onSuccess }) => {
               {errors.calificacion && (
                 <p className="text-[#E33D35] text-sm mt-2 flex items-center gap-1 font-medium justify-center">
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#E33D35]" />
-                  {errors.calificacion}
+                  {errors.calificacion.message}
                 </p>
               )}
             </div>
@@ -250,9 +270,12 @@ const ReviewForm = ({ packageId, onSuccess }) => {
               </label>
               <div className="relative">
                 <textarea
-                  name="comentario"
-                  value={formData.comentario}
-                  onChange={handleChange}
+                  {...register("comentario", {
+                    maxLength: {
+                      value: 500,
+                      message: "Máximo 500 caracteres"
+                    }
+                  })}
                   onFocus={() => setFocusedField('comentario')}
                   onBlur={() => setFocusedField(null)}
                   rows="5"
@@ -260,6 +283,8 @@ const ReviewForm = ({ packageId, onSuccess }) => {
                   className={`w-full px-4 sm:px-5 py-3 sm:py-4 rounded-2xl border-2 text-[#333333] placeholder-[#999999] shadow-md focus:shadow-xl focus:outline-none resize-none transition-all duration-300 ${
                     focusedField === 'comentario'
                       ? 'border-[#1C77B7] bg-white scale-[1.01]'
+                      : errors.comentario
+                      ? 'border-[#E33D35] bg-[#F7F7F7]/50'
                       : 'border-[#DDDDDD] bg-[#F7F7F7]/50'
                   }`}
                 />
@@ -269,11 +294,11 @@ const ReviewForm = ({ packageId, onSuccess }) => {
               </div>
               <div className="flex items-center justify-between mt-2">
                 <p className="text-[#999999] text-xs sm:text-sm">
-                  {formData.comentario?.length || 0} / 500 caracteres
+                  {comentario?.length || 0} / 500 caracteres
                 </p>
                 {errors.comentario && (
                   <p className="text-[#E33D35] text-xs sm:text-sm font-medium">
-                    {errors.comentario}
+                    {errors.comentario.message}
                   </p>
                 )}
               </div>
@@ -281,8 +306,7 @@ const ReviewForm = ({ packageId, onSuccess }) => {
 
             {/* Botón de envío mejorado */}
             <button
-              type="button"
-              onClick={onSubmit}
+              type="submit"
               disabled={isSubmitting}
               className="group relative w-full py-5 sm:py-6 rounded-2xl font-black text-lg sm:text-xl text-white shadow-2xl overflow-hidden transform transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_20px_60px_rgba(28,119,183,0.4)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
               style={{
@@ -318,7 +342,7 @@ const ReviewForm = ({ packageId, onSuccess }) => {
               </p>
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#DDDDDD] to-transparent" />
             </div>
-          </div>
+          </form>
         )}
       </div>
     </div>
