@@ -55,3 +55,124 @@ export const deleteUser = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+// controllers/user.controller.js
+
+// Obtener perfil del usuario actual
+export async function obtenerPerfilController(req, res) {
+  try {
+    const userId = req.user._id;
+    
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: user.datosSinPassword(),
+      perfilCompleto: user.perfilCompleto,
+      camposFaltantes: user.camposFaltantes(),
+      puedeReservar: user.puedeReservar()
+    });
+
+  } catch (error) {
+    console.error('Error en obtenerPerfilController:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener el perfil'
+    });
+  }
+}
+
+// Actualizar perfil del usuario
+export async function actualizarPerfilController(req, res) {
+  try {
+    const userId = req.user._id;
+    
+    const {
+      nombre,
+      apellido,
+      telefono,
+      documento,
+      fechaNacimiento,
+      direccion,
+      preferencias
+    } = req.body;
+
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    // Actualizar campos
+    if (nombre) user.nombre = nombre;
+    if (apellido) user.apellido = apellido;
+    if (telefono) user.telefono = telefono;
+    if (documento) user.documento = documento;
+    if (fechaNacimiento) user.fechaNacimiento = fechaNacimiento;
+    if (direccion) user.direccion = { ...user.direccion, ...direccion };
+    if (preferencias) user.preferencias = { ...user.preferencias, ...preferencias };
+
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: 'Perfil actualizado exitosamente',
+      data: user.datosSinPassword(),
+      perfilCompleto: user.perfilCompleto,
+      camposFaltantes: user.camposFaltantes()
+    });
+
+  } catch (error) {
+    console.error('Error en actualizarPerfilController:', error);
+    return res.status(400).json({
+      success: false,
+      message: error.message || 'Error al actualizar el perfil'
+    });
+  }
+}
+
+// Verificar si el usuario puede hacer reservas
+export async function verificarPuedeReservarController(req, res) {
+  try {
+    const userId = req.user._id;
+    
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    const puedeReservar = user.puedeReservar();
+    const camposFaltantes = user.camposFaltantes();
+
+    return res.json({
+      success: true,
+      puedeReservar,
+      perfilCompleto: user.perfilCompleto,
+      camposFaltantes,
+      mensaje: puedeReservar 
+        ? 'Usuario habilitado para reservar' 
+        : `Debe completar los siguientes campos: ${camposFaltantes.join(', ')}`
+    });
+
+  } catch (error) {
+    console.error('Error en verificarPuedeReservarController:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al verificar el perfil'
+    });
+  }
+}

@@ -1,5 +1,7 @@
+// components/packageDetail/PackageBookingSidebar.jsx
 import React, { useState } from "react";
-import { Clock, MapPin, Star, DollarSign, Users, AlertCircle, CreditCard, MessageCircle, Loader2 } from "lucide-react";
+import { Clock, MapPin, Star, Users, AlertCircle, CreditCard, MessageCircle, Loader2, LogIn, UserCheck, AlertTriangle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function PackageBookingSidebar({
   pkg,
@@ -9,19 +11,13 @@ export default function PackageBookingSidebar({
   datesLoading,
   onPayment,
   onContact,
-  paymentLoading
+  paymentLoading,
+  isAuthenticated,
+  canBook
 }) {
+  const navigate = useNavigate();
   const [adultos, setAdultos] = useState(2);
   const [ninos, setNinos] = useState(0);
-  const [showContactForm, setShowContactForm] = useState(false);
-
-  const [contactData, setContactData] = useState({
-    nombre: "",
-    apellido: "",
-    email: "",
-    telefono: "",
-    documento: "",
-  });
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -38,13 +34,6 @@ export default function PackageBookingSidebar({
   const precioTotal = (precioAdulto * adultos) + (precioNino * ninos);
 
   const handleReservar = () => {
-    // Validar que haya datos de contacto
-    if (!contactData.nombre || !contactData.apellido || !contactData.email || !contactData.telefono || !contactData.documento) {
-      setShowContactForm(true);
-      alert("Por favor completa todos tus datos de contacto");
-      return;
-    }
-
     // Validar fecha seleccionada
     if (!selectedDate) {
       alert("Por favor selecciona una fecha de salida");
@@ -58,14 +47,22 @@ export default function PackageBookingSidebar({
       return;
     }
 
-    // Preparar datos para enviar
+    // Preparar datos para enviar (SIN datos de contacto)
     const bookingData = {
-      pasajeros: { adultos, ninos },
-      contacto: contactData,
+      pasajeros: { adultos, ninos }
     };
 
-    // Llamar al handler de pago
+    // Llamar al handler (que verificará auth y perfil)
     onPayment(bookingData);
+  };
+
+  const handleLoginRedirect = () => {
+    navigate('/login', {
+      state: {
+        from: window.location.pathname,
+        message: 'Inicia sesión para hacer tu reserva'
+      }
+    });
   };
 
   return (
@@ -210,78 +207,88 @@ export default function PackageBookingSidebar({
         </div>
       )}
 
-      {/* Formulario de contacto (toggle) */}
-      {showContactForm && (
-        <div className="mb-6 pb-6 border-b border-border-subtle space-y-3">
-          <h4 className="text-sm font-semibold text-dark">Datos de contacto</h4>
+      {/* ALERTA: Usuario no autenticado */}
+      {!isAuthenticated && (
+        <div className="mb-6 pb-6 border-b border-border-subtle">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <LogIn className="text-blue-600 flex-shrink-0 mt-0.5" size={20} />
+              <div>
+                <p className="text-sm font-semibold text-blue-900 mb-1">
+                  Inicia sesión para reservar
+                </p>
+                <p className="text-xs text-blue-700">
+                  Necesitas una cuenta para hacer tu reserva
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-          <input
-            type="text"
-            placeholder="Nombre *"
-            value={contactData.nombre}
-            onChange={(e) => setContactData({ ...contactData, nombre: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent text-sm"
-            required
-          />
+      {/* ALERTA: Perfil incompleto */}
+      {isAuthenticated && !canBook && (
+        <div className="mb-6 pb-6 border-b border-border-subtle">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="text-yellow-600 flex-shrink-0 mt-0.5" size={20} />
+              <div>
+                <p className="text-sm font-semibold text-yellow-900 mb-1">
+                  Completa tu perfil
+                </p>
+                <p className="text-xs text-yellow-700">
+                  Te pediremos completar algunos datos antes de continuar
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-          <input
-            type="text"
-            placeholder="Apellido *"
-            value={contactData.apellido}
-            onChange={(e) => setContactData({ ...contactData, apellido: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent text-sm"
-            required
-          />
-
-          <input
-            type="email"
-            placeholder="Email *"
-            value={contactData.email}
-            onChange={(e) => setContactData({ ...contactData, email: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent text-sm"
-            required
-          />
-
-          <input
-            type="tel"
-            placeholder="Teléfono *"
-            value={contactData.telefono}
-            onChange={(e) => setContactData({ ...contactData, telefono: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent text-sm"
-            required
-          />
-
-          <input
-            type="text"
-            placeholder="Documento (DNI/Pasaporte) *"
-            value={contactData.documento}
-            onChange={(e) => setContactData({ ...contactData, documento: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent text-sm"
-            required
-          />
+      {/* CONFIRMACIÓN: Perfil completo */}
+      {isAuthenticated && canBook && (
+        <div className="mb-6 pb-6 border-b border-border-subtle">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <div className="flex items-center gap-2">
+              <UserCheck className="text-green-600 flex-shrink-0" size={18} />
+              <p className="text-sm text-green-700">
+                Perfil completo - Listo para reservar
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Botones de acción */}
       <div className="space-y-3">
-        {/* Botón Reservar y Pagar */}
-        <button
-          onClick={!showContactForm ? () => setShowContactForm(true) : handleReservar}
-          disabled={paymentLoading || !selectedDate || packageDates.length === 0}
-          className="w-full bg-primary-red hover:bg-opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-        >
-          {paymentLoading ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Procesando...
-            </>
-          ) : (
-            <>
-              <CreditCard className="w-5 h-5" />
-              {showContactForm ? "Confirmar y Pagar" : "Reservar Ahora"}
-            </>
-          )}
-        </button>
+        {/* Botón principal: Login o Reservar */}
+        {!isAuthenticated ? (
+          <button
+            onClick={handleLoginRedirect}
+            className="w-full bg-primary-blue hover:bg-opacity-90 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+          >
+            <LogIn className="w-5 h-5" />
+            Iniciar Sesión para Reservar
+          </button>
+        ) : (
+          <button
+            onClick={handleReservar}
+            disabled={paymentLoading || !selectedDate || packageDates.length === 0}
+            className="w-full bg-primary-red hover:bg-opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+          >
+            {paymentLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Procesando...
+              </>
+            ) : (
+              <>
+                <CreditCard className="w-5 h-5" />
+                {canBook ? "Reservar y Pagar" : "Completar Perfil y Reservar"}
+              </>
+            )}
+          </button>
+        )}
 
         {/* Botón Consultar */}
         <button
@@ -304,6 +311,12 @@ export default function PackageBookingSidebar({
             <span className="text-green-600">✓</span>
             Confirmación inmediata
           </p>
+          {isAuthenticated && (
+            <p className="flex items-center gap-2">
+              <span className="text-blue-600">ℹ️</span>
+              Tus datos se toman de tu perfil
+            </p>
+          )}
           {pkg.montoSenia && (
             <p className="flex items-center gap-2">
               <span className="text-blue-600">ℹ️</span>

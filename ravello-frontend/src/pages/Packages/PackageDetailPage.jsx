@@ -1,6 +1,8 @@
+// pages/PackageDetailPage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import clientAxios from "../../api/axiosConfig";
+import { useUserProfile } from "../../hooks/useUserProfile";
 import PackageHeader from "../../components/packageDetail/PackageHeader.jsx";
 import PackageGallery from "../../components/packageDetail/PackageGallery.jsx";
 import PackageInfo from "../../components/packageDetail/PackageInfo.jsx";
@@ -9,12 +11,17 @@ import PackageInclusions from "../../components/packageDetail/PackageInclusions.
 import PackageCoordinators from "../../components/packageDetail/PackageCoordinators.jsx";
 import PackageReviews from "../../components/packageDetail/PackageReviews.jsx";
 import PackageBookingSidebar from "../../components/packageDetail/PackageBookingSidebar.jsx";
+import CompleteProfileModal from "../../components/packageDetail/CompleteProfileModal.jsx";
 import LoadingSpinner from "../../components/common/LoadingSpinner.jsx";
 import NotFound from "../../components/common/NotFound.jsx";
 
 export default function PackageDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  // Hook de perfil de usuario
+  const { userProfile, loading: profileLoading, isAuthenticated, canBook, camposFaltantes, refreshProfile } = useUserProfile();
+
   const [pkg, setPkg] = useState(null);
   const [packageDates, setPackageDates] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -26,6 +33,9 @@ export default function PackageDetailPage() {
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [reviewStats, setReviewStats] = useState({ avg: 0, total: 0 });
   const [paymentLoading, setPaymentLoading] = useState(false);
+
+  // Estado del modal de completar perfil
+  const [showCompleteProfileModal, setShowCompleteProfileModal] = useState(false);
 
   // Fetch del paquete
   useEffect(() => {
@@ -105,8 +115,31 @@ export default function PackageDetailPage() {
     if (id) fetchReviews();
   }, [id]);
 
-  // Manejar proceso de pago
-  // PackageDetailPage.jsx
+  // Manejar inicio del proceso de reserva
+  const handleInitiateBooking = (bookingData) => {
+    // 1. Verificar autenticación
+    if (!isAuthenticated) {
+      alert('Debes iniciar sesión para hacer una reserva');
+      navigate('/login', {
+        state: {
+          from: `/paquetes/${id}`,
+          message: 'Inicia sesión para continuar con tu reserva'
+        }
+      });
+      return;
+    }
+
+    // 2. Verificar perfil completo
+    if (!canBook) {
+      setShowCompleteProfileModal(true);
+      return;
+    }
+
+    // 3. Si todo está bien, proceder con el pago
+    handlePayment(bookingData);
+  };
+
+  // Manejar proceso de pago (solo se ejecuta si el perfil está completo)
   const handlePayment = async (bookingData) => {
     if (!selectedDate) {
       alert("Por favor selecciona una fecha de salida");
@@ -116,15 +149,13 @@ export default function PackageDetailPage() {
     try {
       setPaymentLoading(true);
 
-      // Preparar payload
+      // Preparar payload (SIN datosContacto, se toma del usuario autenticado)
       const bookingPayload = {
         paqueteId: id,
         fechaSalidaId: selectedDate._id,
-        cantidadPasajeros: bookingData.pasajeros,
-        datosContacto: bookingData.contacto
+        cantidadPasajeros: bookingData.pasajeros
       };
 
-      // 🔍 LOG: Ver exactamente qué se está enviando
       console.log("📦 Payload de reserva:", JSON.stringify(bookingPayload, null, 2));
 
       // 1. Crear la reserva
@@ -164,6 +195,14 @@ export default function PackageDetailPage() {
     }
   };
 
+  // Handler cuando el perfil se completa exitosamente
+  const handleProfileCompleted = (updatedProfile) => {
+    console.log('✅ Perfil completado:', updatedProfile);
+    setShowCompleteProfileModal(false);
+    refreshProfile();
+    alert('¡Perfil completado! Ahora puedes continuar con tu reserva.');
+  };
+
   // Redirigir a página de contacto
   const handleContact = () => {
     navigate("/contacto", {
@@ -175,7 +214,7 @@ export default function PackageDetailPage() {
     });
   };
 
-  if (loading) {
+  if (loading || profileLoading) {
     return <LoadingSpinner message="Cargando paquete..." />;
   }
 
@@ -213,13 +252,24 @@ export default function PackageDetailPage() {
               selectedDate={selectedDate}
               setSelectedDate={setSelectedDate}
               datesLoading={datesLoading}
-              onPayment={handlePayment}
+              onPayment={handleInitiateBooking}
               onContact={handleContact}
               paymentLoading={paymentLoading}
+              isAuthenticated={isAuthenticated}
+              canBook={canBook}
             />
           </div>
         </div>
       </div>
+
+      {/* Modal para completar perfil */}
+      <CompleteProfileModal
+        isOpen={showCompleteProfileModal}
+        onClose={() => setShowCompleteProfileModal(false)}
+        onProfileCompleted={handleProfileCompleted}
+        camposFaltantes={camposFaltantes} // ⬅️ Pasar campos faltantes
+        userProfile={userProfile} // ⬅️ Pasar perfil completo
+      />
     </div>
   );
 }
