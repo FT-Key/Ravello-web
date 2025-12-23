@@ -3,18 +3,20 @@ import express from 'express';
 import { paymentController } from '../controllers/index.js';
 import {
   authenticate,
-  authorize,
+  requireRole,
   paginationMiddleware,
   queryMiddleware,
   searchMiddleware,
-  validateRequest
+  // validateRequest // TODO: Agregar cuando estén las validaciones
 } from '../middlewares/index.js';
-import {
-  crearPreferenciaValidation,
-  registrarPagoPresencialValidation,
-  cancelarPagoValidation,
-  reembolsoValidation
-} from '../validations/index.js';
+
+// TODO: Descomentar cuando estén listas las validaciones
+// import {
+//   crearPreferenciaValidation,
+//   registrarPagoPresencialValidation,
+//   cancelarPagoValidation,
+//   reembolsoValidation
+// } from '../validations/index.js';
 
 const router = express.Router();
 
@@ -36,7 +38,7 @@ router.get('/verificar/:numeroPago', paymentController.verificarEstadoPago);
 router.post(
   '/mercadopago/preference',
   authenticate,
-  validateRequest(crearPreferenciaValidation),
+  // validateRequest(crearPreferenciaValidation), // TODO: Agregar validación
   paymentController.crearPreferenciaMercadoPago
 );
 
@@ -44,8 +46,8 @@ router.post(
 router.post(
   '/presencial',
   authenticate,
-  authorize(['admin', 'editor']),
-  validateRequest(registrarPagoPresencialValidation),
+  requireRole('admin', 'editor'),
+  // validateRequest(registrarPagoPresencialValidation), // TODO: Agregar validación
   paymentController.registrarPagoPresencial
 );
 
@@ -60,7 +62,7 @@ router.get(
 router.get(
   '/',
   authenticate,
-  authorize(['admin']),
+  requireRole('admin'),
   queryMiddleware,
   searchMiddleware,
   paginationMiddleware,
@@ -78,8 +80,8 @@ router.get(
 router.patch(
   '/:id/cancelar',
   authenticate,
-  authorize(['admin']),
-  validateRequest(cancelarPagoValidation),
+  requireRole('admin'),
+  // validateRequest(cancelarPagoValidation), // TODO: Agregar validación
   paymentController.cancelarPago
 );
 
@@ -87,8 +89,8 @@ router.patch(
 router.post(
   '/:id/reembolso',
   authenticate,
-  authorize(['admin']),
-  validateRequest(reembolsoValidation),
+  requireRole('admin'),
+  // validateRequest(reembolsoValidation), // TODO: Agregar validación
   paymentController.procesarReembolso
 );
 

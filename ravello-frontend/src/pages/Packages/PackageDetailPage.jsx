@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import clientAxios from "../../api/axiosConfig";
 import PackageHeader from "../../components/packageDetail/PackageHeader.jsx";
 import PackageGallery from "../../components/packageDetail/PackageGallery.jsx";
@@ -14,6 +14,7 @@ import NotFound from "../../components/common/NotFound.jsx";
 
 export default function PackageDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [pkg, setPkg] = useState(null);
   const [packageDates, setPackageDates] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -24,6 +25,7 @@ export default function PackageDetailPage() {
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [reviewStats, setReviewStats] = useState({ avg: 0, total: 0 });
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   // Fetch del paquete
   useEffect(() => {
@@ -103,6 +105,68 @@ export default function PackageDetailPage() {
     if (id) fetchReviews();
   }, [id]);
 
+  // Manejar proceso de pago
+  const handlePayment = async (bookingData) => {
+    if (!selectedDate) {
+      alert("Por favor selecciona una fecha de salida");
+      return;
+    }
+
+    try {
+      setPaymentLoading(true);
+
+      // 1. Crear la reserva
+      console.log("📝 Creando reserva...");
+      const bookingResponse = await clientAxios.post("/bookings", {
+        paquete: id,
+        fechaSalida: selectedDate._id,
+        cantidadPasajeros: bookingData.pasajeros,
+        datosContacto: bookingData.contacto,
+        moneda: selectedDate.moneda || 'ARS',
+      });
+
+      const reserva = bookingResponse.data.data;
+      console.log("✅ Reserva creada:", reserva);
+
+      // 2. Crear preferencia de pago en MercadoPago
+      console.log("💳 Creando preferencia de pago...");
+      const paymentResponse = await clientAxios.post("/payments/mercadopago/preference", {
+        reservaId: reserva._id,
+        monto: reserva.montoTotal,
+        tipoPago: 'total',
+      });
+
+      const { preferenceId, initPoint } = paymentResponse.data.data;
+      console.log("✅ Preferencia creada:", preferenceId);
+
+      // 3. Redirigir a MercadoPago
+      console.log("🔄 Redirigiendo a MercadoPago...");
+      window.location.href = initPoint;
+
+    } catch (error) {
+      console.error("❌ Error procesando el pago:", error);
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          "Error al procesar el pago. Por favor intenta nuevamente.";
+      
+      alert(errorMessage);
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
+  // Redirigir a página de contacto
+  const handleContact = () => {
+    navigate("/contacto", {
+      state: {
+        asunto: `Consulta sobre: ${pkg.nombre}`,
+        paqueteId: id,
+        fechaId: selectedDate?._id
+      }
+    });
+  };
+
   if (loading) {
     return <LoadingSpinner message="Cargando paquete..." />;
   }
@@ -113,14 +177,14 @@ export default function PackageDetailPage() {
 
   return (
     <div className="min-h-screen bg-background-light">
-      <PackageHeader 
-        isFavorite={isFavorite} 
-        setIsFavorite={setIsFavorite} 
+      <PackageHeader
+        isFavorite={isFavorite}
+        setIsFavorite={setIsFavorite}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <PackageGallery 
-          pkg={pkg} 
+        <PackageGallery
+          pkg={pkg}
           selectedImage={selectedImage}
           setSelectedImage={setSelectedImage}
         />
@@ -135,12 +199,15 @@ export default function PackageDetailPage() {
           </div>
 
           <div className="lg:col-span-1">
-            <PackageBookingSidebar 
+            <PackageBookingSidebar
               pkg={pkg}
               packageDates={packageDates}
               selectedDate={selectedDate}
               setSelectedDate={setSelectedDate}
               datesLoading={datesLoading}
+              onPayment={handlePayment}
+              onContact={handleContact}
+              paymentLoading={paymentLoading}
             />
           </div>
         </div>

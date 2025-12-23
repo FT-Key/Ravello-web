@@ -9,6 +9,8 @@ import featuredRoutes from './featured.route.js';
 import offerRoutes from './offer.route.js';
 import featuredPromotionsRoutes from './featuredPromotions.route.js';
 import newsletterRoutes from './newsletter.route.js';
+import paymentRoutes from './payment.routes.js';
+import bookingRoutes from './booking.route.js';
 
 // 🔹 IMPORTANTE: rutas de autenticación
 import authRoutes from './auth.route.js';
@@ -55,5 +57,7 @@ router.use('/featured-promotions', featuredPromotionsRoutes);
 router.use('/featured', featuredRoutes);
 router.use('/offers', offerRoutes);
 router.use('/newsletter', newsletterRoutes);
+router.use('/payment', paymentRoutes);
+router.use('/booking', bookingRoutes);
 
 export default router;

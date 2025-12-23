@@ -30,6 +30,8 @@ import ManagePackageDatesPage from "../pages/Admin/ManagePackageDatesPage";
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
 import ScrollToTop from "../utils/scrollToTop";
+import PaymentSuccessPage from "../pages/Payment/PaymentSuccessPage";
+import PaymentFailurePage from "../pages/Payment/PaymentFailurePage";
 
 function PrivateRoute({ children }) {
   const { user, token, loadingUser } = useUserStore();
@@ -100,6 +102,8 @@ function AppRouterInner() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/registro" element={<RegisterPage />} />
         <Route path="/unsubscribe" element={<UnsubscribePage />} />
+        <Route path="/reservas/:numeroReserva/pago-exitoso" element={<PaymentSuccessPage />} />
+        <Route path="/reservas/:numeroReserva/pago-fallido" element={<PaymentFailurePage />} />
 
         {/* Ruta privada del usuario */}
         <Route
