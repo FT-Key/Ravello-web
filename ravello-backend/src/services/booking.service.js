@@ -1,12 +1,18 @@
 // services/booking.service.js
+import mongoose from 'mongoose';
 import { Booking, Package, PackageDate, AuditLog, User } from '../models/index.js';
 import { sendEmail } from './email.service.js';
+import { analizarRiesgo, extraerInfoDispositivo } from '../utils/security.utils.js';
 
 // ============================================
-// CREAR RESERVA
+// CREAR RESERVA CON TRANSACCIÓN
 // ============================================
-export async function crearReserva(data, userId = null) {
+export async function crearReserva(data, userId, metadata = {}) {
+  const session = await mongoose.startSession();
+  
   try {
+    await session.startTransaction();
+
     const {
       paqueteId,
       fechaSalidaId,
@@ -17,8 +23,26 @@ export async function crearReserva(data, userId = null) {
       notasCliente
     } = data;
 
+    // ============================================
+    // VALIDACIONES
+    // ============================================
+    
+    // Validar usuario
+    if (!userId) {
+      throw new Error('Usuario no autenticado. Debe iniciar sesión para reservar.');
+    }
+
+    const usuario = await User.findById(userId).session(session);
+    if (!usuario) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    if (!usuario.activo) {
+      throw new Error('Usuario deshabilitado. Contacte al administrador.');
+    }
+
     // Validar paquete
-    const paquete = await Package.findById(paqueteId);
+    const paquete = await Package.findById(paqueteId).session(session);
     if (!paquete) {
       throw new Error('Paquete no encontrado');
     }
@@ -27,8 +51,8 @@ export async function crearReserva(data, userId = null) {
       throw new Error('Este paquete no está disponible');
     }
 
-    // Validar fecha de salida
-    const fechaSalida = await PackageDate.findById(fechaSalidaId);
+    // Validar fecha de salida CON BLOQUEO (evitar race conditions)
+    const fechaSalida = await PackageDate.findById(fechaSalidaId).session(session);
     if (!fechaSalida) {
       throw new Error('Fecha de salida no encontrada');
     }
@@ -48,7 +72,34 @@ export async function crearReserva(data, userId = null) {
       throw new Error(`El paquete permite máximo ${paquete.capacidadMaxima} pasajeros`);
     }
 
-    // Calcular precios
+    // ============================================
+    // ANÁLISIS DE RIESGO
+    // ============================================
+    const riesgo = analizarRiesgo({
+      usuario,
+      email: datosContacto.email,
+      ip: metadata.ip,
+      userAgent: metadata.userAgent,
+      monto: calcularMontoTotal(paquete, cantidadPasajeros, data.descuentoAplicado)
+    });
+
+    // Si es muy riesgoso, rechazar
+    if (riesgo.score > 80) {
+      await AuditLog.create([{
+        usuario: userId,
+        accion: 'reserva_rechazada_riesgo',
+        entidad: { tipo: 'Booking' },
+        descripcion: `Reserva rechazada por alto riesgo: ${riesgo.motivo}`,
+        nivel: 'critical',
+        metadata: { riesgo, ...metadata }
+      }], { session });
+
+      throw new Error('No se pudo procesar su reserva. Por favor contacte al servicio al cliente.');
+    }
+
+    // ============================================
+    // CALCULAR PRECIOS
+    // ============================================
     const precioAdulto = paquete.precioBase;
     const precioNino = paquete.precioBase * (1 - paquete.descuentoNinos / 100);
     
@@ -65,7 +116,7 @@ export async function crearReserva(data, userId = null) {
     const fechaLimitePagoTotal = new Date(fechaSalida.salida);
     fechaLimitePagoTotal.setDate(fechaLimitePagoTotal.getDate() - diasLimite);
 
-    // Crear plan de cuotas si se especifica
+    // Crear plan de cuotas
     let planCuotasData = {
       tipo: 'contado',
       cantidadCuotas: 1,
@@ -77,7 +128,14 @@ export async function crearReserva(data, userId = null) {
       planCuotasData = generarPlanCuotas(montoTotal, planCuotas, fechaSalida.salida);
     }
 
-    // Crear reserva
+    // ============================================
+    // EXTRAER INFO DEL DISPOSITIVO
+    // ============================================
+    const infoDispositivo = extraerInfoDispositivo(metadata.userAgent);
+
+    // ============================================
+    // CREAR RESERVA
+    // ============================================
     const reserva = new Booking({
       usuario: userId,
       paquete: paqueteId,
@@ -90,24 +148,60 @@ export async function crearReserva(data, userId = null) {
       montoPendiente,
       moneda: paquete.moneda,
       planCuotas: planCuotasData,
-      estado: 'pendiente',
+      estado: riesgo.score > 50 ? 'pendiente' : 'pendiente', // Puede agregar 'en_revision' si prefiere
       fechaLimitePagoTotal,
       datosContacto,
       pasajeros: pasajeros || [],
       notasCliente,
-      usuarioCreador: userId
+      usuarioCreador: userId,
+      
+      // SEGURIDAD
+      seguridad: {
+        ip: metadata.ip,
+        userAgent: metadata.userAgent,
+        navegador: infoDispositivo.navegador,
+        sistemaOperativo: infoDispositivo.sistemaOperativo,
+        dispositivo: infoDispositivo.dispositivo,
+        geolocalizacion: metadata.geolocalizacion || {},
+        intentosPrevios: 0,
+        esRiesgoso: riesgo.score > 50,
+        motivoRiesgo: riesgo.score > 50 ? riesgo.motivo : null,
+        emailVerificado: false
+      }
     });
 
-    await reserva.save();
+    await reserva.save({ session });
 
-    // Actualizar cupos
+    // ============================================
+    // ACTUALIZAR CUPOS (DENTRO DE LA TRANSACCIÓN)
+    // ============================================
     fechaSalida.cuposDisponibles -= totalPasajeros;
     if (fechaSalida.cuposDisponibles <= 0) {
       fechaSalida.estado = 'agotado';
     }
-    await fechaSalida.save();
+    await fechaSalida.save({ session });
 
-    // Enviar email de confirmación
+    // ============================================
+    // LOG DE AUDITORÍA
+    // ============================================
+    await AuditLog.create([{
+      usuario: userId,
+      usuarioEmail: datosContacto.email,
+      accion: 'reserva_creada',
+      entidad: { tipo: 'Booking', id: reserva._id },
+      descripcion: `Reserva creada: ${reserva.numeroReserva} - Paquete: ${paquete.nombre} - Monto: ${montoTotal} ${paquete.moneda}`,
+      nivel: riesgo.score > 50 ? 'warning' : 'info',
+      metadata: { riesgo, ...metadata }
+    }], { session });
+
+    // ============================================
+    // COMMIT DE LA TRANSACCIÓN
+    // ============================================
+    await session.commitTransaction();
+
+    // ============================================
+    // ENVIAR EMAIL (FUERA DE LA TRANSACCIÓN)
+    // ============================================
     await sendEmail({
       to: datosContacto.email,
       subject: `Reserva creada - ${reserva.numeroReserva}`,
@@ -122,16 +216,9 @@ export async function crearReserva(data, userId = null) {
         moneda: paquete.moneda,
         planCuotas: planCuotasData
       }
-    });
-
-    // Log de auditoría
-    await AuditLog.create({
-      usuario: userId,
-      usuarioEmail: datosContacto.email,
-      accion: 'reserva_creada',
-      entidad: { tipo: 'Booking', id: reserva._id },
-      descripcion: `Reserva creada: ${reserva.numeroReserva} - Paquete: ${paquete.nombre} - Monto: ${montoTotal} ${paquete.moneda}`,
-      nivel: 'info'
+    }).catch(err => {
+      console.error('Error enviando email de confirmación:', err);
+      // No fallar la reserva si el email falla
     });
 
     // Poblar datos para respuesta
@@ -143,8 +230,12 @@ export async function crearReserva(data, userId = null) {
     return reserva;
 
   } catch (error) {
+    // ROLLBACK en caso de error
+    await session.abortTransaction();
     console.error('Error creando reserva:', error);
     throw error;
+  } finally {
+    session.endSession();
   }
 }
 
@@ -164,7 +255,6 @@ function generarPlanCuotas(montoTotal, planConfig, fechaSalida) {
       const fechaVencimiento = new Date(fechaActual);
       fechaVencimiento.setMonth(fechaVencimiento.getMonth() + i);
 
-      // No permitir cuotas después de la fecha de salida
       if (fechaVencimiento > new Date(fechaSalida)) {
         fechaVencimiento.setTime(new Date(fechaSalida).getTime() - (7 * 24 * 60 * 60 * 1000));
       }
@@ -172,7 +262,7 @@ function generarPlanCuotas(montoTotal, planConfig, fechaSalida) {
       cuotas.push({
         numeroCuota: i,
         monto: i === cantidadCuotas 
-          ? montoTotal - (montoPorCuota * (cantidadCuotas - 1)) // Ajustar última cuota
+          ? montoTotal - (montoPorCuota * (cantidadCuotas - 1))
           : montoPorCuota,
         fechaVencimiento,
         estado: 'pendiente',
@@ -207,7 +297,6 @@ function generarPlanCuotas(montoTotal, planConfig, fechaSalida) {
       };
     });
 
-    // Validar que el total de cuotas coincida con el monto total
     if (Math.abs(totalAsignado - montoTotal) > 0.01) {
       throw new Error('El total de las cuotas no coincide con el monto total de la reserva');
     }
@@ -220,7 +309,6 @@ function generarPlanCuotas(montoTotal, planConfig, fechaSalida) {
     };
   }
 
-  // Por defecto: pago único
   return {
     tipo: 'contado',
     cantidadCuotas: 1,
@@ -234,6 +322,20 @@ function generarPlanCuotas(montoTotal, planConfig, fechaSalida) {
       montoPendiente: montoTotal
     }]
   };
+}
+
+// ============================================
+// CALCULAR MONTO TOTAL (helper)
+// ============================================
+function calcularMontoTotal(paquete, cantidadPasajeros, descuento = 0) {
+  const precioAdulto = paquete.precioBase;
+  const precioNino = paquete.precioBase * (1 - paquete.descuentoNinos / 100);
+  
+  const precioTotal = 
+    (cantidadPasajeros.adultos * precioAdulto) + 
+    ((cantidadPasajeros.ninos || 0) * precioNino);
+
+  return precioTotal - descuento;
 }
 
 // ============================================
@@ -253,6 +355,8 @@ export async function obtenerReservasPorUsuario(userId) {
     throw error;
   }
 }
+
+// ... (resto de funciones igual: obtenerReservaPorId, actualizarReserva, etc.)
 
 // ============================================
 // OBTENER RESERVA POR ID

@@ -1,31 +1,95 @@
 // services/payment.service.js
+import mongoose from 'mongoose';
 import { MercadoPagoConfig, Preference, Payment as MPPayment } from 'mercadopago';
-import { Payment, Booking, AuditLog } from '../models/index.js';
+import { Payment, Booking, AuditLog, User } from '../models/index.js';
 import { sendEmail } from './email.service.js';
+import { analizarRiesgo, extraerInfoDispositivo } from '../utils/security.utils.js';
+import dotenv from "dotenv";
 
-const mpClient = new MercadoPagoConfig({ 
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN 
+dotenv.config();
+
+const mpClient = new MercadoPagoConfig({
+  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN
 });
 
 // ============================================
-// CREAR PREFERENCIA DE MERCADOPAGO
+// CREAR PREFERENCIA DE MERCADOPAGO CON TRANSACCIÓN
 // ============================================
-export async function crearPreferenciaMercadoPago(reservaId, montoPago, tipoPago, numeroCuota = null, userId = null) {
+export async function crearPreferenciaMercadoPago(reservaId, montoPago, tipoPago, numeroCuota = null, userId = null, metadata = {}) {
+  const session = await mongoose.startSession();
+  
   try {
+    await session.startTransaction();
+
+    // ============================================
+    // VALIDACIONES
+    // ============================================
+    if (!userId) {
+      throw new Error('Usuario no autenticado');
+    }
+
+    const usuario = await User.findById(userId).session(session);
+    if (!usuario || !usuario.activo) {
+      throw new Error('Usuario no válido o deshabilitado');
+    }
+
     const reserva = await Booking.findById(reservaId)
       .populate('paquete')
-      .populate('fechaSalida');
+      .populate('fechaSalida')
+      .session(session);
 
     if (!reserva) {
       throw new Error('Reserva no encontrada');
     }
 
-    // Validar que el monto no exceda lo pendiente
+    // Verificar que el usuario sea dueño de la reserva (o admin)
+    if (reserva.usuario.toString() !== userId && usuario.rol !== 'admin') {
+      throw new Error('No tiene permisos para realizar pagos en esta reserva');
+    }
+
     if (montoPago > reserva.montoPendiente) {
       throw new Error('El monto del pago excede el saldo pendiente');
     }
 
-    // Crear registro de pago pendiente
+    if (reserva.estado === 'cancelada') {
+      throw new Error('No se pueden hacer pagos en reservas canceladas');
+    }
+
+    // ============================================
+    // ANÁLISIS DE RIESGO
+    // ============================================
+    const riesgo = analizarRiesgo({
+      usuario,
+      reserva,
+      ip: metadata.ip,
+      userAgent: metadata.userAgent,
+      monto: montoPago,
+      tipoPago
+    });
+
+    // Si es muy riesgoso, rechazar
+    if (riesgo.score > 85) {
+      await AuditLog.create([{
+        usuario: userId,
+        accion: 'pago_rechazado_riesgo',
+        entidad: { tipo: 'Payment' },
+        descripcion: `Pago rechazado por alto riesgo: ${riesgo.motivo}`,
+        nivel: 'critical',
+        metadata: { riesgo, reservaId, montoPago }
+      }], { session });
+
+      await session.abortTransaction();
+      throw new Error('No se pudo procesar el pago. Por favor contacte al servicio al cliente.');
+    }
+
+    // ============================================
+    // EXTRAER INFO DEL DISPOSITIVO
+    // ============================================
+    const infoDispositivo = extraerInfoDispositivo(metadata.userAgent);
+
+    // ============================================
+    // CREAR REGISTRO DE PAGO PENDIENTE
+    // ============================================
     const pago = new Payment({
       reserva: reservaId,
       monto: montoPago,
@@ -34,18 +98,33 @@ export async function crearPreferenciaMercadoPago(reservaId, montoPago, tipoPago
       numeroCuota,
       metodoPago: 'mercadopago',
       estado: 'pendiente',
-      usuarioRegistro: userId
+      usuarioRegistro: userId,
+      usuarioInicio: userId,
+      
+      // SEGURIDAD
+      seguridad: {
+        ip: metadata.ip,
+        userAgent: metadata.userAgent,
+        navegador: infoDispositivo.navegador,
+        dispositivo: infoDispositivo.dispositivo,
+        esRiesgoso: riesgo.score > 50,
+        motivoRiesgo: riesgo.score > 50 ? riesgo.motivo : null,
+        scoreRiesgo: riesgo.score,
+        verificaciones: []
+      }
     });
 
-    await pago.save();
+    await pago.save({ session });
 
-    // Crear preferencia de MercadoPago
+    // ============================================
+    // CREAR PREFERENCIA DE MERCADOPAGO
+    // ============================================
     const preference = new Preference(mpClient);
 
     const cuotaText = numeroCuota ? ` - Cuota ${numeroCuota}/${reserva.planCuotas.cantidadCuotas}` : '';
-    const tipoText = tipoPago === 'senia' ? 'Seña' : 
-                     tipoPago === 'cuota' ? 'Cuota' : 
-                     tipoPago === 'saldo' ? 'Saldo' : 'Pago';
+    const tipoText = tipoPago === 'senia' ? 'Seña' :
+      tipoPago === 'cuota' ? 'Cuota' :
+        tipoPago === 'saldo' ? 'Saldo' : 'Pago';
 
     const body = {
       items: [
@@ -75,13 +154,12 @@ export async function crearPreferenciaMercadoPago(reservaId, montoPago, tipoPago
         failure: `${process.env.FRONTEND_URL}/reservas/${reserva.numeroReserva}/pago-fallido`,
         pending: `${process.env.FRONTEND_URL}/reservas/${reserva.numeroReserva}/pago-pendiente`
       },
-      /* auto_return: 'approved', */
       external_reference: pago.numeroPago,
       notification_url: `${process.env.BACKEND_URL}/api/webhooks/mercadopago`,
       statement_descriptor: 'RAVELLO VIAJES',
       expires: true,
       expiration_date_from: new Date().toISOString(),
-      expiration_date_to: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() // 48 horas
+      expiration_date_to: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
     };
 
     const result = await preference.create({ body });
@@ -90,16 +168,20 @@ export async function crearPreferenciaMercadoPago(reservaId, montoPago, tipoPago
     pago.mercadopago.preferenceId = result.id;
     pago.mercadopago.externalReference = pago.numeroPago;
     pago.mercadopago.backUrls = body.back_urls;
-    await pago.save();
+    await pago.save({ session });
 
     // Log de auditoría
-    await AuditLog.create({
+    await AuditLog.create([{
       usuario: userId,
       accion: 'pago_iniciado',
       entidad: { tipo: 'Payment', id: pago._id },
       descripcion: `Preferencia MP creada para reserva ${reserva.numeroReserva} - Monto: ${montoPago} ${reserva.moneda}`,
-      nivel: 'info'
-    });
+      nivel: riesgo.score > 50 ? 'warning' : 'info',
+      metadata: { riesgo, ...metadata }
+    }], { session });
+
+    // COMMIT
+    await session.commitTransaction();
 
     return {
       preferenceId: result.id,
@@ -114,47 +196,54 @@ export async function crearPreferenciaMercadoPago(reservaId, montoPago, tipoPago
     };
 
   } catch (error) {
+    await session.abortTransaction();
     console.error('Error creando preferencia MP:', error);
     throw error;
+  } finally {
+    session.endSession();
   }
 }
 
 // ============================================
-// PROCESAR WEBHOOK DE MERCADOPAGO
+// PROCESAR WEBHOOK DE MERCADOPAGO CON TRANSACCIÓN
 // ============================================
 export async function procesarWebhookMercadoPago(webhookData) {
+  const session = await mongoose.startSession();
+  
   try {
+    await session.startTransaction();
+
     const { type, data } = webhookData;
 
-    // Solo procesar pagos (payment)
     if (type !== 'payment') {
       console.log(`Webhook tipo ${type} ignorado`);
+      await session.commitTransaction();
       return { success: true, message: 'Tipo de webhook no procesado' };
     }
 
     const paymentId = data.id;
 
-    // Consultar detalles del pago en MercadoPago
     const mpPayment = new MPPayment(mpClient);
     const paymentInfo = await mpPayment.get({ id: paymentId });
 
     const externalReference = paymentInfo.external_reference;
 
-    // Buscar el pago en nuestra BD
-    const pago = await Payment.findOne({ numeroPago: externalReference });
+    const pago = await Payment.findOne({ numeroPago: externalReference }).session(session);
 
     if (!pago) {
       console.error(`Pago no encontrado: ${externalReference}`);
+      await session.abortTransaction();
       return { success: false, message: 'Pago no encontrado' };
     }
 
-    // Evitar procesar el mismo webhook múltiples veces
+    // Evitar procesar duplicados
     if (pago.mercadopago.paymentId === paymentId && pago.estado !== 'pendiente') {
       console.log(`Pago ${externalReference} ya fue procesado`);
+      await session.commitTransaction();
       return { success: true, message: 'Pago ya procesado' };
     }
 
-    // Actualizar datos de MercadoPago en el pago
+    // Actualizar datos de MercadoPago
     pago.mercadopago.paymentId = paymentId;
     pago.mercadopago.status = paymentInfo.status;
     pago.mercadopago.statusDetail = paymentInfo.status_detail;
@@ -169,7 +258,7 @@ export async function procesarWebhookMercadoPago(webhookData) {
     pago.mercadopago.dateApproved = paymentInfo.date_approved;
     pago.mercadopago.dateLastUpdated = paymentInfo.date_last_updated;
     pago.mercadopago.merchantOrderId = paymentInfo.order?.id;
-    
+
     if (paymentInfo.payer) {
       pago.mercadopago.payer = {
         id: paymentInfo.payer.id,
@@ -183,29 +272,29 @@ export async function procesarWebhookMercadoPago(webhookData) {
 
     pago.mercadopago.webhookData = paymentInfo;
 
-    // Actualizar estado según respuesta de MP
+    // Actualizar estado según MP
     switch (paymentInfo.status) {
       case 'approved':
         pago.estado = 'aprobado';
-        await pago.save();
-        await aplicarPagoAReserva(pago);
+        await pago.save({ session });
+        await aplicarPagoAReserva(pago, session);
         break;
 
       case 'rejected':
         pago.estado = 'rechazado';
-        await pago.save();
+        await pago.save({ session });
         await notificarPagoRechazado(pago);
         break;
 
       case 'pending':
       case 'in_process':
         pago.estado = 'en_revision';
-        await pago.save();
+        await pago.save({ session });
         break;
 
       case 'cancelled':
         pago.estado = 'cancelado';
-        await pago.save();
+        await pago.save({ session });
         break;
 
       case 'refunded':
@@ -213,27 +302,30 @@ export async function procesarWebhookMercadoPago(webhookData) {
         pago.reembolso.realizado = true;
         pago.reembolso.fecha = new Date();
         pago.reembolso.mercadopagoRefundId = paymentInfo.refunds?.[0]?.id;
-        await pago.save();
+        await pago.save({ session });
         break;
 
       default:
         console.log(`Estado desconocido: ${paymentInfo.status}`);
+        await pago.save({ session });
     }
 
     // Log de auditoría
-    await AuditLog.create({
+    await AuditLog.create([{
       accion: 'pago_webhook_recibido',
       entidad: { tipo: 'Payment', id: pago._id },
       descripcion: `Webhook MP procesado - Estado: ${paymentInfo.status} - Payment ID: ${paymentId}`,
       nivel: paymentInfo.status === 'approved' ? 'info' : 'warning',
       metadata: { paymentId, status: paymentInfo.status }
-    });
+    }], { session });
 
+    await session.commitTransaction();
     return { success: true, message: 'Webhook procesado correctamente' };
 
   } catch (error) {
+    await session.abortTransaction();
     console.error('Error procesando webhook MP:', error);
-    
+
     await AuditLog.create({
       accion: 'error_sistema',
       entidad: { tipo: 'Sistema' },
@@ -243,46 +335,54 @@ export async function procesarWebhookMercadoPago(webhookData) {
     });
 
     throw error;
+  } finally {
+    session.endSession();
   }
 }
 
 // ============================================
-// APLICAR PAGO A RESERVA
+// APLICAR PAGO A RESERVA (DENTRO DE TRANSACCIÓN)
 // ============================================
-async function aplicarPagoAReserva(pago) {
+async function aplicarPagoAReserva(pago, session) {
   try {
-    const reserva = await Booking.findById(pago.reserva);
+    const reserva = await Booking.findById(pago.reserva).session(session);
 
     if (!reserva) {
       throw new Error('Reserva no encontrada');
     }
 
-    // Registrar el pago en la reserva
     await reserva.registrarPago(pago.monto, pago._id);
+    await reserva.save({ session });
 
-    // Enviar notificación al cliente
-    await sendEmail({
-      to: reserva.datosContacto.email,
-      subject: `Pago recibido - Reserva ${reserva.numeroReserva}`,
-      template: 'pago-confirmado',
-      data: {
-        nombreCliente: reserva.datosContacto.nombre,
-        numeroReserva: reserva.numeroReserva,
-        montoPagado: pago.monto,
-        moneda: pago.moneda,
-        montoPendiente: reserva.montoPendiente,
-        numeroPago: pago.numeroPago,
-        fechaPago: new Date().toLocaleDateString('es-AR')
+    // Enviar email FUERA de la transacción
+    setImmediate(async () => {
+      try {
+        await sendEmail({
+          to: reserva.datosContacto.email,
+          subject: `Pago recibido - Reserva ${reserva.numeroReserva}`,
+          template: 'pago-confirmado',
+          data: {
+            nombreCliente: reserva.datosContacto.nombre,
+            numeroReserva: reserva.numeroReserva,
+            montoPagado: pago.monto,
+            moneda: pago.moneda,
+            montoPendiente: reserva.montoPendiente,
+            numeroPago: pago.numeroPago,
+            fechaPago: new Date().toLocaleDateString('es-AR')
+          }
+        });
+      } catch (err) {
+        console.error('Error enviando email de confirmación:', err);
       }
     });
 
     // Log de auditoría
-    await AuditLog.create({
+    await AuditLog.create([{
       accion: 'pago_aprobado',
       entidad: { tipo: 'Payment', id: pago._id },
       descripcion: `Pago aprobado y aplicado a reserva ${reserva.numeroReserva} - Monto: ${pago.monto} ${pago.moneda}`,
       nivel: 'info'
-    });
+    }], { session });
 
     console.log(`✅ Pago ${pago.numeroPago} aplicado a reserva ${reserva.numeroReserva}`);
 
@@ -291,6 +391,8 @@ async function aplicarPagoAReserva(pago) {
     throw error;
   }
 }
+
+// ... (resto de funciones: notificarPagoRechazado, registrarPagoPresencial, etc.)
 
 // ============================================
 // NOTIFICAR PAGO RECHAZADO
@@ -325,14 +427,14 @@ async function notificarPagoRechazado(pago) {
 // ============================================
 export async function registrarPagoPresencial(data, userId) {
   try {
-    const { 
-      reservaId, 
-      monto, 
-      tipoPago, 
+    const {
+      reservaId,
+      monto,
+      tipoPago,
       numeroCuota,
-      metodoPago, 
+      metodoPago,
       detallePresencial,
-      notas 
+      notas
     } = data;
 
     const reserva = await Booking.findById(reservaId);
@@ -385,9 +487,9 @@ export async function registrarPagoPresencial(data, userId) {
         moneda: reserva.moneda,
         montoPendiente: reserva.montoPendiente,
         numeroPago: pago.numeroPago,
-        metodoPago: metodoPago === 'efectivo' ? 'Efectivo' : 
-                    metodoPago === 'tarjeta_presencial' ? 'Tarjeta' : 
-                    'Transferencia',
+        metodoPago: metodoPago === 'efectivo' ? 'Efectivo' :
+          metodoPago === 'tarjeta_presencial' ? 'Tarjeta' :
+            'Transferencia',
         fechaPago: new Date().toLocaleDateString('es-AR')
       }
     });
@@ -406,7 +508,7 @@ export async function registrarPagoPresencial(data, userId) {
 
   } catch (error) {
     console.error('Error registrando pago presencial:', error);
-    
+
     await AuditLog.create({
       usuario: userId,
       accion: 'error_sistema',

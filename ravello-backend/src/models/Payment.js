@@ -215,9 +215,38 @@ const paymentSchema = new mongoose.Schema({
     ref: 'User'
   },
 
-  fechaRegistro: { type: Date, default: Date.now }
+  fechaRegistro: { type: Date, default: Date.now },
+  // ============================================
+  // 🔐 SEGURIDAD Y ANTI-FRAUDE
+  // ============================================
+  seguridad: {
+    ip: String,
+    userAgent: String,
+    navegador: String,
+    dispositivo: String,
+
+    // Flags de riesgo
+    esRiesgoso: { type: Boolean, default: false },
+    motivoRiesgo: String,
+    scoreRiesgo: { type: Number, min: 0, max: 100 }, // 0 = seguro, 100 = muy riesgoso
+
+    // Verificaciones adicionales
+    verificaciones: [{
+      tipo: { type: String, enum: ['ip', 'email', 'documento', '3ds', 'manual'] },
+      resultado: { type: String, enum: ['aprobado', 'rechazado', 'pendiente'] },
+      fecha: { type: Date, default: Date.now },
+      detalles: String
+    }]
+  },
+
+  // Referencia al usuario que inició el pago
+  usuarioInicio: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true  // ⬅️ OBLIGATORIO
+  },
 },
-{ timestamps: true });
+  { timestamps: true });
 
 // ============================================
 // MIDDLEWARE: Generar número de pago
@@ -232,7 +261,7 @@ paymentSchema.pre('save', async function (next) {
       const numero = (count + 1).toString().padStart(5, '0');
 
       this.numeroPago = `PAG-${year}${month}-${numero}`;
-      
+
       console.log('✅ Número de pago generado:', this.numeroPago);
     } catch (error) {
       console.error('❌ Error generando número de pago:', error);

@@ -1,143 +1,168 @@
 // controllers/booking.controller.js
 import { bookingService } from '../services/index.js';
-import { Booking } from '../models/index.js';
+
+const {
+  crearReserva,
+  obtenerReservasPorUsuario,
+  obtenerReservaPorId,
+  actualizarReserva,
+  confirmarReserva,
+  cancelarReserva,
+  eliminarReserva
+} = bookingService;
+
+// ============================================
+// HELPER: EXTRAER METADATA DE SEGURIDAD
+// ============================================
+function extraerMetadata(req) {
+  return {
+    ip: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+    userAgent: req.headers['user-agent'],
+    origin: req.headers.origin,
+    referer: req.headers.referer,
+    acceptLanguage: req.headers['accept-language']
+  };
+}
 
 // ============================================
 // CREAR RESERVA
 // ============================================
-export const crearReserva = async (req, res) => {
+export async function crearReservaController(req, res) {
   try {
     const userId = req.user?._id;
-    const reserva = await bookingService.crearReserva(req.body, userId);
 
-    res.status(201).json({
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Debe iniciar sesión para crear una reserva'
+      });
+    }
+
+    const metadata = extraerMetadata(req);
+    
+    const reserva = await crearReserva(req.body, userId, metadata);
+
+    return res.status(201).json({
       success: true,
       message: 'Reserva creada exitosamente',
       data: reserva
     });
 
   } catch (error) {
-    console.error('Error en crearReserva:', error);
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
-
-// ============================================
-// OBTENER TODAS LAS RESERVAS (con filtros)
-// ============================================
-export const obtenerTodasReservas = async (req, res) => {
-  try {
-    const { queryOptions, searchFilter, pagination } = req;
+    console.error('Error en crearReservaController:', error);
     
-    const allowedFilters = ['estado', 'paquete', 'fechaSalida'];
-    const filters = Object.fromEntries(
-      Object.entries(queryOptions.raw).filter(([key]) => allowedFilters.includes(key))
-    );
-
-    const query = {
-      ...queryOptions.filters,
-      ...filters,
-      ...searchFilter
-    };
-
-    const total = await Booking.countDocuments(query);
-
-    let mongoQuery = Booking.find(query)
-      .populate('paquete', 'nombre imagenPrincipal')
-      .populate('fechaSalida', 'salida regreso')
-      .populate('usuario', 'nombre email')
-      .sort(queryOptions.sort);
-
-    if (pagination) {
-      mongoQuery = mongoQuery
-        .skip(pagination.skip)
-        .limit(pagination.limit);
-    }
-
-    const items = await mongoQuery;
-
-    res.json({
-      success: true,
-      total,
-      page: pagination?.page || null,
-      limit: pagination?.limit || null,
-      items
-    });
-
-  } catch (error) {
-    console.error('Error en obtenerTodasReservas:', error);
-    res.status(500).json({
+    return res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message || 'Error al crear la reserva'
     });
   }
-};
+}
 
 // ============================================
-// OBTENER MIS RESERVAS (usuario actual)
+// OBTENER MIS RESERVAS
 // ============================================
-export const obtenerMisReservas = async (req, res) => {
+export async function obtenerMisReservasController(req, res) {
   try {
     const userId = req.user._id;
-    const reservas = await bookingService.obtenerReservasPorUsuario(userId);
+    
+    const reservas = await obtenerReservasPorUsuario(userId);
 
-    res.json({
+    return res.json({
       success: true,
       data: reservas
     });
 
   } catch (error) {
-    console.error('Error en obtenerMisReservas:', error);
-    res.status(500).json({
+    console.error('Error en obtenerMisReservasController:', error);
+    
+    return res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Error al obtener las reservas'
     });
   }
-};
+}
 
 // ============================================
 // OBTENER RESERVA POR ID
 // ============================================
-export const obtenerReservaPorId = async (req, res) => {
+export async function obtenerReservaPorIdController(req, res) {
   try {
     const { id } = req.params;
-    const reserva = await bookingService.obtenerReservaPorId(id);
+    const userId = req.user._id;
+    const userRole = req.user.rol;
 
-    // Verificar permisos: solo el dueño o admin/editor pueden ver
-    const esAdmin = ['admin', 'editor'].includes(req.user.rol);
-    const esDueno = reserva.usuario?.toString() === req.user._id.toString();
+    const reserva = await obtenerReservaPorId(id);
 
-    if (!esAdmin && !esDueno) {
+    // Verificar permisos: solo el dueño o admin puede ver la reserva
+    if (reserva.usuario.toString() !== userId.toString() && userRole !== 'admin' && userRole !== 'editor') {
       return res.status(403).json({
         success: false,
-        message: 'No tienes permiso para ver esta reserva'
+        message: 'No tiene permisos para ver esta reserva'
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: reserva
     });
 
   } catch (error) {
-    console.error('Error en obtenerReservaPorId:', error);
-    res.status(404).json({
+    console.error('Error en obtenerReservaPorIdController:', error);
+    
+    return res.status(404).json({
       success: false,
-      message: error.message
+      message: error.message || 'Reserva no encontrada'
     });
   }
-};
+}
 
 // ============================================
-// OBTENER POR NÚMERO DE RESERVA (público)
+// OBTENER TODAS LAS RESERVAS (ADMIN)
 // ============================================
-export const obtenerPorNumero = async (req, res) => {
+export async function obtenerTodasReservasController(req, res) {
+  try {
+    const { filters, pagination } = req;
+
+    // Aquí implementarías la lógica de filtrado y paginación
+    // Por ahora retornamos todas
+    const reservas = await Booking.find(filters || {})
+      .populate('paquete', 'nombre imagenPrincipal')
+      .populate('fechaSalida', 'salida regreso')
+      .populate('usuario', 'nombre email')
+      .limit(pagination?.limit || 50)
+      .skip(pagination?.skip || 0)
+      .sort({ createdAt: -1 });
+
+    const total = await Booking.countDocuments(filters || {});
+
+    return res.json({
+      success: true,
+      data: reservas,
+      pagination: {
+        total,
+        page: pagination?.page || 1,
+        limit: pagination?.limit || 50,
+        totalPages: Math.ceil(total / (pagination?.limit || 50))
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en obtenerTodasReservasController:', error);
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener las reservas'
+    });
+  }
+}
+
+// ============================================
+// OBTENER POR NÚMERO DE RESERVA (PÚBLICO)
+// ============================================
+export async function obtenerPorNumeroController(req, res) {
   try {
     const { numeroReserva } = req.params;
-    
+
     const reserva = await Booking.findOne({ numeroReserva })
       .populate('paquete', 'nombre imagenPrincipal destinos')
       .populate('fechaSalida', 'salida regreso');
@@ -149,141 +174,144 @@ export const obtenerPorNumero = async (req, res) => {
       });
     }
 
-    // Devolver solo información pública
-    const reservaPublica = {
-      numeroReserva: reserva.numeroReserva,
-      estado: reserva.estado,
-      paquete: reserva.paquete,
-      fechaSalida: reserva.fechaSalida,
-      cantidadPasajeros: reserva.cantidadPasajeros,
-      montoTotal: reserva.montoTotal,
-      montoPagado: reserva.montoPagado,
-      montoPendiente: reserva.montoPendiente,
-      moneda: reserva.moneda,
-      planCuotas: {
-        tipo: reserva.planCuotas.tipo,
-        cantidadCuotas: reserva.planCuotas.cantidadCuotas,
-        cuotas: reserva.planCuotas.cuotas.map(c => ({
-          numeroCuota: c.numeroCuota,
-          monto: c.monto,
-          fechaVencimiento: c.fechaVencimiento,
-          estado: c.estado,
-          montoPagado: c.montoPagado,
-          montoPendiente: c.montoPendiente
-        }))
-      }
-    };
-
-    res.json({
+    // Retornar solo info básica (sin datos sensibles)
+    return res.json({
       success: true,
-      data: reservaPublica
+      data: {
+        numeroReserva: reserva.numeroReserva,
+        estado: reserva.estado,
+        paquete: reserva.paquete,
+        fechaSalida: reserva.fechaSalida,
+        montoTotal: reserva.montoTotal,
+        montoPagado: reserva.montoPagado,
+        montoPendiente: reserva.montoPendiente,
+        moneda: reserva.moneda
+      }
     });
 
   } catch (error) {
-    console.error('Error obteniendo reserva por número:', error);
-    res.status(500).json({
+    console.error('Error en obtenerPorNumeroController:', error);
+    
+    return res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Error al buscar la reserva'
     });
   }
-};
+}
 
 // ============================================
 // ACTUALIZAR RESERVA
 // ============================================
-export const actualizarReserva = async (req, res) => {
+export async function actualizarReservaController(req, res) {
   try {
     const { id } = req.params;
     const userId = req.user._id;
-    
-    const reserva = await bookingService.actualizarReserva(id, req.body, userId);
 
-    res.json({
+    const reserva = await actualizarReserva(id, req.body, userId);
+
+    return res.json({
       success: true,
       message: 'Reserva actualizada exitosamente',
       data: reserva
     });
 
   } catch (error) {
-    console.error('Error en actualizarReserva:', error);
-    res.status(400).json({
+    console.error('Error en actualizarReservaController:', error);
+    
+    return res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message || 'Error al actualizar la reserva'
     });
   }
-};
+}
 
 // ============================================
-// CANCELAR RESERVA
+// CONFIRMAR RESERVA (ADMIN)
 // ============================================
-export const cancelarReserva = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { motivo } = req.body;
-    const userId = req.user._id;
-
-    const reserva = await bookingService.cancelarReserva(id, motivo, userId);
-
-    res.json({
-      success: true,
-      message: 'Reserva cancelada exitosamente',
-      data: reserva
-    });
-
-  } catch (error) {
-    console.error('Error en cancelarReserva:', error);
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
-
-// ============================================
-// CONFIRMAR RESERVA
-// ============================================
-export const confirmarReserva = async (req, res) => {
+export async function confirmarReservaController(req, res) {
   try {
     const { id } = req.params;
     const userId = req.user._id;
 
-    const reserva = await bookingService.confirmarReserva(id, userId);
+    const reserva = await confirmarReserva(id, userId);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Reserva confirmada exitosamente',
       data: reserva
     });
 
   } catch (error) {
-    console.error('Error en confirmarReserva:', error);
-    res.status(400).json({
+    console.error('Error en confirmarReservaController:', error);
+    
+    return res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message || 'Error al confirmar la reserva'
     });
   }
-};
+}
 
 // ============================================
-// ELIMINAR RESERVA
+// CANCELAR RESERVA
 // ============================================
-export const eliminarReserva = async (req, res) => {
+export async function cancelarReservaController(req, res) {
+  try {
+    const { id } = req.params;
+    const { motivo } = req.body;
+    const userId = req.user._id;
+
+    const reserva = await cancelarReserva(id, motivo, userId);
+
+    return res.json({
+      success: true,
+      message: 'Reserva cancelada exitosamente',
+      data: reserva
+    });
+
+  } catch (error) {
+    console.error('Error en cancelarReservaController:', error);
+    
+    return res.status(400).json({
+      success: false,
+      message: error.message || 'Error al cancelar la reserva'
+    });
+  }
+}
+
+// ============================================
+// ELIMINAR RESERVA (SOLO ADMIN)
+// ============================================
+export async function eliminarReservaController(req, res) {
   try {
     const { id } = req.params;
     const userId = req.user._id;
 
-    await bookingService.eliminarReserva(id, userId);
+    await eliminarReserva(id, userId);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Reserva eliminada exitosamente'
     });
 
   } catch (error) {
-    console.error('Error en eliminarReserva:', error);
-    res.status(400).json({
+    console.error('Error en eliminarReservaController:', error);
+    
+    return res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message || 'Error al eliminar la reserva'
     });
   }
+}
+
+// Exportar todo junto
+export default {
+  crearReserva: crearReservaController,
+  obtenerMisReservas: obtenerMisReservasController,
+  obtenerReservaPorId: obtenerReservaPorIdController,
+  obtenerTodasReservas: obtenerTodasReservasController,
+  obtenerPorNumero: obtenerPorNumeroController,
+  actualizarReserva: actualizarReservaController,
+  confirmarReserva: confirmarReservaController,
+  cancelarReserva: cancelarReservaController,
+  eliminarReserva: eliminarReservaController
 };

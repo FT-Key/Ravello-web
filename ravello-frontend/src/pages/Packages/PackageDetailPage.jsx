@@ -138,7 +138,7 @@ export default function PackageDetailPage() {
       console.log("💳 Creando preferencia de pago...");
       const paymentResponse = await clientAxios.post("/payments/mercadopago/preference", {
         reservaId: reserva._id,
-        monto: reserva.montoTotal,
+        montoPago: reserva.montoTotal,
         tipoPago: 'total',
       });
 

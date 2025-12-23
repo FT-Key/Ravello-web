@@ -150,9 +150,49 @@ const bookingSchema = new mongoose.Schema({
       ref: 'User'
     },
     motivo: String
-  }
+  },
+  // ============================================
+  // 🔐 SEGURIDAD Y ANTI-FRAUDE
+  // ============================================
+  seguridad: {
+    ip: String,
+    userAgent: String,
+    navegador: String,
+    sistemaOperativo: String,
+    dispositivo: String,
+
+    // Geolocalización aproximada
+    geolocalizacion: {
+      pais: String,
+      ciudad: String,
+      latitud: Number,
+      longitud: Number
+    },
+
+    // Intentos de creación
+    intentosPrevios: { type: Number, default: 0 },
+
+    // Flags de riesgo
+    esRiesgoso: { type: Boolean, default: false },
+    motivoRiesgo: String,
+
+    // Email verificado
+    emailVerificado: { type: Boolean, default: false },
+    tokenVerificacion: String,
+    fechaVerificacion: Date
+  },
+
+  // ============================================
+  // 🔒 CONTROL DE ACCESO
+  // ============================================
+  // NUEVO: Solo usuarios autenticados pueden crear reservas
+  usuario: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true  // ⬅️ AHORA ES OBLIGATORIO
+  },
 },
-{ timestamps: true });
+  { timestamps: true });
 
 // ============================================
 // MIDDLEWARE: Generar número de reserva
@@ -167,7 +207,7 @@ bookingSchema.pre('save', async function (next) {
       const numero = (count + 1).toString().padStart(4, '0');
 
       this.numeroReserva = `RES-${year}${month}-${numero}`;
-      
+
       console.log('✅ Número de reserva generado:', this.numeroReserva);
     } catch (error) {
       console.error('❌ Error generando número de reserva:', error);
