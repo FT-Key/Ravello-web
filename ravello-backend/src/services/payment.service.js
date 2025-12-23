@@ -75,7 +75,7 @@ export async function crearPreferenciaMercadoPago(reservaId, montoPago, tipoPago
         failure: `${process.env.FRONTEND_URL}/reservas/${reserva.numeroReserva}/pago-fallido`,
         pending: `${process.env.FRONTEND_URL}/reservas/${reserva.numeroReserva}/pago-pendiente`
       },
-      auto_return: 'approved',
+      /* auto_return: 'approved', */
       external_reference: pago.numeroPago,
       notification_url: `${process.env.BACKEND_URL}/api/webhooks/mercadopago`,
       statement_descriptor: 'RAVELLO VIAJES',

@@ -106,6 +106,7 @@ export default function PackageDetailPage() {
   }, [id]);
 
   // Manejar proceso de pago
+  // PackageDetailPage.jsx
   const handlePayment = async (bookingData) => {
     if (!selectedDate) {
       alert("Por favor selecciona una fecha de salida");
@@ -115,15 +116,20 @@ export default function PackageDetailPage() {
     try {
       setPaymentLoading(true);
 
+      // Preparar payload
+      const bookingPayload = {
+        paqueteId: id,
+        fechaSalidaId: selectedDate._id,
+        cantidadPasajeros: bookingData.pasajeros,
+        datosContacto: bookingData.contacto
+      };
+
+      // 🔍 LOG: Ver exactamente qué se está enviando
+      console.log("📦 Payload de reserva:", JSON.stringify(bookingPayload, null, 2));
+
       // 1. Crear la reserva
       console.log("📝 Creando reserva...");
-      const bookingResponse = await clientAxios.post("/bookings", {
-        paquete: id,
-        fechaSalida: selectedDate._id,
-        cantidadPasajeros: bookingData.pasajeros,
-        datosContacto: bookingData.contacto,
-        moneda: selectedDate.moneda || 'ARS',
-      });
+      const bookingResponse = await clientAxios.post("/bookings", bookingPayload);
 
       const reserva = bookingResponse.data.data;
       console.log("✅ Reserva creada:", reserva);
@@ -136,20 +142,22 @@ export default function PackageDetailPage() {
         tipoPago: 'total',
       });
 
-      const { preferenceId, initPoint } = paymentResponse.data.data;
-      console.log("✅ Preferencia creada:", preferenceId);
+      const { initPoint } = paymentResponse.data.data;
+      console.log("✅ Preferencia creada");
 
       // 3. Redirigir a MercadoPago
       console.log("🔄 Redirigiendo a MercadoPago...");
       window.location.href = initPoint;
 
     } catch (error) {
-      console.error("❌ Error procesando el pago:", error);
-      
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          "Error al procesar el pago. Por favor intenta nuevamente.";
-      
+      console.error("❌ Error completo:", error);
+      console.error("❌ Respuesta del servidor:", error.response?.data);
+      console.error("❌ Status:", error.response?.status);
+
+      const errorMessage = error.response?.data?.message ||
+        error.message ||
+        "Error al procesar el pago. Por favor intenta nuevamente.";
+
       alert(errorMessage);
     } finally {
       setPaymentLoading(false);

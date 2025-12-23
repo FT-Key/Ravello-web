@@ -5,8 +5,9 @@ const paymentSchema = new mongoose.Schema({
   // Número de pago único
   numeroPago: {
     type: String,
-    unique: true,  // ✅ Esto ya crea el índice automáticamente
-    required: true
+    unique: true,
+    sparse: true  // ⬅️ AGREGAR: Permite null temporalmente durante el pre-save
+    // ❌ NO poner required: true
   },
 
   // Relación con reserva
@@ -144,10 +145,7 @@ const paymentSchema = new mongoose.Schema({
     // Cajero que procesó el pago
     usuarioRecibio: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: function () {
-        return this.metodoPago !== 'mercadopago';
-      }
+      ref: 'User'
     }
   },
 
@@ -219,20 +217,27 @@ const paymentSchema = new mongoose.Schema({
 
   fechaRegistro: { type: Date, default: Date.now }
 },
-  { timestamps: true });
+{ timestamps: true });
 
 // ============================================
 // MIDDLEWARE: Generar número de pago
 // ============================================
 paymentSchema.pre('save', async function (next) {
-  if (!this.numeroPago) {
-    const count = await mongoose.model('Payment').countDocuments();
-    const fecha = new Date();
-    const year = fecha.getFullYear().toString().slice(-2);
-    const month = (fecha.getMonth() + 1).toString().padStart(2, '0');
-    const numero = (count + 1).toString().padStart(5, '0');
+  if (!this.numeroPago && this.isNew) {  // ⬅️ AGREGAR: Solo para documentos nuevos
+    try {
+      const count = await mongoose.model('Payment').countDocuments();
+      const fecha = new Date();
+      const year = fecha.getFullYear().toString().slice(-2);
+      const month = (fecha.getMonth() + 1).toString().padStart(2, '0');
+      const numero = (count + 1).toString().padStart(5, '0');
 
-    this.numeroPago = `PAG-${year}${month}-${numero}`;
+      this.numeroPago = `PAG-${year}${month}-${numero}`;
+      
+      console.log('✅ Número de pago generado:', this.numeroPago);
+    } catch (error) {
+      console.error('❌ Error generando número de pago:', error);
+      return next(error);
+    }
   }
   next();
 });
@@ -240,9 +245,6 @@ paymentSchema.pre('save', async function (next) {
 // ============================================
 // ÍNDICES
 // ============================================
-// ❌ ELIMINADO: paymentSchema.index({ numeroPago: 1 }); 
-// ↑ Ya está cubierto por unique: true en la definición del campo
-
 paymentSchema.index({ reserva: 1, estado: 1 });
 paymentSchema.index({ metodoPago: 1 });
 paymentSchema.index({ estado: 1 });

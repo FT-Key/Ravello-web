@@ -57,7 +57,7 @@ router.use('/featured-promotions', featuredPromotionsRoutes);
 router.use('/featured', featuredRoutes);
 router.use('/offers', offerRoutes);
 router.use('/newsletter', newsletterRoutes);
-router.use('/payment', paymentRoutes);
-router.use('/booking', bookingRoutes);
+router.use('/payments', paymentRoutes);
+router.use('/bookings', bookingRoutes);
 
 export default router;

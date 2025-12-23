@@ -5,8 +5,9 @@ const bookingSchema = new mongoose.Schema({
   // Número de reserva único
   numeroReserva: {
     type: String,
-    unique: true,  // ✅ Esto ya crea el índice automáticamente
-    required: true
+    unique: true,
+    sparse: true  // ⬅️ Permite que sea null temporalmente durante el pre-save
+    // ❌ NO poner required: true aquí
   },
 
   // Relaciones
@@ -151,26 +152,33 @@ const bookingSchema = new mongoose.Schema({
     motivo: String
   }
 },
-  { timestamps: true });
+{ timestamps: true });
 
 // ============================================
 // MIDDLEWARE: Generar número de reserva
 // ============================================
 bookingSchema.pre('save', async function (next) {
-  if (!this.numeroReserva) {
-    const count = await mongoose.model('Booking').countDocuments();
-    const fecha = new Date();
-    const year = fecha.getFullYear().toString().slice(-2);
-    const month = (fecha.getMonth() + 1).toString().padStart(2, '0');
-    const numero = (count + 1).toString().padStart(4, '0');
+  if (!this.numeroReserva && this.isNew) {  // ⬅️ Solo para documentos nuevos
+    try {
+      const count = await mongoose.model('Booking').countDocuments();
+      const fecha = new Date();
+      const year = fecha.getFullYear().toString().slice(-2);
+      const month = (fecha.getMonth() + 1).toString().padStart(2, '0');
+      const numero = (count + 1).toString().padStart(4, '0');
 
-    this.numeroReserva = `RES-${year}${month}-${numero}`;
+      this.numeroReserva = `RES-${year}${month}-${numero}`;
+      
+      console.log('✅ Número de reserva generado:', this.numeroReserva);
+    } catch (error) {
+      console.error('❌ Error generando número de reserva:', error);
+      return next(error);
+    }
   }
   next();
 });
 
 // ============================================
-// MIDDLEWARE: Actualizar estado según pagos
+// MÉTODOS: Actualizar estado según pagos
 // ============================================
 bookingSchema.methods.actualizarEstadoPago = function () {
   const { montoPagado, montoTotal } = this;
@@ -185,7 +193,7 @@ bookingSchema.methods.actualizarEstadoPago = function () {
 };
 
 // ============================================
-// MÉTODOS: Agregar pago
+// MÉTODOS: Registrar pago
 // ============================================
 bookingSchema.methods.registrarPago = async function (montoPago, pagoId) {
   this.montoPagado += montoPago;
@@ -219,9 +227,6 @@ bookingSchema.methods.registrarPago = async function (montoPago, pagoId) {
 // ============================================
 // ÍNDICES
 // ============================================
-// ❌ ELIMINADO: bookingSchema.index({ numeroReserva: 1 }); 
-// ↑ Ya está cubierto por unique: true en la definición del campo
-
 bookingSchema.index({ usuario: 1, estado: 1 });
 bookingSchema.index({ fechaSalida: 1 });
 bookingSchema.index({ estado: 1, createdAt: -1 });
