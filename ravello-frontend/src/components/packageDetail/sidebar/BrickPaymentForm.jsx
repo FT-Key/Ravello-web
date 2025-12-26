@@ -2,7 +2,7 @@
 // components/packageDetail/sidebar/BrickPaymentForm.jsx
 // ===================================================================
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 
 const MP_SDK_URL = "https://sdk.mercadopago.com/js/v2";
@@ -18,6 +18,7 @@ export default function BrickPaymentForm({
   const [isLoading, setIsLoading] = useState(true);
   const brickCreatedRef = useRef(false);
   const mpInstanceRef = useRef(null);
+  const [navbarHeight, setNavbarHeight] = useState(0);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -26,6 +27,23 @@ export default function BrickPaymentForm({
     };
   }, []);
 
+  useLayoutEffect(() => {
+    const updateNavbarHeight = () => {
+      const navbar = document.getElementById("main-navbar");
+      if (navbar) {
+        setNavbarHeight(navbar.getBoundingClientRect().height);
+      }
+    };
+
+    updateNavbarHeight();
+    window.addEventListener("resize", updateNavbarHeight);
+    window.addEventListener("scroll", updateNavbarHeight);
+
+    return () => {
+      window.removeEventListener("resize", updateNavbarHeight);
+      window.removeEventListener("scroll", updateNavbarHeight);
+    };
+  }, []);
 
   // Al inicio del componente (después de línea 10):
   useEffect(() => {
@@ -121,7 +139,10 @@ export default function BrickPaymentForm({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div
+      className="fixed left-0 right-0 bottom-0 bg-black/50 z-40 flex items-center justify-center p-4"
+      style={{ top: navbarHeight }}
+    >
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">

@@ -75,7 +75,10 @@ const Navbar = ({ position = "sticky" }) => {
   };
 
   return (
-    <nav className={`${position} top-0 left-0 right-0 z-50 min-h-[115px] transition-all duration-500`}>
+    <nav
+      id="main-navbar"
+      className={`${position} top-0 left-0 right-0 z-50 min-h-[115px] transition-all duration-500`}
+    >
       <div
         className={`
         transition-all duration-500
