@@ -1,21 +1,15 @@
 // config/mercadopago.js
-import { MercadoPagoConfig } from '@mercadopago/sdk-react';
 
 /**
- * Configuración del SDK de MercadoPago para React
+ * Configuración de MercadoPago para el frontend
  * 
  * IMPORTANTE: 
- * - Instalar: npm install @mercadopago/sdk-react
  * - Agregar en .env: VITE_MERCADOPAGO_PUBLIC_KEY=tu_public_key
+ * - Para Bricks, el SDK se carga dinámicamente desde CDN
  */
 
-export const mercadoPagoConfig = new MercadoPagoConfig({
-  publicKey: import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY,
-  locale: 'es-AR',
-});
-
 /**
- * Obtener la public key (útil para validaciones)
+ * Obtener la public key de MercadoPago
  */
 export const getMercadoPagoPublicKey = () => {
   return import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY;
@@ -26,7 +20,27 @@ export const getMercadoPagoPublicKey = () => {
  */
 export const isMercadoPagoConfigured = () => {
   const publicKey = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY;
-  return !!publicKey && publicKey !== 'undefined';
+  return !!publicKey && publicKey !== 'undefined' && publicKey !== '';
 };
 
-export default mercadoPagoConfig;
+/**
+ * Obtener la configuración para Bricks
+ */
+export const getBricksConfig = () => {
+  return {
+    publicKey: getMercadoPagoPublicKey(),
+    locale: 'es-AR'
+  };
+};
+
+/**
+ * URL del SDK de MercadoPago (para Bricks)
+ */
+export const MP_SDK_URL = 'https://sdk.mercadopago.com/js/v2';
+
+export default {
+  getMercadoPagoPublicKey,
+  isMercadoPagoConfigured,
+  getBricksConfig,
+  MP_SDK_URL
+};

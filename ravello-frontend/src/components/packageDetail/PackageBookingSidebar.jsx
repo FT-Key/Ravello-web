@@ -11,6 +11,8 @@ import DateSelector from "./sidebar/DateSelector";
 import AuthAlerts from "./sidebar/AuthAlerts";
 import PaymentButtons from "./sidebar/PaymentButtons";
 import PackageDetails from "./sidebar/PackageDetails";
+import BrickPaymentForm from "./sidebar/BrickPaymentForm";
+import { getMercadoPagoPublicKey } from '../../config/mercadopago';
 
 export default function PackageBookingSidebar({
   pkg,
@@ -22,12 +24,14 @@ export default function PackageBookingSidebar({
   onContact,
   paymentLoading,
   isAuthenticated,
-  canBook
+  canBook,
+  mercadoPagoPublicKey // Añadir esta prop
 }) {
   const navigate = useNavigate();
   const [adultos, setAdultos] = useState(2);
   const [ninos, setNinos] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState(null); // 'checkout' | 'brick' | null
+  const [showBrickModal, setShowBrickModal] = useState(false);
 
   // Calcular precio total
   const precioAdulto = selectedDate?.precioFinal || selectedDate?.precio || pkg.precioBase || 0;
@@ -50,12 +54,28 @@ export default function PackageBookingSidebar({
 
     // Preparar datos para enviar
     const bookingData = {
-      pasajeros: { adultos, ninos },
-      paymentMethod: method // 'checkout' o 'brick'
+      paqueteId: pkg._id,
+      fechaSalidaId: selectedDate._id,
+      pasajeros: { adultos, ninos }
     };
 
-    // Llamar al handler
-    onPayment(bookingData);
+    if (method === 'checkout') {
+      // Checkout Pro: redirigir a MercadoPago
+      onPayment({ ...bookingData, paymentMethod: 'checkout' });
+    } else if (method === 'brick') {
+      // Bricks: mostrar modal con formulario
+      setShowBrickModal(true);
+    }
+  };
+
+  const handleBrickSuccess = (result) => {
+    setShowBrickModal(false);
+    // Redirigir o mostrar mensaje de éxito
+    navigate(`/booking-confirmation/${result.bookingId}`);
+  };
+
+  const handleBrickError = (error) => {
+    alert(error);
   };
 
   const handleLoginRedirect = () => {
@@ -65,6 +85,12 @@ export default function PackageBookingSidebar({
         message: 'Inicia sesión para hacer tu reserva'
       }
     });
+  };
+
+  const bookingData = {
+    paqueteId: pkg._id,
+    fechaSalidaId: selectedDate?._id,
+    pasajeros: { adultos, ninos }
   };
 
   return (
@@ -136,7 +162,7 @@ export default function PackageBookingSidebar({
                 </>
               ) : (
                 <>
-                  {paymentMethod === 'checkout' ? 'Ir a MercadoPago' : 'Proceder al Pago'}
+                  {paymentMethod === 'checkout' ? 'Ir a MercadoPago' : 'Abrir Formulario de Pago'}
                 </>
               )}
             </button>
@@ -176,6 +202,18 @@ export default function PackageBookingSidebar({
 
       {/* Detalles del paquete */}
       <PackageDetails pkg={pkg} />
+
+      {/* Modal de Brick Payment */}
+      {showBrickModal && (
+        <BrickPaymentForm
+          bookingData={bookingData}
+          precioTotal={precioTotal}
+          onSuccess={handleBrickSuccess}
+          onError={handleBrickError}
+          onCancel={() => setShowBrickModal(false)}
+          publicKey={getMercadoPagoPublicKey()}
+        />
+      )}
     </div>
   );
 }

@@ -83,6 +83,65 @@ export async function crearPreferenciaMercadoPagoController(req, res) {
 }
 
 // ============================================
+// CREAR PAGO CON BRICKS
+// ============================================
+export async function crearPagoBrickController(req, res) {
+  try {
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Debe iniciar sesión para realizar un pago'
+      });
+    }
+
+    const { reservaId, montoPago, tipoPago, numeroCuota, paymentData } = req.body;
+
+    // Validaciones básicas
+    if (!reservaId || !montoPago || !tipoPago || !paymentData) {
+      return res.status(400).json({
+        success: false,
+        message: 'Faltan datos requeridos'
+      });
+    }
+
+    if (montoPago <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'El monto debe ser mayor a cero'
+      });
+    }
+
+    const metadata = extraerMetadata(req);
+
+    const resultado = await crearPagoBrick(
+      reservaId,
+      montoPago,
+      tipoPago,
+      numeroCuota,
+      paymentData,
+      userId,
+      metadata
+    );
+
+    return res.json({
+      success: true,
+      message: 'Pago procesado exitosamente',
+      data: resultado
+    });
+
+  } catch (error) {
+    console.error('Error en crearPagoBrickController:', error);
+
+    return res.status(400).json({
+      success: false,
+      message: error.message || 'Error al procesar el pago'
+    });
+  }
+}
+
+// ============================================
 // WEBHOOK DE MERCADOPAGO
 // ============================================
 export async function webhookMercadoPagoController(req, res) {
@@ -367,6 +426,7 @@ export async function procesarReembolsoController(req, res) {
 // Exportar todo junto
 export default {
   crearPreferenciaMercadoPago: crearPreferenciaMercadoPagoController,
+  crearPagoBrick: crearPagoBrickController,
   webhookMercadoPago: webhookMercadoPagoController,
   verificarEstadoPago: verificarEstadoPagoController,
   registrarPagoPresencial: registrarPagoPresencialController,

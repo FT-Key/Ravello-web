@@ -34,6 +34,13 @@ router.get('/verificar/:numeroPago', paymentController.verificarEstadoPago);
 // RUTAS PROTEGIDAS (requieren autenticación)
 // ============================================
 
+// Crear pago con Bricks (inline payment)
+router.post(
+  '/mercadopago/brick',
+  authenticate,
+  paymentController.crearPagoBrick
+);
+
 // Crear preferencia de MercadoPago
 router.post(
   '/mercadopago/preference',

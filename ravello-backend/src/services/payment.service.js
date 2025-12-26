@@ -17,7 +17,7 @@ const mpClient = new MercadoPagoConfig({
 // ============================================
 export async function crearPreferenciaMercadoPago(reservaId, montoPago, tipoPago, numeroCuota = null, userId = null, metadata = {}) {
   const session = await mongoose.startSession();
-  
+
   try {
     await session.startTransaction();
 
@@ -100,7 +100,7 @@ export async function crearPreferenciaMercadoPago(reservaId, montoPago, tipoPago
       estado: 'pendiente',
       usuarioRegistro: userId,
       usuarioInicio: userId,
-      
+
       // SEGURIDAD
       seguridad: {
         ip: metadata.ip,
@@ -205,11 +205,215 @@ export async function crearPreferenciaMercadoPago(reservaId, montoPago, tipoPago
 }
 
 // ============================================
+// CREAR PAGO CON BRICKS (INLINE PAYMENT)
+// ============================================
+export async function crearPagoBrick(reservaId, montoPago, tipoPago, numeroCuota, paymentData, userId, metadata = {}) {
+  const session = await mongoose.startSession();
+
+  try {
+    await session.startTransaction();
+
+    // ============================================
+    // VALIDACIONES (igual que en preferencia)
+    // ============================================
+    if (!userId) {
+      throw new Error('Usuario no autenticado');
+    }
+
+    const usuario = await User.findById(userId).session(session);
+    if (!usuario || !usuario.activo) {
+      throw new Error('Usuario no válido o deshabilitado');
+    }
+
+    const reserva = await Booking.findById(reservaId)
+      .populate('paquete')
+      .populate('fechaSalida')
+      .session(session);
+
+    if (!reserva) {
+      throw new Error('Reserva no encontrada');
+    }
+
+    if (reserva.usuario.toString() !== userId && usuario.rol !== 'admin') {
+      throw new Error('No tiene permisos para realizar pagos en esta reserva');
+    }
+
+    if (montoPago > reserva.montoPendiente) {
+      throw new Error('El monto del pago excede el saldo pendiente');
+    }
+
+    if (reserva.estado === 'cancelada') {
+      throw new Error('No se pueden hacer pagos en reservas canceladas');
+    }
+
+    // ============================================
+    // ANÁLISIS DE RIESGO
+    // ============================================
+    const riesgo = analizarRiesgo({
+      usuario,
+      reserva,
+      ip: metadata.ip,
+      userAgent: metadata.userAgent,
+      monto: montoPago,
+      tipoPago
+    });
+
+    if (riesgo.score > 85) {
+      await AuditLog.create([{
+        usuario: userId,
+        accion: 'pago_rechazado_riesgo',
+        entidad: { tipo: 'Payment' },
+        descripcion: `Pago Brick rechazado por alto riesgo: ${riesgo.motivo}`,
+        nivel: 'critical',
+        metadata: { riesgo, reservaId, montoPago }
+      }], { session });
+
+      await session.abortTransaction();
+      throw new Error('No se pudo procesar el pago. Por favor contacte al servicio al cliente.');
+    }
+
+    const infoDispositivo = extraerInfoDispositivo(metadata.userAgent);
+
+    // ============================================
+    // CREAR REGISTRO DE PAGO
+    // ============================================
+    const pago = new Payment({
+      reserva: reservaId,
+      monto: montoPago,
+      moneda: reserva.moneda,
+      tipoPago,
+      numeroCuota,
+      metodoPago: 'mercadopago',
+      estado: 'pendiente',
+      usuarioRegistro: userId,
+      usuarioInicio: userId,
+      seguridad: {
+        ip: metadata.ip,
+        userAgent: metadata.userAgent,
+        navegador: infoDispositivo.navegador,
+        dispositivo: infoDispositivo.dispositivo,
+        esRiesgoso: riesgo.score > 50,
+        motivoRiesgo: riesgo.score > 50 ? riesgo.motivo : null,
+        scoreRiesgo: riesgo.score,
+        verificaciones: []
+      }
+    });
+
+    await pago.save({ session });
+
+    // ============================================
+    // PROCESAR PAGO CON MERCADOPAGO
+    // ============================================
+    const mpPayment = new MPPayment(mpClient);
+
+    const payment = await mpPayment.create({
+      body: {
+        transaction_amount: montoPago,
+        token: paymentData.token,
+        description: `${reserva.paquete.nombre} - Reserva ${reserva.numeroReserva}`,
+        installments: paymentData.installments,
+        payment_method_id: paymentData.payment_method_id,
+        issuer_id: paymentData.issuer_id,
+        payer: {
+          email: paymentData.payer.email,
+          identification: {
+            type: paymentData.payer.identification.type,
+            number: paymentData.payer.identification.number
+          }
+        },
+        statement_descriptor: 'RAVELLO VIAJES',
+        external_reference: pago.numeroPago,
+        notification_url: `${process.env.BACKEND_URL}/api/payments/webhook/mercadopago`,
+        metadata: {
+          reserva_id: reservaId,
+          user_id: userId,
+          tipo_pago: tipoPago
+        }
+      }
+    });
+
+    // ============================================
+    // ACTUALIZAR PAGO CON RESPUESTA DE MP
+    // ============================================
+    pago.mercadopago.paymentId = payment.id;
+    pago.mercadopago.status = payment.status;
+    pago.mercadopago.statusDetail = payment.status_detail;
+    pago.mercadopago.paymentTypeId = payment.payment_type_id;
+    pago.mercadopago.paymentMethodId = payment.payment_method_id;
+    pago.mercadopago.installments = payment.installments;
+    pago.mercadopago.transactionAmount = payment.transaction_amount;
+    pago.mercadopago.netReceivedAmount = payment.transaction_details?.net_received_amount;
+    pago.mercadopago.totalPaidAmount = payment.transaction_details?.total_paid_amount;
+    pago.mercadopago.dateCreated = payment.date_created;
+    pago.mercadopago.dateApproved = payment.date_approved;
+    pago.mercadopago.externalReference = pago.numeroPago;
+
+    if (payment.payer) {
+      pago.mercadopago.payer = {
+        id: payment.payer.id,
+        email: payment.payer.email,
+        identification: payment.payer.identification
+      };
+    }
+
+    // ============================================
+    // ACTUALIZAR ESTADO SEGÚN RESPUESTA
+    // ============================================
+    if (payment.status === 'approved') {
+      pago.estado = 'aprobado';
+      await pago.save({ session });
+      await aplicarPagoAReserva(pago, session);
+
+    } else if (payment.status === 'pending' || payment.status === 'in_process') {
+      pago.estado = 'en_revision';
+      await pago.save({ session });
+
+    } else if (payment.status === 'rejected') {
+      pago.estado = 'rechazado';
+      await pago.save({ session });
+      await session.abortTransaction();
+      throw new Error(`Pago rechazado: ${payment.status_detail}`);
+    }
+
+    // Log de auditoría
+    await AuditLog.create([{
+      usuario: userId,
+      accion: 'pago_brick_procesado',
+      entidad: { tipo: 'Payment', id: pago._id },
+      descripcion: `Pago Brick ${payment.status} - Reserva ${reserva.numeroReserva} - Monto: ${montoPago}`,
+      nivel: payment.status === 'approved' ? 'info' : 'warning',
+      metadata: { paymentId: payment.id, status: payment.status }
+    }], { session });
+
+    await session.commitTransaction();
+
+    return {
+      pagoId: pago._id,
+      numeroPago: pago.numeroPago,
+      paymentId: payment.id,
+      status: payment.status,
+      statusDetail: payment.status_detail,
+      reserva: {
+        numero: reserva.numeroReserva,
+        paquete: reserva.paquete.nombre
+      }
+    };
+
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('Error creando pago Brick:', error);
+    throw error;
+  } finally {
+    session.endSession();
+  }
+}
+
+// ============================================
 // PROCESAR WEBHOOK DE MERCADOPAGO CON TRANSACCIÓN
 // ============================================
 export async function procesarWebhookMercadoPago(webhookData) {
   const session = await mongoose.startSession();
-  
+
   try {
     await session.startTransaction();
 
