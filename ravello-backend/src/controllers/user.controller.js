@@ -1,4 +1,5 @@
 import * as userService from "../services/user.service.js";
+import { User } from "../models/index.js"
 
 // GET /api/users
 export const getUsers = async (req, res) => {
@@ -62,9 +63,9 @@ export const deleteUser = async (req, res) => {
 export async function obtenerPerfilController(req, res) {
   try {
     const userId = req.user._id;
-    
+
     const user = await User.findById(userId);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -93,7 +94,7 @@ export async function obtenerPerfilController(req, res) {
 export async function actualizarPerfilController(req, res) {
   try {
     const userId = req.user._id;
-    
+
     const {
       nombre,
       apellido,
@@ -105,7 +106,7 @@ export async function actualizarPerfilController(req, res) {
     } = req.body;
 
     const user = await User.findById(userId);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -145,9 +146,9 @@ export async function actualizarPerfilController(req, res) {
 export async function verificarPuedeReservarController(req, res) {
   try {
     const userId = req.user._id;
-    
+
     const user = await User.findById(userId);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -163,8 +164,8 @@ export async function verificarPuedeReservarController(req, res) {
       puedeReservar,
       perfilCompleto: user.perfilCompleto,
       camposFaltantes,
-      mensaje: puedeReservar 
-        ? 'Usuario habilitado para reservar' 
+      mensaje: puedeReservar
+        ? 'Usuario habilitado para reservar'
         : `Debe completar los siguientes campos: ${camposFaltantes.join(', ')}`
     });
 

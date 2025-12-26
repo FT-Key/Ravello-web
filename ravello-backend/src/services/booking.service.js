@@ -7,9 +7,10 @@ import { analizarRiesgo, extraerInfoDispositivo } from '../utils/security.utils.
 // ============================================
 // CREAR RESERVA CON TRANSACCIÓN
 // ============================================
-export async function crearReserva(data, userId, metadata = {}) {
+
+export async function crearReserva(data, usuario, metadata = {}) {
   const session = await mongoose.startSession();
-  
+
   try {
     await session.startTransaction();
 
@@ -17,29 +18,39 @@ export async function crearReserva(data, userId, metadata = {}) {
       paqueteId,
       fechaSalidaId,
       cantidadPasajeros,
-      datosContacto,
-      pasajeros,
+      pasajeros = [],
       planCuotas,
-      notasCliente
+      notasCliente,
+      paymentMethod // 'checkout' o 'brick'
     } = data;
 
-    // ============================================
-    // VALIDACIONES
-    // ============================================
-    
-    // Validar usuario
-    if (!userId) {
-      throw new Error('Usuario no autenticado. Debe iniciar sesión para reservar.');
-    }
+    console.log('📦 Datos recibidos:', {
+      paqueteId,
+      fechaSalidaId,
+      cantidadPasajeros,
+      usuarioId: usuario._id,
+      paymentMethod
+    });
 
-    const usuario = await User.findById(userId).session(session);
-    if (!usuario) {
-      throw new Error('Usuario no encontrado');
+    // ============================================
+    // VALIDACIONES DE USUARIO
+    // ============================================
+
+    if (!usuario.perfilCompleto) {
+      throw new Error('Debe completar su perfil antes de hacer una reserva');
     }
 
     if (!usuario.activo) {
       throw new Error('Usuario deshabilitado. Contacte al administrador.');
     }
+
+    if (!usuario.puedeReservar()) {
+      throw new Error('No puede realizar reservas en este momento');
+    }
+
+    // ============================================
+    // VALIDACIONES DE PAQUETE Y FECHA
+    // ============================================
 
     // Validar paquete
     const paquete = await Package.findById(paqueteId).session(session);
@@ -63,7 +74,7 @@ export async function crearReserva(data, userId, metadata = {}) {
 
     // Validar cupos
     const totalPasajeros = cantidadPasajeros.adultos + (cantidadPasajeros.ninos || 0);
-    
+
     if (fechaSalida.cuposDisponibles < totalPasajeros) {
       throw new Error(`Solo quedan ${fechaSalida.cuposDisponibles} cupos disponibles`);
     }
@@ -73,6 +84,45 @@ export async function crearReserva(data, userId, metadata = {}) {
     }
 
     // ============================================
+    // CONSTRUIR DATOS DE CONTACTO DESDE USUARIO AUTENTICADO
+    // ============================================
+    const datosContacto = {
+      nombre: usuario.nombre,
+      apellido: usuario.apellido,
+      email: usuario.email,
+      telefono: usuario.telefono,
+      documento: usuario.documento?.numero || '',
+      tipoDocumento: usuario.documento?.tipo || 'DNI'
+    };
+
+    console.log('📋 Datos de contacto del usuario:', datosContacto);
+
+    // ============================================
+    // CALCULAR PRECIOS
+    // ============================================
+    const {
+      precioAdulto,
+      precioNino,
+      precioTotal,
+      descuentoAplicado,
+      montoTotal,
+      montoPendiente
+    } = calcularMontoTotal({
+      paquete,
+      fechaSalida,
+      cantidadPasajeros,
+      descuentoAplicado: data.descuentoAplicado || 0
+    });
+
+    console.log('💰 Cálculo de precios:', {
+      precioAdulto,
+      precioNino,
+      precioTotal,
+      descuentoAplicado,
+      montoTotal
+    });
+
+    // ============================================
     // ANÁLISIS DE RIESGO
     // ============================================
     const riesgo = analizarRiesgo({
@@ -80,13 +130,15 @@ export async function crearReserva(data, userId, metadata = {}) {
       email: datosContacto.email,
       ip: metadata.ip,
       userAgent: metadata.userAgent,
-      monto: calcularMontoTotal(paquete, cantidadPasajeros, data.descuentoAplicado)
+      monto: montoTotal
     });
+
+    console.log('🔍 Análisis de riesgo:', riesgo);
 
     // Si es muy riesgoso, rechazar
     if (riesgo.score > 80) {
       await AuditLog.create([{
-        usuario: userId,
+        usuario: usuario._id,
         accion: 'reserva_rechazada_riesgo',
         entidad: { tipo: 'Booking' },
         descripcion: `Reserva rechazada por alto riesgo: ${riesgo.motivo}`,
@@ -98,25 +150,15 @@ export async function crearReserva(data, userId, metadata = {}) {
     }
 
     // ============================================
-    // CALCULAR PRECIOS
+    // CALCULAR FECHA LÍMITE DE PAGO
     // ============================================
-    const precioAdulto = paquete.precioBase;
-    const precioNino = paquete.precioBase * (1 - paquete.descuentoNinos / 100);
-    
-    const precioTotal = 
-      (cantidadPasajeros.adultos * precioAdulto) + 
-      ((cantidadPasajeros.ninos || 0) * precioNino);
-
-    const descuentoAplicado = data.descuentoAplicado || 0;
-    const montoTotal = precioTotal - descuentoAplicado;
-    const montoPendiente = montoTotal;
-
-    // Calcular fecha límite de pago
     const diasLimite = paquete.plazoPagoTotalDias || 7;
     const fechaLimitePagoTotal = new Date(fechaSalida.salida);
     fechaLimitePagoTotal.setDate(fechaLimitePagoTotal.getDate() - diasLimite);
 
-    // Crear plan de cuotas
+    // ============================================
+    // CREAR PLAN DE CUOTAS
+    // ============================================
     let planCuotasData = {
       tipo: 'contado',
       cantidadCuotas: 1,
@@ -137,7 +179,7 @@ export async function crearReserva(data, userId, metadata = {}) {
     // CREAR RESERVA
     // ============================================
     const reserva = new Booking({
-      usuario: userId,
+      usuario: usuario._id,
       paquete: paqueteId,
       fechaSalida: fechaSalidaId,
       cantidadPasajeros,
@@ -146,15 +188,15 @@ export async function crearReserva(data, userId, metadata = {}) {
       montoTotal,
       montoPagado: 0,
       montoPendiente,
-      moneda: paquete.moneda,
+      moneda: fechaSalida.moneda || paquete.moneda,
       planCuotas: planCuotasData,
-      estado: riesgo.score > 50 ? 'pendiente' : 'pendiente', // Puede agregar 'en_revision' si prefiere
+      estado: 'pendiente',
       fechaLimitePagoTotal,
       datosContacto,
       pasajeros: pasajeros || [],
       notasCliente,
-      usuarioCreador: userId,
-      
+      usuarioCreador: usuario._id,
+
       // SEGURIDAD
       seguridad: {
         ip: metadata.ip,
@@ -166,11 +208,13 @@ export async function crearReserva(data, userId, metadata = {}) {
         intentosPrevios: 0,
         esRiesgoso: riesgo.score > 50,
         motivoRiesgo: riesgo.score > 50 ? riesgo.motivo : null,
-        emailVerificado: false
+        emailVerificado: usuario.emailVerificado || false
       }
     });
 
     await reserva.save({ session });
+
+    console.log('✅ Reserva creada:', reserva.numeroReserva);
 
     // ============================================
     // ACTUALIZAR CUPOS (DENTRO DE LA TRANSACCIÓN)
@@ -181,23 +225,30 @@ export async function crearReserva(data, userId, metadata = {}) {
     }
     await fechaSalida.save({ session });
 
+    console.log('✅ Cupos actualizados:', {
+      cuposDisponibles: fechaSalida.cuposDisponibles,
+      estado: fechaSalida.estado
+    });
+
     // ============================================
     // LOG DE AUDITORÍA
     // ============================================
     await AuditLog.create([{
-      usuario: userId,
+      usuario: usuario._id,
       usuarioEmail: datosContacto.email,
       accion: 'reserva_creada',
       entidad: { tipo: 'Booking', id: reserva._id },
-      descripcion: `Reserva creada: ${reserva.numeroReserva} - Paquete: ${paquete.nombre} - Monto: ${montoTotal} ${paquete.moneda}`,
+      descripcion: `Reserva creada: ${reserva.numeroReserva} - Paquete: ${paquete.nombre} - Monto: ${montoTotal} ${reserva.moneda}`,
       nivel: riesgo.score > 50 ? 'warning' : 'info',
-      metadata: { riesgo, ...metadata }
+      metadata: { riesgo, paymentMethod, ...metadata }
     }], { session });
 
     // ============================================
     // COMMIT DE LA TRANSACCIÓN
     // ============================================
     await session.commitTransaction();
+
+    console.log('✅ Transacción confirmada');
 
     // ============================================
     // ENVIAR EMAIL (FUERA DE LA TRANSACCIÓN)
@@ -207,135 +258,138 @@ export async function crearReserva(data, userId, metadata = {}) {
       subject: `Reserva creada - ${reserva.numeroReserva}`,
       template: 'reserva-creada',
       data: {
-        nombreCliente: datosContacto.nombre,
+        nombreCliente: `${datosContacto.nombre} ${datosContacto.apellido}`,
         numeroReserva: reserva.numeroReserva,
         paquete: paquete.nombre,
         fechaSalida: fechaSalida.salida.toLocaleDateString('es-AR'),
+        fechaRegreso: fechaSalida.regreso.toLocaleDateString('es-AR'),
         cantidadPasajeros: totalPasajeros,
         montoTotal: montoTotal,
-        moneda: paquete.moneda,
-        planCuotas: planCuotasData
+        moneda: reserva.moneda,
+        planCuotas: planCuotasData,
+        paymentMethod
       }
     }).catch(err => {
-      console.error('Error enviando email de confirmación:', err);
+      console.error('⚠️ Error enviando email de confirmación:', err);
       // No fallar la reserva si el email falla
     });
 
+    // ============================================
+    // ACTUALIZAR ESTADÍSTICAS DEL USUARIO
+    // ============================================
+    usuario.estadisticas.totalReservas += 1;
+    usuario.estadisticas.ultimaReserva = new Date();
+    await usuario.save();
+
     // Poblar datos para respuesta
     await reserva.populate([
-      { path: 'paquete', select: 'nombre imagenPrincipal destinos' },
-      { path: 'fechaSalida', select: 'salida regreso' }
+      {
+        path: 'paquete',
+        select: 'nombre imagenPrincipal destinos precioBase moneda duracionTotal'
+      },
+      {
+        path: 'fechaSalida',
+        select: 'salida regreso precio precioFinal cuposDisponibles'
+      }
     ]);
 
     return reserva;
 
   } catch (error) {
-    // ROLLBACK en caso de error
-    await session.abortTransaction();
-    console.error('Error creando reserva:', error);
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    console.error('❌ Error creando reserva:', error);
     throw error;
   } finally {
     session.endSession();
   }
+
 }
 
-// ============================================
-// GENERAR PLAN DE CUOTAS
-// ============================================
-function generarPlanCuotas(montoTotal, planConfig, fechaSalida) {
-  const { tipo, cantidadCuotas, cuotasPersonalizadas } = planConfig;
+// ===================================================================
+// FUNCIÓN AUXILIAR: Generar plan de cuotas
+// ===================================================================
+function generarPlanCuotas(montoTotal, planCuotas, fechaSalida) {
+  const { tipo, cantidadCuotas } = planCuotas;
 
-  let cuotas = [];
-
-  if (tipo === 'cuotas_fijas' && cantidadCuotas) {
-    const montoPorCuota = Math.round((montoTotal / cantidadCuotas) * 100) / 100;
-    const fechaActual = new Date();
-
-    for (let i = 1; i <= cantidadCuotas; i++) {
-      const fechaVencimiento = new Date(fechaActual);
-      fechaVencimiento.setMonth(fechaVencimiento.getMonth() + i);
-
-      if (fechaVencimiento > new Date(fechaSalida)) {
-        fechaVencimiento.setTime(new Date(fechaSalida).getTime() - (7 * 24 * 60 * 60 * 1000));
-      }
-
-      cuotas.push({
-        numeroCuota: i,
-        monto: i === cantidadCuotas 
-          ? montoTotal - (montoPorCuota * (cantidadCuotas - 1))
-          : montoPorCuota,
-        fechaVencimiento,
-        estado: 'pendiente',
-        montoPagado: 0,
-        montoPendiente: i === cantidadCuotas 
-          ? montoTotal - (montoPorCuota * (cantidadCuotas - 1))
-          : montoPorCuota
-      });
-    }
-
+  if (tipo === 'contado') {
     return {
-      tipo: 'cuotas_fijas',
-      cantidadCuotas,
-      montoPorCuota,
-      cuotas
+      tipo: 'contado',
+      cantidadCuotas: 1,
+      montoPorCuota: montoTotal,
+      cuotas: []
     };
   }
 
-  if (tipo === 'personalizado' && cuotasPersonalizadas) {
-    let totalAsignado = 0;
+  const montoPorCuota = Math.ceil(montoTotal / cantidadCuotas);
+  const cuotas = [];
+  const fechaBase = new Date();
 
-    cuotas = cuotasPersonalizadas.map((cuota, index) => {
-      totalAsignado += cuota.monto;
-      return {
-        numeroCuota: index + 1,
-        monto: cuota.monto,
-        fechaVencimiento: new Date(cuota.fechaVencimiento),
-        estado: 'pendiente',
-        montoPagado: 0,
-        montoPendiente: cuota.monto,
-        notas: cuota.notas
-      };
-    });
+  for (let i = 0; i < cantidadCuotas; i++) {
+    const fechaVencimiento = new Date(fechaBase);
+    fechaVencimiento.setMonth(fechaVencimiento.getMonth() + i);
 
-    if (Math.abs(totalAsignado - montoTotal) > 0.01) {
-      throw new Error('El total de las cuotas no coincide con el monto total de la reserva');
+    // La última cuota no puede ser después de la fecha de salida
+    if (fechaVencimiento > new Date(fechaSalida)) {
+      fechaVencimiento.setTime(new Date(fechaSalida).getTime() - (7 * 24 * 60 * 60 * 1000));
     }
 
-    return {
-      tipo: 'personalizado',
-      cantidadCuotas: cuotas.length,
-      montoPorCuota: null,
-      cuotas
-    };
+    cuotas.push({
+      numeroCuota: i + 1,
+      monto: i === cantidadCuotas - 1
+        ? montoTotal - (montoPorCuota * (cantidadCuotas - 1)) // Ajustar última cuota
+        : montoPorCuota,
+      fechaVencimiento,
+      estado: 'pendiente',
+      pagos: [],
+      montoPagado: 0,
+      montoPendiente: i === cantidadCuotas - 1
+        ? montoTotal - (montoPorCuota * (cantidadCuotas - 1))
+        : montoPorCuota
+    });
   }
 
   return {
-    tipo: 'contado',
-    cantidadCuotas: 1,
-    montoPorCuota: montoTotal,
-    cuotas: [{
-      numeroCuota: 1,
-      monto: montoTotal,
-      fechaVencimiento: new Date(fechaSalida),
-      estado: 'pendiente',
-      montoPagado: 0,
-      montoPendiente: montoTotal
-    }]
+    tipo,
+    cantidadCuotas,
+    montoPorCuota,
+    cuotas
   };
 }
 
 // ============================================
 // CALCULAR MONTO TOTAL (helper)
 // ============================================
-function calcularMontoTotal(paquete, cantidadPasajeros, descuento = 0) {
-  const precioAdulto = paquete.precioBase;
-  const precioNino = paquete.precioBase * (1 - paquete.descuentoNinos / 100);
-  
-  const precioTotal = 
-    (cantidadPasajeros.adultos * precioAdulto) + 
+function calcularMontoTotal({
+  paquete,
+  fechaSalida,
+  cantidadPasajeros,
+  descuentoAplicado = 0
+}) {
+  const precioAdulto =
+    fechaSalida.precioFinal ||
+    fechaSalida.precio ||
+    paquete.precioBase;
+
+  const precioNino =
+    fechaSalida.precioNino ||
+    (precioAdulto * (1 - ((paquete.descuentoNinos || 30) / 100)));
+
+  const precioTotal =
+    (cantidadPasajeros.adultos * precioAdulto) +
     ((cantidadPasajeros.ninos || 0) * precioNino);
 
-  return precioTotal - descuento;
+  const montoTotal = precioTotal - descuentoAplicado;
+
+  return {
+    precioAdulto,
+    precioNino,
+    precioTotal,
+    descuentoAplicado,
+    montoTotal,
+    montoPendiente: montoTotal
+  };
 }
 
 // ============================================
@@ -517,7 +571,7 @@ export async function cancelarReserva(reservaId, motivo, userId) {
 
     // Liberar cupos
     const totalPasajeros = reserva.cantidadPasajeros.adultos + (reserva.cantidadPasajeros.ninos || 0);
-    
+
     const fechaSalida = await PackageDate.findById(reserva.fechaSalida._id);
     if (fechaSalida) {
       fechaSalida.cuposDisponibles += totalPasajeros;

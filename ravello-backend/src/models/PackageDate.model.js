@@ -8,10 +8,15 @@ const packageDateSchema = new mongoose.Schema(
       required: true
     },
 
-    salida: { type: Date, required: true },
+    salida: {
+      type: Date,
+      required: true
+    },
 
-    // Será calculado automáticamente
-    regreso: { type: Date },
+    // Fecha de regreso calculada automáticamente
+    regreso: {
+      type: Date
+    },
 
     precioFinal: Number,
     moneda: { type: String, default: "ARS" },
@@ -30,49 +35,76 @@ const packageDateSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// ============================================================
-// 🟣 Middleware: recalcular regreso en updates
-// ============================================================
-packageDateSchema.pre("findOneAndUpdate", async function (next) {
-  console.log("🟣 PRE-UPDATE PackageDate ejecutado");
+/* ============================================================
+   🟢 UTIL: calcular fecha de regreso
+============================================================ */
+async function calcularRegreso(packageId, salida) {
+  if (!packageId || !salida) return null;
 
-  const update = this.getUpdate();
-  console.log("📥 Update recibido:", update);
+  const Package = mongoose.model("Package");
+  const pkg = await Package.findById(packageId);
 
-  // Determinar package y salida
-  const pkgId = update.package || this._conditions.package;
-  const salida = update.salida;
+  if (!pkg) {
+    throw new Error("Package no encontrado para calcular regreso");
+  }
 
-  console.log("📦 package ID:", pkgId);
-  console.log("📅 nueva salida:", salida);
+  const dias = pkg.duracionTotal || 0;
 
-  // Si no hay salida, no recalcular
-  if (!pkgId || !salida) return next();
+  const salidaDate = new Date(salida);
+  const regresoDate = new Date(salidaDate);
+  regresoDate.setDate(regresoDate.getDate() + dias);
 
+  return regresoDate;
+}
+
+/* ============================================================
+   🟣 PRE-SAVE → creación
+============================================================ */
+packageDateSchema.pre("save", async function (next) {
   try {
-    const Package = mongoose.model("Package");
-    const pkg = await Package.findById(pkgId);
+    // Solo al crear y si no está calculado
+    if (!this.isNew || this.regreso) return next();
 
-    if (!pkg) {
-      console.log("❌ Package no encontrado");
-      return next(new Error("Package no encontrado para esta salida"));
-    }
+    const regreso = await calcularRegreso(this.package, this.salida);
+    if (regreso) this.regreso = regreso;
 
-    const dias = pkg.duracionTotal || 0;
-    const salidaDate = new Date(salida);
-    const regresoDate = new Date(salidaDate);
-    regresoDate.setDate(regresoDate.getDate() + dias);
-
-    console.log("📅 regreso calculado:", regresoDate);
-
-    // Insertar regreso en el update
-    update.regreso = regresoDate;
-    this.setUpdate(update);
-
-    console.log("🟢 Regreso agregado a update");
     next();
   } catch (err) {
-    console.log("❌ Error:", err);
+    next(err);
+  }
+});
+
+/* ============================================================
+   🟣 PRE-FINDONEANDUPDATE → updates
+============================================================ */
+packageDateSchema.pre("findOneAndUpdate", async function (next) {
+  try {
+    const update = this.getUpdate();
+
+    const salida =
+      update.salida ||
+      update.$set?.salida;
+
+    const packageId =
+      update.package ||
+      update.$set?.package ||
+      this._conditions.package;
+
+    // Si no cambia la salida, no recalcular
+    if (!salida || !packageId) return next();
+
+    const regreso = await calcularRegreso(packageId, salida);
+
+    if (regreso) {
+      update.$set = {
+        ...update.$set,
+        regreso
+      };
+    }
+
+    this.setUpdate(update);
+    next();
+  } catch (err) {
     next(err);
   }
 });

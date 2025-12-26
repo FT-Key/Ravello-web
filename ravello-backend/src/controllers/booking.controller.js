@@ -31,6 +31,7 @@ export async function crearReservaController(req, res) {
   try {
     const userId = req.user?._id;
 
+    // Verificar autenticación
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -38,9 +39,30 @@ export async function crearReservaController(req, res) {
       });
     }
 
+    // Verificar perfil completo
+    if (!req.user.perfilCompleto) {
+      return res.status(400).json({
+        success: false,
+        message: 'Debe completar su perfil antes de hacer una reserva',
+        camposFaltantes: req.user.camposFaltantes(),
+        perfilCompleto: false
+      });
+    }
+
+    // Verificar que puede reservar
+    if (!req.user.puedeReservar()) {
+      return res.status(403).json({
+        success: false,
+        message: 'No puede realizar reservas en este momento. Contacte al administrador.',
+        activo: req.user.activo
+      });
+    }
+
+    // Extraer metadata del request
     const metadata = extraerMetadata(req);
-    
-    const reserva = await crearReserva(req.body, userId, metadata);
+
+    // Crear reserva
+    const reserva = await crearReserva(req.body, req.user, metadata);
 
     return res.status(201).json({
       success: true,
@@ -49,8 +71,25 @@ export async function crearReservaController(req, res) {
     });
 
   } catch (error) {
-    console.error('Error en crearReservaController:', error);
-    
+    console.error('❌ Error en crearReservaController:', error);
+
+    // Errores específicos
+    if (error.message.includes('no encontrado')) {
+      return res.status(404).json({
+        success: false,
+        message: error.message
+      });
+    }
+
+    if (error.message.includes('no está disponible') ||
+      error.message.includes('cupos disponibles')) {
+      return res.status(409).json({
+        success: false,
+        message: error.message
+      });
+    }
+
+    // Error genérico
     return res.status(400).json({
       success: false,
       message: error.message || 'Error al crear la reserva'
@@ -64,7 +103,7 @@ export async function crearReservaController(req, res) {
 export async function obtenerMisReservasController(req, res) {
   try {
     const userId = req.user._id;
-    
+
     const reservas = await obtenerReservasPorUsuario(userId);
 
     return res.json({
@@ -74,7 +113,7 @@ export async function obtenerMisReservasController(req, res) {
 
   } catch (error) {
     console.error('Error en obtenerMisReservasController:', error);
-    
+
     return res.status(500).json({
       success: false,
       message: 'Error al obtener las reservas'
@@ -108,7 +147,7 @@ export async function obtenerReservaPorIdController(req, res) {
 
   } catch (error) {
     console.error('Error en obtenerReservaPorIdController:', error);
-    
+
     return res.status(404).json({
       success: false,
       message: error.message || 'Reserva no encontrada'
@@ -148,7 +187,7 @@ export async function obtenerTodasReservasController(req, res) {
 
   } catch (error) {
     console.error('Error en obtenerTodasReservasController:', error);
-    
+
     return res.status(500).json({
       success: false,
       message: 'Error al obtener las reservas'
@@ -191,7 +230,7 @@ export async function obtenerPorNumeroController(req, res) {
 
   } catch (error) {
     console.error('Error en obtenerPorNumeroController:', error);
-    
+
     return res.status(500).json({
       success: false,
       message: 'Error al buscar la reserva'
@@ -217,7 +256,7 @@ export async function actualizarReservaController(req, res) {
 
   } catch (error) {
     console.error('Error en actualizarReservaController:', error);
-    
+
     return res.status(400).json({
       success: false,
       message: error.message || 'Error al actualizar la reserva'
@@ -243,7 +282,7 @@ export async function confirmarReservaController(req, res) {
 
   } catch (error) {
     console.error('Error en confirmarReservaController:', error);
-    
+
     return res.status(400).json({
       success: false,
       message: error.message || 'Error al confirmar la reserva'
@@ -270,7 +309,7 @@ export async function cancelarReservaController(req, res) {
 
   } catch (error) {
     console.error('Error en cancelarReservaController:', error);
-    
+
     return res.status(400).json({
       success: false,
       message: error.message || 'Error al cancelar la reserva'
@@ -295,7 +334,7 @@ export async function eliminarReservaController(req, res) {
 
   } catch (error) {
     console.error('Error en eliminarReservaController:', error);
-    
+
     return res.status(400).json({
       success: false,
       message: error.message || 'Error al eliminar la reserva'
