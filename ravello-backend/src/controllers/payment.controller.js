@@ -1,15 +1,6 @@
 // controllers/payment.controller.js
 import { paymentService } from '../services/index.js';
-
-const {
-  crearPreferenciaMercadoPago,
-  procesarWebhookMercadoPago,
-  registrarPagoPresencial,
-  obtenerPagosPorReserva,
-  obtenerPagoPorId,
-  cancelarPago,
-  procesarReembolso
-} = paymentService;
+import { Payment, Booking } from '../models/index.js';
 
 // ============================================
 // HELPER: EXTRAER METADATA DE SEGURIDAD
@@ -57,7 +48,7 @@ export async function crearPreferenciaMercadoPagoController(req, res) {
 
     const metadata = extraerMetadata(req);
 
-    const resultado = await crearPreferenciaMercadoPago(
+    const resultado = await paymentService.crearPreferenciaMercadoPago(
       reservaId,
       montoPago,
       tipoPago,
@@ -115,7 +106,7 @@ export async function crearPagoBrickController(req, res) {
 
     const metadata = extraerMetadata(req);
 
-    const resultado = await crearPagoBrick(
+    const resultado = await paymentService.crearPagoBrick(
       reservaId,
       montoPago,
       tipoPago,
@@ -148,7 +139,14 @@ export async function webhookMercadoPagoController(req, res) {
   try {
     console.log('📨 Webhook recibido de MercadoPago:', req.body);
 
-    const resultado = await procesarWebhookMercadoPago(req.body);
+    // Validar webhook (opcional pero recomendado)
+    const esValido = paymentService.validarWebhook(req.headers, req.body);
+    
+    if (!esValido) {
+      console.warn('⚠️ Webhook inválido recibido');
+    }
+
+    const resultado = await paymentService.procesarWebhookMercadoPago(req.body);
 
     // Siempre responder 200 OK a MercadoPago
     return res.status(200).json(resultado);
@@ -171,15 +169,7 @@ export async function verificarEstadoPagoController(req, res) {
   try {
     const { numeroPago } = req.params;
 
-    const pago = await Payment.findOne({ numeroPago })
-      .populate('reserva', 'numeroReserva estado');
-
-    if (!pago) {
-      return res.status(404).json({
-        success: false,
-        message: 'Pago no encontrado'
-      });
-    }
+    const pago = await paymentService.obtenerPagoPorNumero(numeroPago);
 
     return res.json({
       success: true,
@@ -200,9 +190,9 @@ export async function verificarEstadoPagoController(req, res) {
   } catch (error) {
     console.error('Error en verificarEstadoPagoController:', error);
 
-    return res.status(500).json({
+    return res.status(404).json({
       success: false,
-      message: 'Error al verificar el estado del pago'
+      message: error.message || 'Pago no encontrado'
     });
   }
 }
@@ -213,9 +203,8 @@ export async function verificarEstadoPagoController(req, res) {
 export async function registrarPagoPresencialController(req, res) {
   try {
     const userId = req.user._id;
-    const metadata = extraerMetadata(req);
 
-    const pago = await registrarPagoPresencial(req.body, userId, metadata);
+    const pago = await paymentService.registrarPagoPresencial(req.body, userId);
 
     return res.status(201).json({
       success: true,
@@ -259,7 +248,7 @@ export async function obtenerPagosPorReservaController(req, res) {
       });
     }
 
-    const pagos = await obtenerPagosPorReserva(reservaId);
+    const pagos = await paymentService.obtenerPagosPorReserva(reservaId);
 
     return res.json({
       success: true,
@@ -322,7 +311,7 @@ export async function obtenerPagoPorIdController(req, res) {
     const userId = req.user._id;
     const userRole = req.user.rol;
 
-    const pago = await obtenerPagoPorId(id);
+    const pago = await paymentService.obtenerPagoPorId(id);
 
     // Verificar permisos
     const reserva = await Booking.findById(pago.reserva);
@@ -364,7 +353,7 @@ export async function cancelarPagoController(req, res) {
       });
     }
 
-    const pago = await cancelarPago(id, motivo, userId);
+    const pago = await paymentService.cancelarPago(id, motivo, userId);
 
     return res.json({
       success: true,
@@ -405,7 +394,7 @@ export async function procesarReembolsoController(req, res) {
       });
     }
 
-    const pago = await procesarReembolso(id, montoReembolso, motivo, userId);
+    const pago = await paymentService.procesarReembolso(id, montoReembolso, motivo, userId);
 
     return res.json({
       success: true,
@@ -423,6 +412,191 @@ export async function procesarReembolsoController(req, res) {
   }
 }
 
+// ============================================
+// GENERAR COMPROBANTE PRESENCIAL
+// ============================================
+export async function generarComprobanteController(req, res) {
+  try {
+    const { id } = req.params;
+
+    const comprobante = await paymentService.generarComprobante(id);
+
+    return res.json({
+      success: true,
+      data: comprobante
+    });
+
+  } catch (error) {
+    console.error('Error en generarComprobanteController:', error);
+
+    return res.status(400).json({
+      success: false,
+      message: error.message || 'Error al generar comprobante'
+    });
+  }
+}
+
+// ============================================
+// VERIFICAR ESTADO EN MERCADOPAGO
+// ============================================
+export async function verificarEstadoMPController(req, res) {
+  try {
+    const { id } = req.params;
+
+    const estado = await paymentService.verificarEstadoPagoMP(id);
+
+    return res.json({
+      success: true,
+      data: estado
+    });
+
+  } catch (error) {
+    console.error('Error en verificarEstadoMPController:', error);
+
+    return res.status(400).json({
+      success: false,
+      message: error.message || 'Error al verificar estado en MercadoPago'
+    });
+  }
+}
+
+// ============================================
+// REENVIAR NOTIFICACIÓN
+// ============================================
+export async function reenviarNotificacionController(req, res) {
+  try {
+    const { id } = req.params;
+
+    const resultado = await paymentService.reenviarNotificacion(id);
+
+    return res.json({
+      success: true,
+      message: resultado.message
+    });
+
+  } catch (error) {
+    console.error('Error en reenviarNotificacionController:', error);
+
+    return res.status(400).json({
+      success: false,
+      message: error.message || 'Error al reenviar notificación'
+    });
+  }
+}
+
+// ============================================
+// OBTENER ESTADÍSTICAS DE PAGOS
+// ============================================
+export async function obtenerEstadisticasController(req, res) {
+  try {
+    const filtros = {
+      fechaDesde: req.query.fechaDesde,
+      fechaHasta: req.query.fechaHasta,
+      estado: req.query.estado,
+      metodoPago: req.query.metodoPago
+    };
+
+    const estadisticas = await paymentService.obtenerEstadisticas(filtros);
+
+    return res.json({
+      success: true,
+      data: estadisticas
+    });
+
+  } catch (error) {
+    console.error('Error en obtenerEstadisticasController:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener estadísticas'
+    });
+  }
+}
+
+// ============================================
+// LISTAR PAGOS PRESENCIALES
+// ============================================
+export async function listarPagosPresencialesController(req, res) {
+  try {
+    const filtros = {
+      fechaDesde: req.query.fechaDesde,
+      fechaHasta: req.query.fechaHasta,
+      metodoPago: req.query.metodoPago,
+      usuarioRecibio: req.query.usuarioRecibio,
+      limit: req.query.limit ? parseInt(req.query.limit) : 100
+    };
+
+    const pagos = await paymentService.listarPagosPresenciales(filtros);
+
+    return res.json({
+      success: true,
+      data: pagos
+    });
+
+  } catch (error) {
+    console.error('Error en listarPagosPresencialesController:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Error al listar pagos presenciales'
+    });
+  }
+}
+
+// ============================================
+// LISTAR REEMBOLSOS
+// ============================================
+export async function listarReembolsosController(req, res) {
+  try {
+    const filtros = {
+      fechaDesde: req.query.fechaDesde,
+      fechaHasta: req.query.fechaHasta,
+      usuarioAutorizo: req.query.usuarioAutorizo,
+      metodoPago: req.query.metodoPago,
+      limit: req.query.limit ? parseInt(req.query.limit) : 100
+    };
+
+    const reembolsos = await paymentService.listarReembolsos(filtros);
+
+    return res.json({
+      success: true,
+      data: reembolsos
+    });
+
+  } catch (error) {
+    console.error('Error en listarReembolsosController:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Error al listar reembolsos'
+    });
+  }
+}
+
+// ============================================
+// REINTENTAR WEBHOOK
+// ============================================
+export async function reintentarWebhookController(req, res) {
+  try {
+    const { id } = req.params;
+
+    const resultado = await paymentService.reintentarWebhook(id);
+
+    return res.json({
+      success: true,
+      message: resultado.message
+    });
+
+  } catch (error) {
+    console.error('Error en reintentarWebhookController:', error);
+
+    return res.status(400).json({
+      success: false,
+      message: error.message || 'Error al reintentar webhook'
+    });
+  }
+}
+
 // Exportar todo junto
 export default {
   crearPreferenciaMercadoPago: crearPreferenciaMercadoPagoController,
@@ -434,5 +608,12 @@ export default {
   obtenerTodosPagos: obtenerTodosPagosController,
   obtenerPagoPorId: obtenerPagoPorIdController,
   cancelarPago: cancelarPagoController,
-  procesarReembolso: procesarReembolsoController
+  procesarReembolso: procesarReembolsoController,
+  generarComprobante: generarComprobanteController,
+  verificarEstadoMP: verificarEstadoMPController,
+  reenviarNotificacion: reenviarNotificacionController,
+  obtenerEstadisticas: obtenerEstadisticasController,
+  listarPagosPresenciales: listarPagosPresencialesController,
+  listarReembolsos: listarReembolsosController,
+  reintentarWebhook: reintentarWebhookController
 };

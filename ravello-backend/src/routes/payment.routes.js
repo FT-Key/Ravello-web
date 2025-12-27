@@ -31,15 +31,8 @@ router.post('/webhook/mercadopago', paymentController.webhookMercadoPago);
 router.get('/verificar/:numeroPago', paymentController.verificarEstadoPago);
 
 // ============================================
-// RUTAS PROTEGIDAS (requieren autenticación)
+// RUTAS PROTEGIDAS - USUARIOS AUTENTICADOS
 // ============================================
-
-// Crear pago con Bricks (inline payment)
-router.post(
-  '/mercadopago/brick',
-  authenticate,
-  paymentController.crearPagoBrick
-);
 
 // Crear preferencia de MercadoPago
 router.post(
@@ -49,7 +42,32 @@ router.post(
   paymentController.crearPreferenciaMercadoPago
 );
 
-// Registrar pago presencial (solo admin/editor)
+// Crear pago con Bricks (inline payment)
+router.post(
+  '/mercadopago/brick',
+  authenticate,
+  paymentController.crearPagoBrick
+);
+
+// Obtener pagos de una reserva (usuario dueño o admin)
+router.get(
+  '/reserva/:reservaId',
+  authenticate,
+  paymentController.obtenerPagosPorReserva
+);
+
+// Obtener un pago por ID (usuario dueño o admin)
+router.get(
+  '/:id',
+  authenticate,
+  paymentController.obtenerPagoPorId
+);
+
+// ============================================
+// RUTAS PROTEGIDAS - ADMIN/EDITOR
+// ============================================
+
+// Registrar pago presencial
 router.post(
   '/presencial',
   authenticate,
@@ -58,32 +76,23 @@ router.post(
   paymentController.registrarPagoPresencial
 );
 
-// Obtener pagos de una reserva
+// Generar comprobante de pago presencial
 router.get(
-  '/reserva/:reservaId',
+  '/:id/comprobante',
   authenticate,
-  paymentController.obtenerPagosPorReserva
+  requireRole('admin', 'editor'),
+  paymentController.generarComprobante
 );
 
-// Obtener todos los pagos con filtros (solo admin)
+// Listar pagos presenciales con filtros
 router.get(
-  '/',
+  '/presenciales/listar',
   authenticate,
-  requireRole('admin'),
-  queryMiddleware,
-  searchMiddleware,
-  paginationMiddleware,
-  paymentController.obtenerTodosPagos
+  requireRole('admin', 'editor'),
+  paymentController.listarPagosPresenciales
 );
 
-// Obtener un pago por ID
-router.get(
-  '/:id',
-  authenticate,
-  paymentController.obtenerPagoPorId
-);
-
-// Cancelar pago (solo admin)
+// Cancelar pago
 router.patch(
   '/:id/cancelar',
   authenticate,
@@ -92,13 +101,68 @@ router.patch(
   paymentController.cancelarPago
 );
 
-// Procesar reembolso (solo admin)
+// ============================================
+// RUTAS PROTEGIDAS - SOLO ADMIN
+// ============================================
+
+// Obtener todos los pagos con filtros
+router.get(
+  '/admin/todos',
+  authenticate,
+  requireRole('admin'),
+  queryMiddleware,
+  searchMiddleware,
+  paginationMiddleware,
+  paymentController.obtenerTodosPagos
+);
+
+// Procesar reembolso
 router.post(
   '/:id/reembolso',
   authenticate,
   requireRole('admin'),
   // validateRequest(reembolsoValidation), // TODO: Agregar validación
   paymentController.procesarReembolso
+);
+
+// Listar reembolsos con filtros
+router.get(
+  '/admin/reembolsos',
+  authenticate,
+  requireRole('admin'),
+  paymentController.listarReembolsos
+);
+
+// Verificar estado de pago en MercadoPago
+router.get(
+  '/:id/verificar-mp',
+  authenticate,
+  requireRole('admin'),
+  paymentController.verificarEstadoMP
+);
+
+// Reenviar notificación de pago
+router.post(
+  '/:id/reenviar-notificacion',
+  authenticate,
+  requireRole('admin'),
+  paymentController.reenviarNotificacion
+);
+
+// Obtener estadísticas de pagos
+router.get(
+  '/admin/estadisticas',
+  authenticate,
+  requireRole('admin'),
+  paymentController.obtenerEstadisticas
+);
+
+// Reintentar procesamiento de webhook
+router.post(
+  '/:id/reintentar-webhook',
+  authenticate,
+  requireRole('admin'),
+  paymentController.reintentarWebhook
 );
 
 export default router;

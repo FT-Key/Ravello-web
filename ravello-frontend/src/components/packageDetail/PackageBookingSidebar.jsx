@@ -1,7 +1,6 @@
 // ===================================================================
 // components/packageDetail/PackageBookingSidebar.jsx
 // ===================================================================
-
 import React, { useState } from "react";
 import { MessageCircle, LogIn } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -25,20 +24,22 @@ export default function PackageBookingSidebar({
   paymentLoading,
   isAuthenticated,
   canBook,
-  mercadoPagoPublicKey // Añadir esta prop
+  mercadoPagoPublicKey
 }) {
   const navigate = useNavigate();
   const [adultos, setAdultos] = useState(2);
   const [ninos, setNinos] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState(null); // 'checkout' | 'brick' | null
   const [showBrickModal, setShowBrickModal] = useState(false);
+  const [reservaCreada, setReservaCreada] = useState(null); // ⬅️ NUEVO: Guardar reserva creada
+  const [isCreatingBooking, setIsCreatingBooking] = useState(false); // ⬅️ NUEVO: Loading state
 
   // Calcular precio total
   const precioAdulto = selectedDate?.precioFinal || selectedDate?.precio || pkg.precioBase || 0;
   const precioNino = selectedDate?.precioNino || precioAdulto * 0.7;
   const precioTotal = (precioAdulto * adultos) + (precioNino * ninos);
 
-  const handleReservar = (method) => {
+  const handleReservar = async (method) => {
     // Validar fecha seleccionada
     if (!selectedDate) {
       alert("Por favor selecciona una fecha de salida");
@@ -56,26 +57,78 @@ export default function PackageBookingSidebar({
     const bookingData = {
       paqueteId: pkg._id,
       fechaSalidaId: selectedDate._id,
-      pasajeros: { adultos, ninos }
+      cantidadPasajeros: { adultos, ninos } // ⬅️ CORREGIDO: usar "cantidadPasajeros"
     };
 
     if (method === 'checkout') {
-      // Checkout Pro: redirigir a MercadoPago
+      // Checkout Pro: usar el handler del padre (PackageDetailPage)
       onPayment({ ...bookingData, paymentMethod: 'checkout' });
     } else if (method === 'brick') {
-      // Bricks: mostrar modal con formulario
-      setShowBrickModal(true);
+      // ⬅️ NUEVO FLUJO PARA BRICKS
+      try {
+        setIsCreatingBooking(true);
+
+        // 1. CREAR LA RESERVA
+        console.log("📝 Creando reserva...");
+        const response = await fetch("/api/bookings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(bookingData),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Error al crear la reserva");
+        }
+
+        const result = await response.json();
+        const reserva = result.data;
+
+        console.log("✅ Reserva creada:", reserva);
+
+        // 2. GUARDAR LA RESERVA Y MOSTRAR EL BRICK
+        setReservaCreada(reserva);
+        setShowBrickModal(true);
+
+      } catch (error) {
+        console.error("❌ Error al crear reserva:", error);
+        alert(error.message || "Error al crear la reserva");
+      } finally {
+        setIsCreatingBooking(false);
+      }
     }
   };
 
   const handleBrickSuccess = (result) => {
+    console.log("✅ Pago exitoso:", result);
     setShowBrickModal(false);
-    // Redirigir o mostrar mensaje de éxito
-    navigate(`/booking-confirmation/${result.bookingId}`);
+    setReservaCreada(null);
+    setPaymentMethod(null);
+    
+    // Redirigir a confirmación o mis reservas
+    alert("¡Pago procesado exitosamente! Redirigiendo a tus reservas...");
+    navigate("/mis-reservas");
   };
 
   const handleBrickError = (error) => {
+    console.error("❌ Error en pago:", error);
     alert(error);
+    // No cerramos el modal para que pueda reintentar
+  };
+
+  const handleBrickCancel = () => {
+    const confirmar = window.confirm(
+      "¿Deseas cancelar el pago? La reserva quedará pendiente de pago."
+    );
+    
+    if (confirmar) {
+      setShowBrickModal(false);
+      setReservaCreada(null);
+      setPaymentMethod(null);
+    }
   };
 
   const handleLoginRedirect = () => {
@@ -85,12 +138,6 @@ export default function PackageBookingSidebar({
         message: 'Inicia sesión para hacer tu reserva'
       }
     });
-  };
-
-  const bookingData = {
-    paqueteId: pkg._id,
-    fechaSalidaId: selectedDate?._id,
-    pasajeros: { adultos, ninos }
   };
 
   return (
@@ -144,7 +191,7 @@ export default function PackageBookingSidebar({
           <PaymentButtons
             onSelectCheckout={() => setPaymentMethod('checkout')}
             onSelectBrick={() => setPaymentMethod('brick')}
-            disabled={paymentLoading || !selectedDate}
+            disabled={paymentLoading || !selectedDate || isCreatingBooking}
             canBook={canBook}
           />
         ) : (
@@ -152,24 +199,25 @@ export default function PackageBookingSidebar({
           <div className="space-y-3">
             <button
               onClick={() => handleReservar(paymentMethod)}
-              disabled={paymentLoading || !selectedDate}
+              disabled={paymentLoading || !selectedDate || isCreatingBooking}
               className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {paymentLoading ? (
+              {(paymentLoading || isCreatingBooking) ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Procesando...
+                  {isCreatingBooking ? 'Creando reserva...' : 'Procesando...'}
                 </>
               ) : (
                 <>
-                  {paymentMethod === 'checkout' ? 'Ir a MercadoPago' : 'Abrir Formulario de Pago'}
+                  {paymentMethod === 'checkout' ? 'Ir a MercadoPago' : 'Continuar con el pago'}
                 </>
               )}
             </button>
-
+            
             <button
               onClick={() => setPaymentMethod(null)}
-              className="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+              disabled={isCreatingBooking}
+              className="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors text-sm disabled:opacity-50"
             >
               Cambiar método de pago
             </button>
@@ -204,13 +252,14 @@ export default function PackageBookingSidebar({
       <PackageDetails pkg={pkg} />
 
       {/* Modal de Brick Payment */}
-      {showBrickModal && (
+      {showBrickModal && reservaCreada && (
         <BrickPaymentForm
-          bookingData={bookingData}
-          precioTotal={precioTotal}
+          reservaId={reservaCreada._id}
+          reservaData={reservaCreada}
+          precioTotal={reservaCreada.montoTotal}
           onSuccess={handleBrickSuccess}
           onError={handleBrickError}
-          onCancel={() => setShowBrickModal(false)}
+          onCancel={handleBrickCancel}
           publicKey={getMercadoPagoPublicKey()}
         />
       )}
