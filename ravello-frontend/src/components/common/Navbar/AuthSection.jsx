@@ -41,7 +41,7 @@ export default function AuthSection({ user, loadingUser, isScrolled }) {
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all no-select ${
             isScrolled
               ? "text-dark hover:bg-background-light"
-              : "text-white hover:bg-white hover:bg-opacity-10"
+              : "text-white hover:text-black hover:bg-white hover:bg-opacity-10"
           }`}
         >
           <LogIn size={18} />
@@ -86,7 +86,7 @@ export default function AuthSection({ user, loadingUser, isScrolled }) {
 
           <div className="py-2">
             <Link
-              to="/me/perfil"
+              to="/mi-perfil"
               onClick={() => setIsMenuOpen(false)}
               className="flex items-center gap-3 px-4 py-2 hover:bg-background-light transition-colors text-dark"
             >
@@ -104,7 +104,7 @@ export default function AuthSection({ user, loadingUser, isScrolled }) {
             </Link>
 
             <Link
-              to="/me/configuracion"
+              to="/configuracion"
               onClick={() => setIsMenuOpen(false)}
               className="flex items-center gap-3 px-4 py-2 hover:bg-background-light transition-colors text-dark"
             >
