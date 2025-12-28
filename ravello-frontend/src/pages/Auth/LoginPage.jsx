@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { useState } from "react";
-import { Eye, EyeOff, LogIn, Plane, MapPin, Compass } from "lucide-react";
+import { Eye, EyeOff, LogIn, Plane, MapPin, Compass, Mail, Lock } from "lucide-react";
 import clientAxios from "../../api/axiosConfig";
 import toast from "react-hot-toast";
 import { useUserStore } from "../../stores/useUserStore";
@@ -24,6 +24,12 @@ export default function LoginPage() {
     try {
       const res = await clientAxios.post("/auth/login", data);
 
+      // Backend retorna { success, token, user }
+      if (!res.data.success) {
+        toast.error(res.data.message || "Error en el login");
+        return;
+      }
+
       const token = res.data.token;
       const user = res.data.user;
 
@@ -40,27 +46,35 @@ export default function LoginPage() {
       navigate("/");
 
     } catch (err) {
-      console.log(err);
-      toast.error(
-        err?.response?.data?.msg ||
-        err?.response?.data?.message ||
-        "Credenciales incorrectas"
-      );
+      console.error("Error en login:", err);
+      
+      // Manejar errores de validación del backend
+      if (err?.response?.data?.errors) {
+        err.response.data.errors.forEach(error => {
+          toast.error(error);
+        });
+      } else {
+        toast.error(
+          err?.response?.data?.message ||
+          err?.response?.data?.msg ||
+          "Credenciales incorrectas"
+        );
+      }
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center px-4 py-8 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 flex items-center justify-center px-4 py-8 relative overflow-hidden">
 
       {/* Decorative animated elements */}
       <div className="absolute top-20 left-10 opacity-10 animate-float">
-        <Plane size={120} className="text-blue-600 rotate-45" />
+        <Plane size={120} className="text-[#1C77B7] rotate-45" />
       </div>
       <div className="absolute bottom-20 right-10 opacity-10 animate-float-delayed">
-        <Compass size={100} className="text-indigo-600" />
+        <Compass size={100} className="text-[#34B0D9]" />
       </div>
       <div className="absolute top-1/2 left-1/4 opacity-5 animate-pulse">
-        <MapPin size={80} className="text-blue-500" />
+        <MapPin size={80} className="text-[#1C77B7]" />
       </div>
 
       <div className="relative w-full max-w-6xl">
@@ -72,10 +86,10 @@ export default function LoginPage() {
             {/* Logo/Brand */}
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-[#E33D35] rounded-xl flex items-center justify-center">
                   <Plane size={20} className="text-white" />
                 </div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold text-[#E33D35]">
                   Ravello
                 </h1>
               </div>
@@ -96,21 +110,28 @@ export default function LoginPage() {
               {/* Email Input */}
               <div>
                 <label className="block text-sm font-semibold mb-2 text-slate-700">
-                  Correo electrónico
+                  Correo electrónico <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
                     type="email"
                     placeholder="tu@email.com"
-                    {...register("email", { required: "El correo es obligatorio" })}
-                    className="w-full px-4 py-3.5 rounded-xl bg-slate-50 border-2 border-slate-200 
-                               focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 
+                    {...register("email", { 
+                      required: "El correo es obligatorio",
+                      pattern: {
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: "El correo debe ser válido"
+                      }
+                    })}
+                    className="w-full pl-10 pr-4 py-3 rounded-lg bg-slate-50 border-2 border-slate-200 
+                               focus:border-[#E33D35] focus:bg-white focus:ring-2 focus:ring-red-100 
                                outline-none text-slate-800 transition-all duration-200
                                placeholder:text-slate-400"
                   />
                 </div>
                 {errors.email && (
-                  <p className="text-sm mt-1.5 text-red-500 flex items-center gap-1">
+                  <p className="text-xs mt-1.5 text-red-500 flex items-center gap-1">
                     <span className="text-xs">⚠️</span>
                     {errors.email.message}
                   </p>
@@ -120,17 +141,24 @@ export default function LoginPage() {
               {/* Password Input */}
               <div>
                 <label className="block text-sm font-semibold mb-2 text-slate-700">
-                  Contraseña
+                  Contraseña <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    {...register("password", { required: "La contraseña es obligatoria" })}
-                    className="w-full px-4 py-3.5 rounded-xl bg-slate-50 border-2 border-slate-200
-                               focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 
+                    {...register("password", { 
+                      required: "La contraseña es obligatoria",
+                      minLength: { 
+                        value: 6, 
+                        message: "La contraseña debe tener al menos 6 caracteres" 
+                      }
+                    })}
+                    className="w-full pl-10 pr-12 py-3 rounded-lg bg-slate-50 border-2 border-slate-200
+                               focus:border-[#E33D35] focus:bg-white focus:ring-2 focus:ring-red-100 
                                outline-none text-slate-800 transition-all duration-200
-                               placeholder:text-slate-400 pr-12"
+                               placeholder:text-slate-400"
                   />
                   <button
                     type="button"
@@ -138,15 +166,11 @@ export default function LoginPage() {
                                hover:text-slate-600 transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? (
-                      <EyeOff size={20} />
-                    ) : (
-                      <Eye size={20} />
-                    )}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-sm mt-1.5 text-red-500 flex items-center gap-1">
+                  <p className="text-xs mt-1.5 text-red-500 flex items-center gap-1">
                     <span className="text-xs">⚠️</span>
                     {errors.password.message}
                   </p>
@@ -158,8 +182,8 @@ export default function LoginPage() {
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <input
                     type="checkbox"
-                    className="w-4 h-4 rounded border-slate-300 text-blue-600 
-                               focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    className="w-4 h-4 rounded border-slate-300 text-[#E33D35] 
+                               focus:ring-2 focus:ring-red-500 cursor-pointer"
                   />
                   <span className="text-slate-600 group-hover:text-slate-800">
                     Recordarme
@@ -168,7 +192,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => navigate("/recuperar")}
-                  className="text-blue-600 hover:text-blue-700 font-medium hover:underline"
+                  className="text-[#E33D35] hover:text-[#c42d26] font-medium hover:underline"
                 >
                   ¿Olvidaste tu contraseña?
                 </button>
@@ -178,11 +202,10 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl
-                           bg-gradient-to-r from-blue-600 to-indigo-600 
-                           hover:from-blue-700 hover:to-indigo-700
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-lg
+                           bg-[#E33D35] hover:bg-[#c42d26]
                            text-white font-semibold transition-all duration-200
-                           shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40
+                           shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40
                            disabled:opacity-50 disabled:cursor-not-allowed
                            transform hover:scale-[1.02] active:scale-[0.98]"
               >
@@ -215,9 +238,9 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => navigate("/registro")}
-                className="w-full py-3.5 rounded-xl border-2 border-slate-200 
-                           text-slate-700 font-semibold hover:border-blue-500 
-                           hover:bg-blue-50 hover:text-blue-600
+                className="w-full py-3.5 rounded-lg border-2 border-slate-200 
+                           text-slate-700 font-semibold hover:border-[#E33D35] 
+                           hover:bg-red-50 hover:text-[#E33D35]
                            transition-all duration-200"
               >
                 Crear una cuenta
@@ -242,13 +265,13 @@ export default function LoginPage() {
           </div>
 
           {/* Right side - Visual/Branding */}
-          <div className="hidden md:block relative bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 overflow-hidden">
+          <div className="hidden md:block relative bg-gradient-to-br from-[#1C77B7] via-[#34B0D9] to-[#1C77B7] overflow-hidden">
 
             {/* Gradient Mesh Background */}
-            <div className="absolute inset-0 opacity-30">
-              <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-              <div className="absolute top-0 right-0 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-              <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+            <div className="absolute inset-0 opacity-40">
+              <div className="absolute top-0 left-0 w-96 h-96 bg-[#1C77B7] rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+              <div className="absolute top-0 right-0 w-96 h-96 bg-[#34B0D9] rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+              <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#1C77B7] rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
             </div>
 
             {/* Content */}
@@ -262,13 +285,13 @@ export default function LoginPage() {
                 </div>
                 {/* Decorative circles */}
                 <div className="absolute -top-4 -right-4 w-12 h-12 bg-yellow-400 rounded-full animate-pulse"></div>
-                <div className="absolute -bottom-4 -left-4 w-8 h-8 bg-pink-400 rounded-full animate-bounce"></div>
+                <div className="absolute -bottom-4 -left-4 w-8 h-8 bg-cyan-400 rounded-full animate-bounce"></div>
               </div>
 
               <h3 className="text-3xl font-bold mb-4 text-center">
                 Explorá el mundo
               </h3>
-              <p className="text-blue-100 text-center mb-8 max-w-md leading-relaxed">
+              <p className="text-blue-50 text-center mb-8 max-w-md leading-relaxed">
                 Gestioná tus paquetes turísticos, reservas y experiencias desde un solo lugar
               </p>
 
@@ -280,7 +303,7 @@ export default function LoginPage() {
                   </div>
                   <div>
                     <p className="font-semibold">Viajes personalizados</p>
-                    <p className="text-xs text-blue-100">Experiencias únicas a tu medida</p>
+                    <p className="text-xs text-blue-50">Experiencias únicas a tu medida</p>
                   </div>
                 </div>
 
@@ -290,7 +313,7 @@ export default function LoginPage() {
                   </div>
                   <div>
                     <p className="font-semibold">Destinos increíbles</p>
-                    <p className="text-xs text-blue-100">Más de 100 destinos disponibles</p>
+                    <p className="text-xs text-blue-50">Más de 100 destinos disponibles</p>
                   </div>
                 </div>
 
@@ -300,7 +323,7 @@ export default function LoginPage() {
                   </div>
                   <div>
                     <p className="font-semibold">Gestión fácil</p>
-                    <p className="text-xs text-blue-100">Todo en un solo panel</p>
+                    <p className="text-xs text-blue-50">Todo en un solo panel</p>
                   </div>
                 </div>
               </div>

@@ -32,7 +32,7 @@ export default function RegisterPage() {
     }
 
     try {
-      // Preparar datos para el registro
+      // Preparar datos para el registro (coincide con registerSchema del backend)
       const registerData = {
         email: data.email,
         password: data.password,
@@ -41,6 +41,12 @@ export default function RegisterPage() {
       };
 
       const res = await clientAxios.post("/auth/register", registerData);
+
+      // Backend retorna { success, token, user, message }
+      if (!res.data.success) {
+        toast.error(res.data.message || "Error en el registro");
+        return;
+      }
 
       const token = res.data.token;
       const user = res.data.user;
@@ -53,46 +59,55 @@ export default function RegisterPage() {
       setUser(user);
       setToken(token);
 
-      toast.success("¡Registro exitoso! Bienvenido a Ravello");
+      toast.success(res.data.message || "¡Registro exitoso! Bienvenido a Ravello");
 
       // Redirigir al perfil para completar información
       navigate("/mi-perfil");
 
     } catch (err) {
-      console.error(err);
-      toast.error(
-        err?.response?.data?.msg ||
-        err?.response?.data?.message ||
-        "Error al crear la cuenta"
-      );
+      console.error("Error en registro:", err);
+      
+      // Manejar errores de validación del backend
+      if (err?.response?.data?.errors) {
+        // Mostrar todos los errores de validación
+        err.response.data.errors.forEach(error => {
+          toast.error(error);
+        });
+      } else {
+        toast.error(
+          err?.response?.data?.message ||
+          err?.response?.data?.msg ||
+          "Error al crear la cuenta"
+        );
+      }
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-50 flex items-center justify-center px-4 py-8 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50/30 to-slate-100 flex items-center justify-center px-4 py-8 relative overflow-hidden">
 
       {/* Decorative animated elements */}
       <div className="absolute top-20 right-10 opacity-10 animate-float">
-        <Compass size={120} className="text-purple-600 rotate-45" />
+        <Compass size={120} className="text-[#E33D35] rotate-45" />
       </div>
       <div className="absolute bottom-20 left-10 opacity-10 animate-float-delayed">
-        <Plane size={100} className="text-pink-600" />
+        <Plane size={100} className="text-[#FF6B6B]" />
       </div>
       <div className="absolute top-1/2 right-1/4 opacity-5 animate-pulse">
-        <MapPin size={80} className="text-purple-500" />
+        <MapPin size={80} className="text-[#FF8E53]" />
       </div>
 
       <div className="relative w-full max-w-6xl">
         <div className="grid md:grid-cols-2 gap-0 bg-white rounded-3xl shadow-2xl overflow-hidden">
 
           {/* Left side - Visual/Branding */}
-          <div className="hidden md:block relative bg-gradient-to-br from-purple-500 via-pink-600 to-rose-600 overflow-hidden">
+          <div className="hidden md:block relative bg-gradient-to-br from-[#E33D35] via-[#FF6B6B] to-[#E33D35] overflow-hidden">
 
             {/* Gradient Mesh Background */}
-            <div className="absolute inset-0 opacity-30">
-              <div className="absolute top-0 left-0 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-              <div className="absolute top-0 right-0 w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-              <div className="absolute bottom-0 left-0 w-96 h-96 bg-rose-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+            <div className="absolute inset-0 opacity-40">
+              <div className="absolute top-0 left-0 w-96 h-96 bg-[#E33D35] rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+              <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF8E53] rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+              <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#FF6B6B] rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
             </div>
 
             {/* Content */}
@@ -112,7 +127,7 @@ export default function RegisterPage() {
               <h3 className="text-3xl font-bold mb-4 text-center">
                 Comenzá tu aventura
               </h3>
-              <p className="text-purple-100 text-center mb-8 max-w-md leading-relaxed">
+              <p className="text-red-50 text-center mb-8 max-w-md leading-relaxed">
                 Creá tu cuenta y accedé a experiencias únicas alrededor del mundo
               </p>
 
@@ -124,17 +139,17 @@ export default function RegisterPage() {
                   </div>
                   <div>
                     <p className="font-semibold">Registro rápido</p>
-                    <p className="text-xs text-purple-100">Solo toma 2 minutos</p>
+                    <p className="text-xs text-red-50">Solo toma 2 minutos</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
                   <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">🎁</span>
+                    <span className="text-2xl">✈️</span>
                   </div>
                   <div>
-                    <p className="font-semibold">Ofertas exclusivas</p>
-                    <p className="text-xs text-purple-100">Descuentos para nuevos usuarios</p>
+                    <p className="font-semibold">Reservas en minutos</p>
+                    <p className="text-xs text-red-50">Proceso simple y rápido</p>
                   </div>
                 </div>
 
@@ -144,7 +159,7 @@ export default function RegisterPage() {
                   </div>
                   <div>
                     <p className="font-semibold">100% seguro</p>
-                    <p className="text-xs text-purple-100">Tus datos están protegidos</p>
+                    <p className="text-xs text-red-50">Tus datos están protegidos</p>
                   </div>
                 </div>
               </div>
@@ -163,10 +178,10 @@ export default function RegisterPage() {
             {/* Logo/Brand */}
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-[#1C77B7] rounded-xl flex items-center justify-center">
                   <Plane size={20} className="text-white" />
                 </div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold text-[#1C77B7]">
                   Ravello
                 </h1>
               </div>
@@ -188,7 +203,7 @@ export default function RegisterPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-slate-700">
-                    Nombre
+                    Nombre <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -197,10 +212,14 @@ export default function RegisterPage() {
                       placeholder="Juan"
                       {...register("nombre", { 
                         required: "El nombre es obligatorio",
-                        minLength: { value: 2, message: "Mínimo 2 caracteres" }
+                        minLength: { value: 2, message: "Mínimo 2 caracteres" },
+                        pattern: {
+                          value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+                          message: "Solo letras permitidas"
+                        }
                       })}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-200 
-                                 focus:border-purple-500 focus:bg-white focus:ring-4 focus:ring-purple-100 
+                      className="w-full pl-10 pr-4 py-3 rounded-lg bg-slate-50 border-2 border-slate-200 
+                                 focus:border-[#1C77B7] focus:bg-white focus:ring-2 focus:ring-blue-100 
                                  outline-none text-slate-800 transition-all duration-200
                                  placeholder:text-slate-400"
                     />
@@ -215,7 +234,7 @@ export default function RegisterPage() {
 
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-slate-700">
-                    Apellido
+                    Apellido <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -224,10 +243,14 @@ export default function RegisterPage() {
                       placeholder="Pérez"
                       {...register("apellido", { 
                         required: "El apellido es obligatorio",
-                        minLength: { value: 2, message: "Mínimo 2 caracteres" }
+                        minLength: { value: 2, message: "Mínimo 2 caracteres" },
+                        pattern: {
+                          value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+                          message: "Solo letras permitidas"
+                        }
                       })}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-200 
-                                 focus:border-purple-500 focus:bg-white focus:ring-4 focus:ring-purple-100 
+                      className="w-full pl-10 pr-4 py-3 rounded-lg bg-slate-50 border-2 border-slate-200 
+                                 focus:border-[#1C77B7] focus:bg-white focus:ring-2 focus:ring-blue-100 
                                  outline-none text-slate-800 transition-all duration-200
                                  placeholder:text-slate-400"
                     />
@@ -244,7 +267,7 @@ export default function RegisterPage() {
               {/* Email Input */}
               <div>
                 <label className="block text-sm font-semibold mb-2 text-slate-700">
-                  Correo electrónico
+                  Correo electrónico <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -255,11 +278,11 @@ export default function RegisterPage() {
                       required: "El correo es obligatorio",
                       pattern: {
                         value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: "Correo inválido"
+                        message: "El correo debe ser válido"
                       }
                     })}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-200 
-                               focus:border-purple-500 focus:bg-white focus:ring-4 focus:ring-purple-100 
+                    className="w-full pl-10 pr-4 py-3 rounded-lg bg-slate-50 border-2 border-slate-200 
+                               focus:border-[#1C77B7] focus:bg-white focus:ring-2 focus:ring-blue-100 
                                outline-none text-slate-800 transition-all duration-200
                                placeholder:text-slate-400"
                   />
@@ -275,7 +298,7 @@ export default function RegisterPage() {
               {/* Password Input */}
               <div>
                 <label className="block text-sm font-semibold mb-2 text-slate-700">
-                  Contraseña
+                  Contraseña <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -284,14 +307,13 @@ export default function RegisterPage() {
                     placeholder="••••••••"
                     {...register("password", { 
                       required: "La contraseña es obligatoria",
-                      minLength: { value: 8, message: "Mínimo 8 caracteres" },
-                      pattern: {
-                        value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                        message: "Debe incluir mayúscula, minúscula y número"
+                      minLength: { 
+                        value: 6, 
+                        message: "La contraseña debe tener al menos 6 caracteres" 
                       }
                     })}
-                    className="w-full pl-10 pr-12 py-3 rounded-xl bg-slate-50 border-2 border-slate-200
-                               focus:border-purple-500 focus:bg-white focus:ring-4 focus:ring-purple-100 
+                    className="w-full pl-10 pr-12 py-3 rounded-lg bg-slate-50 border-2 border-slate-200
+                               focus:border-[#1C77B7] focus:bg-white focus:ring-2 focus:ring-blue-100 
                                outline-none text-slate-800 transition-all duration-200
                                placeholder:text-slate-400"
                   />
@@ -310,10 +332,10 @@ export default function RegisterPage() {
                     {errors.password.message}
                   </p>
                 )}
-                {password && password.length >= 8 && (
+                {password && password.length >= 6 && !errors.password && (
                   <p className="text-xs mt-1.5 text-green-600 flex items-center gap-1">
                     <CheckCircle size={12} />
-                    Contraseña segura
+                    Contraseña válida
                   </p>
                 )}
               </div>
@@ -321,7 +343,7 @@ export default function RegisterPage() {
               {/* Confirm Password Input */}
               <div>
                 <label className="block text-sm font-semibold mb-2 text-slate-700">
-                  Confirmar contraseña
+                  Confirmar contraseña <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -332,8 +354,8 @@ export default function RegisterPage() {
                       required: "Confirma tu contraseña",
                       validate: value => value === password || "Las contraseñas no coinciden"
                     })}
-                    className="w-full pl-10 pr-12 py-3 rounded-xl bg-slate-50 border-2 border-slate-200
-                               focus:border-purple-500 focus:bg-white focus:ring-4 focus:ring-purple-100 
+                    className="w-full pl-10 pr-12 py-3 rounded-lg bg-slate-50 border-2 border-slate-200
+                               focus:border-[#1C77B7] focus:bg-white focus:ring-2 focus:ring-blue-100 
                                outline-none text-slate-800 transition-all duration-200
                                placeholder:text-slate-400"
                   />
@@ -359,21 +381,21 @@ export default function RegisterPage() {
                 <input
                   type="checkbox"
                   {...register("terms", { required: "Debes aceptar los términos" })}
-                  className="mt-1 w-4 h-4 rounded border-slate-300 text-purple-600 
-                             focus:ring-2 focus:ring-purple-500 cursor-pointer"
+                  className="mt-1 w-4 h-4 rounded border-slate-300 text-[#1C77B7] 
+                             focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 />
                 <label className="text-sm text-slate-600 cursor-pointer">
                   Acepto los{" "}
                   <button
                     type="button"
-                    className="text-purple-600 hover:text-purple-700 font-medium hover:underline"
+                    className="text-[#1C77B7] hover:text-blue-800 font-medium hover:underline"
                   >
                     términos y condiciones
                   </button>
                   {" "}y la{" "}
                   <button
                     type="button"
-                    className="text-purple-600 hover:text-purple-700 font-medium hover:underline"
+                    className="text-[#1C77B7] hover:text-blue-800 font-medium hover:underline"
                   >
                     política de privacidad
                   </button>
@@ -390,11 +412,10 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl
-                           bg-gradient-to-r from-purple-600 to-pink-600 
-                           hover:from-purple-700 hover:to-pink-700
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-lg
+                           bg-[#1C77B7] hover:bg-[#155a8f]
                            text-white font-semibold transition-all duration-200
-                           shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40
+                           shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40
                            disabled:opacity-50 disabled:cursor-not-allowed
                            transform hover:scale-[1.02] active:scale-[0.98]"
               >
@@ -427,9 +448,9 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => navigate("/login")}
-                className="w-full py-3.5 rounded-xl border-2 border-slate-200 
-                           text-slate-700 font-semibold hover:border-purple-500 
-                           hover:bg-purple-50 hover:text-purple-600
+                className="w-full py-3.5 rounded-lg border-2 border-slate-200 
+                           text-slate-700 font-semibold hover:border-[#1C77B7] 
+                           hover:bg-blue-50 hover:text-[#1C77B7]
                            transition-all duration-200"
               >
                 Iniciar sesión
