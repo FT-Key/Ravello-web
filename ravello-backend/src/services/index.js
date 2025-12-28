@@ -7,6 +7,8 @@ import * as offerService from './offer.service.js';
 import * as featuredPromotionsService from './featuredPromotions.service.js';
 import * as newsletterService from './newsletter.service.js';
 import * as authService from './auth.service.js';
+import paymentService from './payment.service.js';
+import * as bookingService from './booking.service.js';
 
 export {
   packageService,
@@ -18,4 +20,6 @@ export {
   featuredPromotionsService,
   newsletterService,
   authService,
+  paymentService,
+  bookingService,
 };

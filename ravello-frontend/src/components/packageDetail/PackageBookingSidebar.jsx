@@ -1,221 +1,267 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { Clock, MapPin, Star, DollarSign, Users, Plane, AlertCircle } from "lucide-react";
+// ===================================================================
+// components/packageDetail/PackageBookingSidebar.jsx
+// ===================================================================
+import React, { useState } from "react";
+import { MessageCircle, LogIn } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import PriceDisplay from "./sidebar/PriceDisplay";
+import PassengerSelector from "./sidebar/PassengerSelector";
+import DateSelector from "./sidebar/DateSelector";
+import AuthAlerts from "./sidebar/AuthAlerts";
+import PaymentButtons from "./sidebar/PaymentButtons";
+import PackageDetails from "./sidebar/PackageDetails";
+import BrickPaymentForm from "./sidebar/BrickPaymentForm";
+import { getMercadoPagoPublicKey } from '../../config/mercadopago';
 
 export default function PackageBookingSidebar({
   pkg,
   packageDates,
   selectedDate,
   setSelectedDate,
-  datesLoading
+  datesLoading,
+  onPayment,
+  onContact,
+  paymentLoading,
+  isAuthenticated,
+  canBook,
+  mercadoPagoPublicKey
 }) {
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("es-AR", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
+  const navigate = useNavigate();
+  const [adultos, setAdultos] = useState(2);
+  const [ninos, setNinos] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState(null); // 'checkout' | 'brick' | null
+  const [showBrickModal, setShowBrickModal] = useState(false);
+  const [reservaCreada, setReservaCreada] = useState(null); // ⬅️ NUEVO: Guardar reserva creada
+  const [isCreatingBooking, setIsCreatingBooking] = useState(false); // ⬅️ NUEVO: Loading state
+
+  // Calcular precio total
+  const precioAdulto = selectedDate?.precioFinal || selectedDate?.precio || pkg.precioBase || 0;
+  const precioNino = selectedDate?.precioNino || precioAdulto * 0.7;
+  const precioTotal = (precioAdulto * adultos) + (precioNino * ninos);
+
+  const handleReservar = async (method) => {
+    // Validar fecha seleccionada
+    if (!selectedDate) {
+      alert("Por favor selecciona una fecha de salida");
+      return;
+    }
+
+    // Validar cupos disponibles
+    const totalPasajeros = adultos + ninos;
+    if (totalPasajeros > selectedDate.cuposDisponibles) {
+      alert(`Solo hay ${selectedDate.cuposDisponibles} cupos disponibles`);
+      return;
+    }
+
+    // Preparar datos para enviar
+    const bookingData = {
+      paqueteId: pkg._id,
+      fechaSalidaId: selectedDate._id,
+      cantidadPasajeros: { adultos, ninos } // ⬅️ CORREGIDO: usar "cantidadPasajeros"
+    };
+
+    if (method === 'checkout') {
+      // Checkout Pro: usar el handler del padre (PackageDetailPage)
+      onPayment({ ...bookingData, paymentMethod: 'checkout' });
+    } else if (method === 'brick') {
+      // ⬅️ NUEVO FLUJO PARA BRICKS
+      try {
+        setIsCreatingBooking(true);
+
+        // 1. CREAR LA RESERVA
+        console.log("📝 Creando reserva...");
+        const response = await fetch("/api/bookings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(bookingData),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Error al crear la reserva");
+        }
+
+        const result = await response.json();
+        const reserva = result.data;
+
+        console.log("✅ Reserva creada:", reserva);
+
+        // 2. GUARDAR LA RESERVA Y MOSTRAR EL BRICK
+        setReservaCreada(reserva);
+        setShowBrickModal(true);
+
+      } catch (error) {
+        console.error("❌ Error al crear reserva:", error);
+        alert(error.message || "Error al crear la reserva");
+      } finally {
+        setIsCreatingBooking(false);
+      }
+    }
+  };
+
+  const handleBrickSuccess = (result) => {
+    console.log("✅ Pago exitoso:", result);
+    setShowBrickModal(false);
+    setReservaCreada(null);
+    setPaymentMethod(null);
+    
+    // Redirigir a confirmación o mis reservas
+    alert("¡Pago procesado exitosamente! Redirigiendo a tus reservas...");
+    navigate("/mis-reservas");
+  };
+
+  const handleBrickError = (error) => {
+    console.error("❌ Error en pago:", error);
+    alert(error);
+    // No cerramos el modal para que pueda reintentar
+  };
+
+  const handleBrickCancel = () => {
+    const confirmar = window.confirm(
+      "¿Deseas cancelar el pago? La reserva quedará pendiente de pago."
+    );
+    
+    if (confirmar) {
+      setShowBrickModal(false);
+      setReservaCreada(null);
+      setPaymentMethod(null);
+    }
+  };
+
+  const handleLoginRedirect = () => {
+    navigate('/login', {
+      state: {
+        from: window.location.pathname,
+        message: 'Inicia sesión para hacer tu reserva'
+      }
     });
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-24 select-none">
+    <div className="lg:sticky lg:top-24 space-y-6">
       {/* Precio */}
-      <div className="mb-6">
-        <p className="text-sm text-light mb-1">Precio desde</p>
-        <div className="flex items-baseline gap-2">
-          <span className="text-4xl font-bold text-primary-blue">
-            ${pkg.precioBase?.toLocaleString()}
-          </span>
-          <span className="text-light">{pkg.moneda || "ARS"}</span>
-        </div>
-        {pkg.descuentoNinos > 0 && (
-          <p className="text-sm text-green-600 mt-2">
-            {pkg.descuentoNinos}% descuento para niños
+      <PriceDisplay
+        precioTotal={precioTotal}
+        moneda={selectedDate?.moneda || pkg.moneda || "ARS"}
+        adultos={adultos}
+        ninos={ninos}
+      />
+
+      {/* Selección de pasajeros */}
+      <PassengerSelector
+        adultos={adultos}
+        setAdultos={setAdultos}
+        ninos={ninos}
+        setNinos={setNinos}
+      />
+
+      {/* Fechas disponibles */}
+      <DateSelector
+        packageDates={packageDates}
+        selectedDate={selectedDate}
+        setSelectedDate={setSelectedDate}
+        datesLoading={datesLoading}
+        precioAdulto={precioAdulto}
+        precioNino={precioNino}
+        ninos={ninos}
+      />
+
+      {/* Alertas de autenticación */}
+      <AuthAlerts
+        isAuthenticated={isAuthenticated}
+        canBook={canBook}
+      />
+
+      {/* Botones de acción */}
+      <div className="space-y-3">
+        {/* Botón principal: Login o Seleccionar método de pago */}
+        {!isAuthenticated ? (
+          <button
+            onClick={handleLoginRedirect}
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
+          >
+            <LogIn className="w-5 h-5" />
+            Iniciar Sesión para Reservar
+          </button>
+        ) : !paymentMethod ? (
+          // Mostrar opciones de pago
+          <PaymentButtons
+            onSelectCheckout={() => setPaymentMethod('checkout')}
+            onSelectBrick={() => setPaymentMethod('brick')}
+            disabled={paymentLoading || !selectedDate || isCreatingBooking}
+            canBook={canBook}
+          />
+        ) : (
+          // Botón de confirmar según método seleccionado
+          <div className="space-y-3">
+            <button
+              onClick={() => handleReservar(paymentMethod)}
+              disabled={paymentLoading || !selectedDate || isCreatingBooking}
+              className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {(paymentLoading || isCreatingBooking) ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  {isCreatingBooking ? 'Creando reserva...' : 'Procesando...'}
+                </>
+              ) : (
+                <>
+                  {paymentMethod === 'checkout' ? 'Ir a MercadoPago' : 'Continuar con el pago'}
+                </>
+              )}
+            </button>
+            
+            <button
+              onClick={() => setPaymentMethod(null)}
+              disabled={isCreatingBooking}
+              className="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors text-sm disabled:opacity-50"
+            >
+              Cambiar método de pago
+            </button>
+          </div>
+        )}
+
+        {/* Botón Consultar */}
+        <button
+          onClick={onContact}
+          className="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center justify-center gap-2"
+        >
+          <MessageCircle className="w-5 h-5" />
+          Hacer una Consulta
+        </button>
+      </div>
+
+      {/* Información adicional */}
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2 text-sm">
+        <p className="text-green-800">✓ Pago seguro con MercadoPago</p>
+        <p className="text-green-800">✓ Confirmación inmediata</p>
+        {isAuthenticated && (
+          <p className="text-green-700">ℹ️ Tus datos se toman de tu perfil</p>
+        )}
+        {pkg.montoSenia && (
+          <p className="text-green-700">
+            ℹ️ Seña: ${pkg.montoSenia.toLocaleString()}
           </p>
         )}
       </div>
 
-      {/* Fechas disponibles */}
-      {datesLoading ? (
-        <div className="mb-6 pb-6 border-b border-border-subtle">
-          <p className="text-sm text-light">Cargando fechas...</p>
-        </div>
-      ) : packageDates.length > 0 ? (
-        <div className="mb-6 pb-6 border-b border-border-subtle">
-          <label className="text-sm font-semibold text-dark mb-2 block">
-            Selecciona tu fecha de salida
-          </label>
-          <select
-            value={selectedDate?._id || ""}
-            onChange={(e) => {
-              const date = packageDates.find((d) => d._id === e.target.value);
-              setSelectedDate(date);
-            }}
-            className="w-full px-3 py-2 border border-border-subtle rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent"
-          >
-            {packageDates.map((date) => (
-              <option key={date._id} value={date._id}>
-                {formatDate(date.salida)} - {formatDate(date.regreso)}
-              </option>
-            ))}
-          </select>
+      {/* Detalles del paquete */}
+      <PackageDetails pkg={pkg} />
 
-          {selectedDate && (
-            <div className="mt-4 space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-light">Precio final:</span>
-                <span className="font-bold text-primary-blue text-lg">
-                  ${selectedDate.precioFinal?.toLocaleString()} {selectedDate.moneda}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-light">Cupos disponibles:</span>
-                <span className="font-semibold text-dark">
-                  {selectedDate.cuposDisponibles}
-                </span>
-              </div>
-              {selectedDate.cuposDisponibles < 5 && (
-                <div className="flex items-center gap-2 text-xs text-orange-600 bg-orange-50 p-2 rounded">
-                  <AlertCircle size={14} />
-                  <span>¡Últimos {selectedDate.cuposDisponibles} cupos!</span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="mb-6 pb-6 border-b border-border-subtle">
-          <div className="flex items-center gap-2 text-sm text-light bg-gray-50 p-3 rounded-lg">
-            <AlertCircle size={16} />
-            <span>No hay fechas disponibles en este momento</span>
-          </div>
-        </div>
-      )}
-
-      {/* Información del paquete */}
-      <div className="space-y-3 mb-6 pb-6 border-b border-border-subtle">
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2 text-light">
-            <Clock size={16} />
-            <span>Duración</span>
-          </div>
-          <span className="font-semibold text-dark">
-            {pkg.duracionTotal || 0} días
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2 text-light">
-            <MapPin size={16} />
-            <span>Tipo</span>
-          </div>
-          <span className="font-semibold text-dark capitalize">
-            {pkg.tipo || "Internacional"}
-          </span>
-        </div>
-
-        {pkg.categoria && (
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2 text-light">
-              <Star size={16} />
-              <span>Categoría</span>
-            </div>
-            <span className="font-semibold text-dark capitalize">
-              {pkg.categoria}
-            </span>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2 text-light">
-            <DollarSign size={16} />
-            <span>Seña</span>
-          </div>
-          <span className="font-semibold text-dark">
-            ${pkg.montoSenia?.toLocaleString()}
-          </span>
-        </div>
-
-        {pkg.plazoPagoTotalDias && (
-          <div className="text-xs text-light mt-2 bg-blue-50 p-2 rounded">
-            💡 Plazo de pago total: {pkg.plazoPagoTotalDias} días antes de la salida
-          </div>
-        )}
-
-        {pkg.capacidadMinima && pkg.capacidadMaxima && (
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2 text-light">
-              <Users size={16} />
-              <span>Grupo</span>
-            </div>
-            <span className="font-semibold text-dark">
-              {pkg.capacidadMinima} - {pkg.capacidadMaxima} personas
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Botones de acción */}
-      <div className="space-y-3">
-        <Link
-          to={`/contacto?paquete=${pkg._id}${selectedDate ? `&fecha=${selectedDate._id}` : ""
-            }`}
-          className="w-full block text-center px-6 py-3 bg-primary-red text-white font-semibold rounded-lg hover:bg-opacity-90 transition-all shadow-md hover:shadow-lg"
-        >
-          Reservar ahora
-        </Link>
-        {/*  <Link
-          to={`/contacto?paquete=${pkg._id}&consulta=true`}
-          className="w-full block text-center px-6 py-3 border-2 border-primary-blue text-primary-blue font-semibold rounded-lg hover:bg-primary-blue hover:text-white transition-all"
-        >
-          Consultar disponibilidad
-        </Link> */}
-      </div>
-
-      {/* Contacto rápido */}
-      <div className="mt-6 pt-6 border-t border-border-subtle">
-        <p className="text-sm text-light mb-3 text-center">
-          ¿Necesitas ayuda? Contáctanos
-        </p>
-        <div className="space-y-2">
-          <a
-            href="tel:+5491123456789"
-            className="flex items-center justify-center gap-2 text-sm text-primary-blue hover:underline"
-          >
-            <Plane size={16} />
-            <span>+54 911 2345-6789</span>
-          </a>
-          <a
-            href="mailto:info@ravello.com"
-            className="flex items-center justify-center gap-2 text-sm text-primary-blue hover:underline"
-          >
-            <span>info@ravello.com</span>
-          </a>
-        </div>
-      </div>
-
-      {/* Próximas salidas */}
-      {pkg.fechasDisponibles && pkg.fechasDisponibles.length > 0 && (
-        <div className="mt-6 pt-6 border-t border-border-subtle">
-          <h3 className="text-sm font-semibold text-dark mb-3">
-            Próximas salidas disponibles
-          </h3>
-          <div className="space-y-2">
-            {pkg.fechasDisponibles.slice(0, 3).map((fecha, idx) => (
-              <div key={idx} className="text-xs bg-background-light p-2 rounded">
-                <div className="flex items-center justify-between">
-                  <span className="text-light">{formatDate(fecha.inicio)}</span>
-                  {fecha.cupos && (
-                    <span className="font-semibold text-primary-blue">
-                      {fecha.cupos} cupos
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Modal de Brick Payment */}
+      {showBrickModal && reservaCreada && (
+        <BrickPaymentForm
+          reservaId={reservaCreada._id}
+          reservaData={reservaCreada}
+          precioTotal={reservaCreada.montoTotal}
+          onSuccess={handleBrickSuccess}
+          onError={handleBrickError}
+          onCancel={handleBrickCancel}
+          publicKey={getMercadoPagoPublicKey()}
+        />
       )}
     </div>
   );

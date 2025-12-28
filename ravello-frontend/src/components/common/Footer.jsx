@@ -69,8 +69,12 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-gradient-to-br from-blue-600 via-blue-800 to-blue-600 text-white select-none">
-
+    <footer
+      className="text-white select-none pt-0"
+      style={{
+        background: 'linear-gradient(to bottom, transparent 0, transparent 6px, #2563eb 6px, #1e40af 40%, #2563eb 100%)'
+      }}
+    >
       {/* Wave */}
       <div className="relative">
         <svg
@@ -81,8 +85,7 @@ const Footer = () => {
         >
           <path
             d="M0,0 C300,80 600,80 900,40 C1050,20 1150,0 1200,0 L1200,120 L0,120 Z"
-            fill="var(--background)"
-          />
+            fill="var(--background)" />
         </svg>
       </div>
 
@@ -131,8 +134,7 @@ const Footer = () => {
                 <img
                   src="/ravello-mini-logo.svg"
                   alt="Logo"
-                  className="w-11 h-11"
-                />
+                  className="w-11 h-11" />
                 <h3 className="text-2xl font-bold">Ravello</h3>
               </div>
 

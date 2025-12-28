@@ -2,7 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { useUserStore } from "../stores/useUserStore";
-import { useAdminShortcut } from "../hooks/useAdminShortcut"; // ⭐ Importar
+import { useAdminShortcut } from "../hooks/useAdminShortcut";
 
 // Páginas públicas
 import HomePage from "../pages/Home/HomePage";
@@ -15,6 +15,9 @@ import ReviewPage from "../pages/Reviews/ReviewPage";
 import AboutUsPage from "../pages/AboutUs/AboutUsPage";
 import UnsubscribePage from "../pages/Newsletter/Unsubscribe";
 import NotFoundPage from "../pages/NotFound/NotFound";
+
+// Páginas de Usuario
+import ProfilePage from "../pages/Auth/ProfilePage";
 
 // Páginas Admin
 import DashboardPage from "../pages/Admin/DashboardPage";
@@ -30,6 +33,8 @@ import ManagePackageDatesPage from "../pages/Admin/ManagePackageDatesPage";
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
 import ScrollToTop from "../utils/scrollToTop";
+import PaymentSuccessPage from "../pages/Payment/PaymentSuccessPage";
+import PaymentFailurePage from "../pages/Payment/PaymentFailurePage";
 
 function PrivateRoute({ children }) {
   const { user, token, loadingUser } = useUserStore();
@@ -53,7 +58,7 @@ export function AdminRoute({ children }) {
   }
 
   if (user.rol !== "admin") {
-    return <Navigate to="/perfil" replace />;
+    return <Navigate to="/mi-perfil" replace />;
   }
 
   return children;
@@ -63,9 +68,8 @@ function AppRouterInner() {
   const location = useLocation();
   const isHome = location.pathname === "/";
 
-  useAdminShortcut(); // ⭐ Activar shortcut Ctrl + Shift + A AQUÍ
+  useAdminShortcut();
 
-  // ⭐ AGREGAR ESTO: Esperar a que termine de cargar el usuario
   const { loadingUser } = useUserStore();
 
   // Mostrar un loading mientras se verifica la sesión
@@ -98,20 +102,48 @@ function AppRouterInner() {
         <Route path="/sobre-nosotros" element={<AboutUsPage />} />
         <Route path="/contacto" element={<ContactPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/registro" element={<RegisterPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/unsubscribe" element={<UnsubscribePage />} />
+        <Route path="/reservas/:numeroReserva/pago-exitoso" element={<PaymentSuccessPage />} />
+        <Route path="/reservas/:numeroReserva/pago-fallido" element={<PaymentFailurePage />} />
 
-        {/* Ruta privada del usuario */}
+        {/* ========================================== */}
+        {/* RUTAS PRIVADAS DEL USUARIO */}
+        {/* ========================================== */}
+        
+        {/* Mi Perfil */}
         <Route
-          path="/perfil"
+          path="/mi-perfil"
           element={
             <PrivateRoute>
-              <h1>Perfil del usuario</h1>
+              <ProfilePage />
             </PrivateRoute>
           }
         />
 
-        {/* Rutas ADMIN */}
+        {/* Mis Reservas */}
+        <Route
+          path="/mis-reservas"
+          element={
+            <PrivateRoute>
+              <h1 className="p-8 text-center">Mis Reservas - Próximamente</h1>
+            </PrivateRoute>
+          }
+        />
+
+        {/* Configuración */}
+        <Route
+          path="/configuracion"
+          element={
+            <PrivateRoute>
+              <ProfilePage />
+            </PrivateRoute>
+          }
+        />
+
+        {/* ========================================== */}
+        {/* RUTAS ADMIN */}
+        {/* ========================================== */}
         <Route path="/admin" element={<AdminRoute><DashboardPage /></AdminRoute>} />
         <Route path="/admin/paquetes" element={<AdminRoute><ManagePackagesPage /></AdminRoute>} />
         <Route path="/admin/paquetes-fechas" element={<AdminRoute><ManagePackageDatesPage /></AdminRoute>} />
