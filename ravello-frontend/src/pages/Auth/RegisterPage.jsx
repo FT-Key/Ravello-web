@@ -84,7 +84,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50/30 to-slate-100 flex items-center justify-center px-4 py-8 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50/30 to-slate-100 flex items-center justify-center px-4 py-8 relative overflow-hidden fade-top-bottom">
 
       {/* Decorative animated elements */}
       <div className="absolute top-20 right-10 opacity-10 animate-float">
