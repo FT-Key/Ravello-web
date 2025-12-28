@@ -16,7 +16,7 @@ import { PaymentNotifications } from './payment/notifications/payment.notificati
 // SERVICIO PRINCIPAL DE PAGOS
 // ============================================
 export default class PaymentService {
-  
+
   // ============================================
   // CREAR PREFERENCIA DE MERCADOPAGO
   // ============================================
@@ -28,13 +28,13 @@ export default class PaymentService {
 
       // Validar usuario
       const usuario = await PaymentValidator.validateUser(userId, session);
-      
+
       // Validar reserva
       const reserva = await PaymentValidator.validateBooking(reservaId, session);
-      
+
       // Validar permisos
       PaymentValidator.validatePermissions(reserva, userId, usuario.rol);
-      
+
       // Validar monto
       PaymentValidator.validateAmount(montoPago, reserva.montoPendiente);
 
@@ -42,31 +42,61 @@ export default class PaymentService {
       const { riesgo, infoDispositivo } = await RiskValidator.analyze({
         usuario, reserva, metadata, monto: montoPago, tipoPago
       });
-      
+
       await RiskValidator.checkRiskLevel(riesgo, userId, reservaId, montoPago, session);
 
-      // Crear pago
-      const paymentData = PaymentFactory.createPaymentData(
+      // Crear el objeto de datos (sin guardar aún)
+      const paymentDataObject = PaymentFactory.createPaymentData(
         reserva, montoPago, tipoPago, numeroCuota, userId, riesgo, infoDispositivo, metadata
       );
-      const pago = await PaymentFactory.createPayment(paymentData, session);
 
-      // Crear preferencia en MercadoPago
-      const body = PreferenceService.buildPreferenceBody(reserva, montoPago, tipoPago, numeroCuota, pago.numeroPago);
+      // Generar numeroPago manualmente
+      const count = await Payment.countDocuments();
+      const fecha = new Date();
+      const year = fecha.getFullYear().toString().slice(-2);
+      const month = (fecha.getMonth() + 1).toString().padStart(2, '0');
+      const numero = (count + 1).toString().padStart(5, '0');
+      const numeroPago = `PAG-${year}${month}-${numero}`;
+
+      console.log('✅ Número de pago generado:', numeroPago);
+
+      // Crear preferencia en MercadoPago PRIMERO
+      const body = PreferenceService.buildPreferenceBody(reserva, montoPago, tipoPago, numeroCuota, numeroPago);
       const result = await PreferenceService.create(body);
 
-      // Actualizar pago
-      PreferenceService.updatePaymentWithPreference(pago, result, body);
+      // Construir objeto mercadopago con los datos de la preferencia
+      const mercadopagoData = {
+        preferenceId: result.id,
+        externalReference: numeroPago,
+        status: 'pending',
+        backUrls: {
+          success: body.back_urls?.success,
+          failure: body.back_urls?.failure,
+          pending: body.back_urls?.pending
+        }
+      };
+
+      // Crear el documento CON mercadopago ya incluido
+      const pago = new Payment({
+        ...paymentDataObject,
+        numeroPago: numeroPago,
+        estado: 'pendiente',
+        mercadopago: mercadopagoData
+      });
+
+      // Guardar UNA SOLA VEZ
       await pago.save({ session });
+
+      console.log('✅ Pago con preferencia guardado correctamente en la BD');
 
       // Auditoría
       await AuditLog.create([{
         usuario: userId,
-        accion: 'pago_iniciado',
+        accion: 'pago_checkout_iniciado',
         entidad: { tipo: 'Payment', id: pago._id },
         descripcion: `Preferencia MP creada para reserva ${reserva.numeroReserva} - Monto: ${montoPago} ${reserva.moneda}`,
         nivel: riesgo.score > 50 ? 'warning' : 'info',
-        metadata: { riesgo, ...metadata }
+        metadata: { riesgo, preferenceId: result.id, ...metadata }
       }], { session });
 
       await session.commitTransaction();
@@ -103,13 +133,13 @@ export default class PaymentService {
 
       // Validar usuario
       const usuario = await PaymentValidator.validateUser(userId, session);
-      
+
       // Validar reserva
       const reserva = await PaymentValidator.validateBooking(reservaId, session);
-      
+
       // Validar permisos
       PaymentValidator.validatePermissions(reserva, userId, usuario.rol);
-      
+
       // Validar monto
       PaymentValidator.validateAmount(montoPago, reserva.montoPendiente);
 
@@ -117,33 +147,115 @@ export default class PaymentService {
       const { riesgo, infoDispositivo } = await RiskValidator.analyze({
         usuario, reserva, metadata, monto: montoPago, tipoPago
       });
-      
+
       await RiskValidator.checkRiskLevel(riesgo, userId, reservaId, montoPago, session);
 
-      // Crear pago
+      // ⬅️ CAMBIO 1: Crear el OBJETO de datos del pago (sin guardar aún)
       const paymentDataObject = PaymentFactory.createPaymentData(
         reserva, montoPago, tipoPago, numeroCuota, userId, riesgo, infoDispositivo, metadata
       );
-      const pago = await PaymentFactory.createPayment(paymentDataObject, session);
 
-      // Procesar pago con MercadoPago Brick
-      const body = BrickService.buildPaymentBody(reserva, montoPago, paymentData, pago.numeroPago);
+      // ⬅️ CAMBIO 2: Generar el numeroPago ANTES de crear el documento
+      const count = await Payment.countDocuments();
+      const fecha = new Date();
+      const year = fecha.getFullYear().toString().slice(-2);
+      const month = (fecha.getMonth() + 1).toString().padStart(2, '0');
+      const numero = (count + 1).toString().padStart(5, '0');
+      const numeroPago = `PAG-${year}${month}-${numero}`;
+
+      console.log('✅ Número de pago generado:', numeroPago);
+
+      // Procesar pago con MercadoPago Brick PRIMERO
+      const body = BrickService.buildPaymentBody(reserva, montoPago, paymentData, numeroPago);
       const payment = await BrickService.processPayment(body);
-
-      // Actualizar pago con respuesta de MP
-      BrickService.updatePaymentWithResponse(pago, payment);
 
       // Determinar estado del pago
       const estadoPago = BrickService.determinePaymentState(payment.status);
-      pago.estado = estadoPago;
+
+      // Si fue rechazado, abortar
+      if (payment.status === 'rejected') {
+        await session.abortTransaction();
+        throw new Error(`Pago rechazado: ${payment.status_detail}`);
+      }
+
+      // ⬅️ CAMBIO 3: Construir el objeto mercadopago ANTES de crear el documento
+      const mercadopagoData = {
+        paymentId: payment.id?.toString(),
+        status: payment.status,
+        statusDetail: payment.status_detail,
+        paymentTypeId: payment.payment_type_id,
+        paymentMethodId: payment.payment_method_id,
+        installments: payment.installments,
+        installmentAmount: payment.transaction_details?.installment_amount,
+        transactionAmount: payment.transaction_amount,
+        netReceivedAmount: payment.transaction_details?.net_received_amount,
+        totalPaidAmount: payment.transaction_details?.total_paid_amount,
+        externalReference: numeroPago,
+        dateCreated: payment.date_created ? new Date(payment.date_created) : undefined,
+        dateApproved: payment.date_approved ? new Date(payment.date_approved) : undefined,
+        dateLastUpdated: payment.date_last_updated ? new Date(payment.date_last_updated) : undefined,
+      };
+
+      // Agregar payer si existe
+      if (payment.payer) {
+        mercadopagoData.payer = {
+          id: payment.payer.id?.toString(),
+          email: payment.payer.email,
+          firstName: payment.payer.first_name,
+          lastName: payment.payer.last_name
+        };
+
+        if (payment.payer.identification) {
+          mercadopagoData.payer.identification = {
+            type: payment.payer.identification.type,
+            number: payment.payer.identification.number
+          };
+        }
+
+        if (payment.payer.phone) {
+          mercadopagoData.payer.phone = {
+            areaCode: payment.payer.phone.area_code,
+            number: payment.payer.phone.number
+          };
+        }
+      }
+
+      // Agregar feeDetails si existe
+      if (payment.fee_details && Array.isArray(payment.fee_details)) {
+        mercadopagoData.feeDetails = payment.fee_details.map(fee => ({
+          type: fee.type,
+          amount: fee.amount,
+          feePayer: fee.fee_payer
+        }));
+      }
+
+      // Agregar card si existe
+      if (payment.card) {
+        mercadopagoData.card = {
+          firstSixDigits: payment.card.first_six_digits,
+          lastFourDigits: payment.card.last_four_digits
+        };
+      }
+
+      // Guardar respuesta completa
+      mercadopagoData.webhookData = payment;
+
+      // ⬅️ CAMBIO 4: Crear el documento CON todos los datos ya listos
+      const pago = new Payment({
+        ...paymentDataObject,
+        numeroPago: numeroPago,
+        estado: estadoPago,
+        mercadopago: mercadopagoData  // ⬅️ INCLUIR mercadopago desde el inicio
+      });
+
+      // ⬅️ CAMBIO 5: Guardar UNA SOLA VEZ
       await pago.save({ session });
+
+      console.log('✅ Pago guardado correctamente en la BD');
 
       // Si fue aprobado, aplicar a la reserva
       if (payment.status === 'approved') {
         await PaymentApplicationHandler.apply(pago, session);
-      } else if (payment.status === 'rejected') {
-        await session.abortTransaction();
-        throw new Error(`Pago rechazado: ${payment.status_detail}`);
       }
 
       // Auditoría
@@ -225,7 +337,7 @@ export default class PaymentService {
     try {
       // Validar datos antes de procesar
       PresentialHandler.validatePresentialData(data);
-      
+
       return await PresentialHandler.register(data, userId);
     } catch (error) {
       console.error('Error registrando pago presencial:', error);

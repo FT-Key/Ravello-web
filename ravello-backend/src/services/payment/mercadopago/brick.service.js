@@ -96,27 +96,86 @@ export class BrickService {
       throw error;
     }
   }
-  static updatePaymentWithResponse(pago, payment) {
-    pago.mercadopago.paymentId = payment.id;
-    pago.mercadopago.status = payment.status;
-    pago.mercadopago.statusDetail = payment.status_detail;
-    pago.mercadopago.paymentTypeId = payment.payment_type_id;
-    pago.mercadopago.paymentMethodId = payment.payment_method_id;
-    pago.mercadopago.installments = payment.installments;
-    pago.mercadopago.transactionAmount = payment.transaction_amount;
-    pago.mercadopago.netReceivedAmount = payment.transaction_details?.net_received_amount;
-    pago.mercadopago.totalPaidAmount = payment.transaction_details?.total_paid_amount;
-    pago.mercadopago.dateCreated = payment.date_created;
-    pago.mercadopago.dateApproved = payment.date_approved;
-    pago.mercadopago.externalReference = pago.numeroPago;
 
+  // ⬅️ SOLUCIÓN: Usar set() con parámetro strict false
+  static updatePaymentWithResponse(pago, payment) {
+    console.log("🔄 Actualizando pago con respuesta de MP...");
+    
+    // Construir el objeto mercadopago completo
+    const mercadopagoData = {
+      paymentId: payment.id?.toString(),
+      status: payment.status,
+      statusDetail: payment.status_detail,
+      paymentTypeId: payment.payment_type_id,
+      paymentMethodId: payment.payment_method_id,
+      installments: payment.installments,
+      installmentAmount: payment.transaction_details?.installment_amount,
+      transactionAmount: payment.transaction_amount,
+      netReceivedAmount: payment.transaction_details?.net_received_amount,
+      totalPaidAmount: payment.transaction_details?.total_paid_amount,
+      externalReference: pago.numeroPago,
+      
+      // Fechas
+      dateCreated: payment.date_created ? new Date(payment.date_created) : undefined,
+      dateApproved: payment.date_approved ? new Date(payment.date_approved) : undefined,
+      dateLastUpdated: payment.date_last_updated ? new Date(payment.date_last_updated) : undefined,
+    };
+
+    // ⬅️ IMPORTANTE: Agregar payer solo si existe
     if (payment.payer) {
-      pago.mercadopago.payer = {
-        id: payment.payer.id,
+      mercadopagoData.payer = {
+        id: payment.payer.id?.toString(),
         email: payment.payer.email,
-        identification: payment.payer.identification
+        firstName: payment.payer.first_name,
+        lastName: payment.payer.last_name
+      };
+
+      // ⬅️ CRÍTICO: Agregar identification solo si existe
+      if (payment.payer.identification) {
+        mercadopagoData.payer.identification = {
+          type: payment.payer.identification.type,
+          number: payment.payer.identification.number
+        };
+      }
+
+      // Agregar phone solo si existe
+      if (payment.payer.phone) {
+        mercadopagoData.payer.phone = {
+          areaCode: payment.payer.phone.area_code,
+          number: payment.payer.phone.number
+        };
+      }
+    }
+
+    // ⬅️ IMPORTANTE: Agregar feeDetails solo si existe y es array
+    if (payment.fee_details && Array.isArray(payment.fee_details)) {
+      mercadopagoData.feeDetails = payment.fee_details.map(fee => ({
+        type: fee.type,
+        amount: fee.amount,
+        feePayer: fee.fee_payer
+      }));
+    }
+
+    // ⬅️ IMPORTANTE: Agregar card solo si existe
+    if (payment.card) {
+      mercadopagoData.card = {
+        firstSixDigits: payment.card.first_six_digits,
+        lastFourDigits: payment.card.last_four_digits
       };
     }
+
+    // Guardar respuesta completa
+    mercadopagoData.webhookData = payment;
+
+    // ⬅️ SOLUCIÓN: Usar set() en lugar de asignación directa
+    // Esto le dice a Mongoose que trate estos datos como nuevos
+    pago.set('mercadopago', mercadopagoData);
+    
+    // ⬅️ CRÍTICO: Marcar como modificado para forzar la actualización
+    pago.markModified('mercadopago');
+
+    console.log("✅ Objeto mercadopago actualizado correctamente");
+    console.log("📦 Datos guardados:", JSON.stringify(mercadopagoData, null, 2));
   }
 
   static determinePaymentState(paymentStatus) {

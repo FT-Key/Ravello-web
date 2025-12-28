@@ -149,18 +149,16 @@ export default function PackageDetailPage() {
     try {
       setPaymentLoading(true);
 
-      // Preparar payload (SIN datosContacto, se toma del usuario autenticado)
-      const bookingPayload = {
-        paqueteId: id,
-        fechaSalidaId: selectedDate._id,
-        cantidadPasajeros: bookingData.pasajeros
-      };
-
-      console.log("📦 Payload de reserva:", JSON.stringify(bookingPayload, null, 2));
+      // ⬅️ CORRECCIÓN: bookingData YA viene con la estructura correcta desde el Sidebar
+      console.log("📦 Datos de reserva recibidos:", JSON.stringify(bookingData, null, 2));
 
       // 1. Crear la reserva
       console.log("📝 Creando reserva...");
-      const bookingResponse = await clientAxios.post("/bookings", bookingPayload);
+      const bookingResponse = await clientAxios.post("/bookings", {
+        paqueteId: bookingData.paqueteId,
+        fechaSalidaId: bookingData.fechaSalidaId,
+        cantidadPasajeros: bookingData.cantidadPasajeros  // ⬅️ Ya viene correcto del Sidebar
+      });
 
       const reserva = bookingResponse.data.data;
       console.log("✅ Reserva creada:", reserva);

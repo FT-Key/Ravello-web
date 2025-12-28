@@ -17,6 +17,9 @@ const auditLogSchema = new mongoose.Schema({
       'reserva_creada', 'reserva_modificada', 'reserva_cancelada',
       // Pagos
       'pago_iniciado', 'pago_aprobado', 'pago_rechazado', 'pago_reembolsado',
+      'pago_brick_procesado', // ⬅️ AGREGADO: Para pagos con Checkout Bricks
+      'pago_checkout_iniciado', // ⬅️ AGREGADO: Para pagos con Checkout Pro
+      'pago_checkout_procesado', // ⬅️ AGREGADO: Para pagos con Checkout Pro
       // Usuarios
       'usuario_creado', 'usuario_modificado', 'usuario_eliminado',
       'login', 'logout', 'cambio_password',

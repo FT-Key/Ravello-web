@@ -10,7 +10,8 @@ export default function CompleteProfileModal({
   isOpen, 
   onClose, 
   onProfileCompleted,
-  userProfile = {}
+  userProfile = null, // ⬅️ Cambiar default de {} a null
+  camposFaltantes = [] // ⬅️ Agregar prop explícita con default
 }) {
   const [formData, setFormData] = useState({
     nombre: '',
@@ -29,7 +30,7 @@ export default function CompleteProfileModal({
 
   // Pre-cargar datos existentes del usuario
   useEffect(() => {
-    if (userProfile) {
+    if (userProfile && isOpen) {
       setFormData({
         nombre: userProfile.nombre || '',
         apellido: userProfile.apellido || '',
@@ -45,13 +46,6 @@ export default function CompleteProfileModal({
     }
   }, [userProfile, isOpen]);
 
-  // Determinar campos faltantes basándose en el modelo
-  const camposFaltantes = userProfile.camposRequeridos 
-    ? Object.entries(userProfile.camposRequeridos)
-        .filter(([_, completed]) => !completed)
-        .map(([field]) => field)
-    : ['nombre', 'apellido', 'telefono', 'documento'];
-
   // Verificar si un campo está faltante
   const isCampoFaltante = (campo) => {
     return camposFaltantes.includes(campo);
@@ -59,7 +53,6 @@ export default function CompleteProfileModal({
 
   // Validaciones específicas
   const validateTelefono = (tel) => {
-    // Acepta formatos: +54 11 1234-5678, 11 1234 5678, 1112345678
     const cleaned = tel.replace(/[\s\-]/g, '');
     if (cleaned.length < 10) {
       return 'El teléfono debe tener al menos 10 dígitos';
@@ -129,7 +122,7 @@ export default function CompleteProfileModal({
     }
 
     // Validar fecha de nacimiento si está faltante
-    if (!userProfile.fechaNacimiento) {
+    if (isCampoFaltante('fechaNacimiento')) {
       const fechaError = validateFechaNacimiento(formData.fechaNacimiento);
       if (fechaError) errors.fechaNacimiento = fechaError;
     }
@@ -155,7 +148,7 @@ export default function CompleteProfileModal({
           numero: formData.documento.numero.replace(/[\s\-\.]/g, '')
         };
       }
-      if (!userProfile.fechaNacimiento && formData.fechaNacimiento) {
+      if (isCampoFaltante('fechaNacimiento') && formData.fechaNacimiento) {
         dataToUpdate.fechaNacimiento = formData.fechaNacimiento;
       }
 
@@ -187,8 +180,8 @@ export default function CompleteProfileModal({
 
   if (!isOpen) return null;
 
-  // Si el perfil ya está completo, no mostrar modal
-  if (userProfile.perfilCompleto && camposFaltantes.length === 0) {
+  // Si no hay campos faltantes, no mostrar modal
+  if (camposFaltantes.length === 0) {
     return null;
   }
 
@@ -258,7 +251,7 @@ export default function CompleteProfileModal({
                 <p className="text-xs text-red-600 mt-1">{validationErrors.nombre}</p>
               )}
             </div>
-          ) : (
+          ) : formData.nombre && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-3">
               <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
               <div className="flex-1">
@@ -294,7 +287,7 @@ export default function CompleteProfileModal({
                 <p className="text-xs text-red-600 mt-1">{validationErrors.apellido}</p>
               )}
             </div>
-          ) : (
+          ) : formData.apellido && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-3">
               <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
               <div className="flex-1">
@@ -304,8 +297,8 @@ export default function CompleteProfileModal({
             </div>
           )}
 
-          {/* Fecha de Nacimiento - Opcional pero recomendado */}
-          {!userProfile.fechaNacimiento && (
+          {/* Fecha de Nacimiento */}
+          {isCampoFaltante('fechaNacimiento') && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Fecha de nacimiento *
@@ -364,7 +357,7 @@ export default function CompleteProfileModal({
                 Incluye código de país y área
               </p>
             </div>
-          ) : (
+          ) : formData.telefono && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-3">
               <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
               <div className="flex-1">
@@ -422,7 +415,7 @@ export default function CompleteProfileModal({
                 Sin puntos ni guiones (Ej: 12345678)
               </p>
             </div>
-          ) : (
+          ) : formData.documento.numero && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-3">
               <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
               <div className="flex-1">

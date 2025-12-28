@@ -6,8 +6,7 @@ const paymentSchema = new mongoose.Schema({
   numeroPago: {
     type: String,
     unique: true,
-    sparse: true  // ⬅️ AGREGAR: Permite null temporalmente durante el pre-save
-    // ❌ NO poner required: true
+    sparse: true
   },
 
   // Relación con reserva
@@ -46,47 +45,47 @@ const paymentSchema = new mongoose.Schema({
   },
 
   // ============================================
-  // 🛒 MERCADOPAGO (Checkout Pro)
+  // 🛒 MERCADOPAGO (Checkout Pro & Bricks)
   // ============================================
   mercadopago: {
     // IDs de MercadoPago
-    preferenceId: String,        // ID de la preferencia creada
-    paymentId: String,            // ID del pago (cuando se completa)
-    merchantOrderId: String,      // ID de la orden
-    externalReference: String,    // Nuestra referencia (puede ser el numeroPago)
+    preferenceId: String,
+    paymentId: String,
+    merchantOrderId: String,
+    externalReference: String,
 
     // Estado de MP
-    status: String,               // approved, rejected, pending, etc.
-    statusDetail: String,         // Detalles del estado
+    status: String,
+    statusDetail: String,
 
     // Tipo de pago
-    paymentTypeId: String,        // credit_card, debit_card, ticket, etc.
-    paymentMethodId: String,      // visa, mastercard, rapipago, etc.
+    paymentTypeId: String,
+    paymentMethodId: String,
 
     // Cuotas (si paga con tarjeta)
-    installments: Number,         // Cantidad de cuotas
-    installmentAmount: Number,    // Monto por cuota
+    installments: Number,
+    installmentAmount: Number,
 
     // Montos
-    transactionAmount: Number,    // Monto de la transacción
-    netReceivedAmount: Number,    // Monto neto (después de comisiones MP)
-    totalPaidAmount: Number,      // Monto total pagado por el usuario
+    transactionAmount: Number,
+    netReceivedAmount: Number,
+    totalPaidAmount: Number,
 
-    // Comisión de MercadoPago
+    // ⬅️ CORRECCIÓN CRÍTICA: feeDetails con { type: { type: String } }
     feeDetails: [{
-      type: String,
+      type: { type: String },  // ⬅️ Así se define un campo llamado "type"
       amount: Number,
       feePayer: String
     }],
 
-    // Datos del pagador
+    // ⬅️ CORRECCIÓN CRÍTICA: payer.identification con { type: { type: String } }
     payer: {
       id: String,
       email: String,
       firstName: String,
       lastName: String,
       identification: {
-        type: String,
+        type: { type: String },  // ⬅️ Así se define un campo llamado "type"
         number: String
       },
       phone: {
@@ -95,10 +94,16 @@ const paymentSchema = new mongoose.Schema({
       }
     },
 
+    // Tarjeta
+    card: {
+      firstSixDigits: String,
+      lastFourDigits: String
+    },
+
     // Fechas
-    dateCreated: Date,            // Fecha de creación en MP
-    dateApproved: Date,           // Fecha de aprobación
-    dateLastUpdated: Date,        // Última actualización
+    dateCreated: Date,
+    dateApproved: Date,
+    dateLastUpdated: Date,
 
     // URL para volver
     backUrls: {
@@ -115,16 +120,14 @@ const paymentSchema = new mongoose.Schema({
   // 💵 PAGO PRESENCIAL (efectivo/tarjeta en oficina)
   // ============================================
   presencial: {
-    // Método específico
     metodo: {
       type: String,
       enum: ['efectivo', 'tarjeta_debito', 'tarjeta_credito', 'mixto']
     },
 
-    // Si es tarjeta
     tarjeta: {
       tipo: { type: String, enum: ['debito', 'credito'] },
-      marca: String, // Visa, Mastercard, etc.
+      marca: String,
       ultimos4Digitos: String,
       cuotas: Number,
       numeroAutorizacion: String,
@@ -132,17 +135,14 @@ const paymentSchema = new mongoose.Schema({
       numeroLote: String
     },
 
-    // Si es mixto
     detalleMixto: [{
       metodo: String,
       monto: Number
     }],
 
-    // Recibo
     numeroRecibo: String,
     fechaRecibo: Date,
 
-    // Cajero que procesó el pago
     usuarioRecibio: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
@@ -160,10 +160,9 @@ const paymentSchema = new mongoose.Schema({
     alias: String,
     titular: String,
 
-    // Datos del comprobante
     numeroComprobante: String,
     fechaTransferencia: Date,
-    comprobanteUrl: String, // URL del comprobante subido
+    comprobanteUrl: String,
 
     verificado: { type: Boolean, default: false },
     fechaVerificacion: Date,
@@ -195,7 +194,7 @@ const paymentSchema = new mongoose.Schema({
     monto: Number,
     fecha: Date,
     motivo: String,
-    metodo: String, // mismo_medio, efectivo, transferencia
+    metodo: String,
     mercadopagoRefundId: String,
     usuarioAutorizo: {
       type: mongoose.Schema.Types.ObjectId,
@@ -209,13 +208,13 @@ const paymentSchema = new mongoose.Schema({
   notas: String,
   notasInternas: String,
 
-  // Auditoría
   usuarioRegistro: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
 
   fechaRegistro: { type: Date, default: Date.now },
+
   // ============================================
   // 🔐 SEGURIDAD Y ANTI-FRAUDE
   // ============================================
@@ -225,12 +224,10 @@ const paymentSchema = new mongoose.Schema({
     navegador: String,
     dispositivo: String,
 
-    // Flags de riesgo
     esRiesgoso: { type: Boolean, default: false },
     motivoRiesgo: String,
-    scoreRiesgo: { type: Number, min: 0, max: 100 }, // 0 = seguro, 100 = muy riesgoso
+    scoreRiesgo: { type: Number, min: 0, max: 100 },
 
-    // Verificaciones adicionales
     verificaciones: [{
       tipo: { type: String, enum: ['ip', 'email', 'documento', '3ds', 'manual'] },
       resultado: { type: String, enum: ['aprobado', 'rechazado', 'pendiente'] },
@@ -239,20 +236,18 @@ const paymentSchema = new mongoose.Schema({
     }]
   },
 
-  // Referencia al usuario que inició el pago
   usuarioInicio: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true  // ⬅️ OBLIGATORIO
+    required: true
   },
-},
-  { timestamps: true });
+}, { timestamps: true });
 
 // ============================================
 // MIDDLEWARE: Generar número de pago
 // ============================================
 paymentSchema.pre('save', async function (next) {
-  if (!this.numeroPago && this.isNew) {  // ⬅️ AGREGAR: Solo para documentos nuevos
+  if (!this.numeroPago && this.isNew) {
     try {
       const count = await mongoose.model('Payment').countDocuments();
       const fecha = new Date();
