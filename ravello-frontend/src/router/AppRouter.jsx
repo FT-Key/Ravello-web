@@ -100,7 +100,7 @@ function AppRouterInner() {
         <Route path="/sobre-nosotros" element={<AboutUsPage />} />
         <Route path="/contacto" element={<ContactPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/registro" element={<RegisterPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/unsubscribe" element={<UnsubscribePage />} />
         <Route path="/reservas/:numeroReserva/pago-exitoso" element={<PaymentSuccessPage />} />
         <Route path="/reservas/:numeroReserva/pago-fallido" element={<PaymentFailurePage />} />

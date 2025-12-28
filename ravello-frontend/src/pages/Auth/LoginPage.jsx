@@ -37,7 +37,7 @@ export default function LoginPage() {
 
       toast.success("Ingreso correcto");
 
-      navigate("/admin");
+      navigate("/");
 
     } catch (err) {
       console.log(err);

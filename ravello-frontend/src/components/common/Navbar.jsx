@@ -1,9 +1,14 @@
+// src/components/common/Navbar/Navbar.jsx
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, Phone, Mail, Globe, ChevronDown } from "lucide-react";
 import { FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
 import clientAxios from "../../api/axiosConfig";
-import { siteConfig } from "../../config/siteConfig";
+import { useUserStore } from "../../stores/useUserStore";
+import Topbar from "./Navbar/Topbar";
+import DesktopMenu from "./Navbar/DesktopMenu";
+import MobileMenu from "./Navbar/MobileMenu";
+import AuthSection from "./Navbar/AuthSection";
 
 const Navbar = ({ position = "sticky" }) => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -12,6 +17,8 @@ const Navbar = ({ position = "sticky" }) => {
   const [mobileDropdowns, setMobileDropdowns] = useState({});
   const [destinos, setDestinos] = useState([]);
   const [topbarClickable, setTopbarClickable] = useState(true);
+  
+  const { user, loadingUser } = useUserStore();
 
   useEffect(() => {
     const fetchDestinos = async () => {
@@ -37,7 +44,6 @@ const Navbar = ({ position = "sticky" }) => {
       return () => clearTimeout(timer);
     }
   }, [isScrolled]);
-
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 0);
@@ -87,49 +93,11 @@ const Navbar = ({ position = "sticky" }) => {
         ${isScrolled ? "w-full sm:w-[95%] mx-auto rounded-b-2xl shadow-xl backdrop-blur-md border border-black/10" : "w-full"}
       `}
       >
-
         {/* Topbar */}
-        <div
-          className={`transition-all duration-500 overflow-hidden ${isScrolled ? "max-h-0 opacity-0" : "max-h-24 opacity-100"} ${topbarClickable ? "pointer-events-auto" : "pointer-events-none"}`}
-        >
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="flex justify-between items-center text-sm py-2 border-b border-white border-opacity-20 min-h-[56px]">
-
-              {/* IZQUIERDA */}
-              <div className="flex-1 flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-6 text-white">
-                <a href={`tel:${siteConfig.contact.phone}`} className="flex items-center gap-2 hover:text-secondary-cyan transition-colors text-sm">
-                  <Phone size={16} />
-                  <span>{siteConfig.contact.phone}</span>
-                </a>
-
-                <a href={`mailto:${siteConfig.contact.email}`} className="flex items-center gap-2 hover:text-secondary-cyan transition-colors text-sm">
-                  <Mail size={16} />
-                  <span>{siteConfig.contact.email}</span>
-                </a>
-              </div>
-
-              {/* DERECHA */}
-              <div className="flex items-center gap-4 text-white ml-4">
-                <button className="hover:text-secondary-cyan transition-colors flex items-center gap-1 text-sm no-select">
-                  <Globe size={14} />
-                  <span>ES</span>
-                </button>
-
-                <div className="flex items-center gap-3">
-                  <a href={siteConfig.social.facebook} className="hover:text-secondary-cyan transition-colors no-select">
-                    <FaFacebook size={20} />
-                  </a>
-                  <a href={siteConfig.social.instagram} className="hover:text-secondary-cyan transition-colors no-select">
-                    <FaInstagram size={20} />
-                  </a>
-                  <a href={siteConfig.social.twitter} className="hover:text-secondary-cyan transition-colors no-select">
-                    <FaTwitter size={20} />
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <Topbar 
+          isScrolled={isScrolled} 
+          topbarClickable={topbarClickable}
+        />
 
         {/* NAVBAR PRINCIPAL */}
         <div className={`max-w-7xl mx-auto px-4 ${isScrolled ? "py-2" : "py-4"} transition-all duration-500`}>
@@ -151,77 +119,29 @@ const Navbar = ({ position = "sticky" }) => {
             </Link>
 
             {/* MENÚ DESKTOP */}
-            <div className="hidden lg:flex items-center gap-1">
-              {menuItems.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="relative group no-select"
-                  onMouseEnter={() => setActiveDropdown(idx)}
-                  onMouseLeave={() => setActiveDropdown(null)}
-                >
-                  {item.submenu ? (
-                    <>
-                      <button
-                        className={`px-4 py-2 font-medium transition-all rounded-lg flex items-center gap-1 no-select ${isScrolled
-                          ? "text-dark hover:text-black hover:bg-background-light"
-                          : "text-white hover:text-black hover:bg-white hover:bg-opacity-10"
-                          }`}
-                      >
-                        {item.label}
-                        <ChevronDown size={16} className="transition-transform group-hover:rotate-180 no-select" />
-                      </button>
+            <DesktopMenu 
+              menuItems={menuItems}
+              isScrolled={isScrolled}
+              activeDropdown={activeDropdown}
+              setActiveDropdown={setActiveDropdown}
+              handleMobileLinkClick={handleMobileLinkClick}
+            />
 
-                      {/* Dropdown */}
-                      <div
-                        className={`absolute top-full left-0 w-56 bg-white rounded-xl shadow-2xl overflow-hidden transition-all duration-300 ${activeDropdown === idx ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-2 pointer-events-none"
-                          }`}
-                      >
-                        <div className="max-h-60 overflow-y-auto">
-                          {item.submenu.length === 0 ? (
-                            <p className="px-6 py-3 text-sm text-gray-500 no-select">Cargando...</p>
-                          ) : (
-                            item.submenu.map((subitem, subidx) => {
-                              const nombreCompleto = `${subitem.ciudad}${subitem.pais ? ", " + subitem.pais : ""}`;
-                              const ciudadSola = subitem.ciudad;
-
-                              return (
-                                <Link
-                                  onClick={handleMobileLinkClick}
-                                  key={subidx}
-                                  to={`/paquetes?destino=${encodeURIComponent(ciudadSola)}`}
-                                  className="block px-6 py-3 text-dark hover:bg-background-light hover:text-black transition-colors border-b border-border-subtle last:border-b-0 no-select"
-                                >
-                                  {nombreCompleto}
-                                </Link>
-                              );
-                            })
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <Link
-                      onClick={handleMobileLinkClick}
-                      to={item.link}
-                      className={`px-4 py-2 font-medium transition-all rounded-lg no-select ${isScrolled ? "text-dark hover:text-black hover:bg-background-light" : "text-white hover:text-black hover:bg-white hover:bg-opacity-10"
-                        }`}
-                    >
-                      {item.label}
-                    </Link>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* CTA */}
+            {/* CTA + AUTH */}
             <div className="hidden lg:flex items-center gap-3">
-              <Link
+            {/*   <Link
                 onClick={handleMobileLinkClick}
                 to="/contacto"
                 className="px-6 py-2 rounded-full border-2 border-[var(--color-primary-red)] text-[var(--color-primary-red)] font-semibold hover:bg-[var(--color-primary-red)] hover:text-white transition-all duration-300 no-select"
               >
                 Cotizar viaje
-              </Link>
+              </Link> */}
+              
+              <AuthSection 
+                user={user} 
+                loadingUser={loadingUser} 
+                isScrolled={isScrolled}
+              />
             </div>
 
             {/* Botón Mobile */}
@@ -237,68 +157,15 @@ const Navbar = ({ position = "sticky" }) => {
       </div>
 
       {/* MENÚ MOBILE */}
-      <div
-        className={`lg:hidden bg-white shadow-xl overflow-y-auto transition-all duration-300 ${isMobileMenuOpen ? "max-h-[80vh] opacity-100 pointer-events-auto" : "max-h-0 opacity-0 pointer-events-none"
-          }`}
-      >
-        <div className="px-4 py-6 space-y-2 no-select">
-          {menuItems.map((item, idx) => (
-            <div key={idx} className="no-select">
-              {item.submenu ? (
-                <>
-                  <button
-                    onClick={() => toggleMobileDropdown(idx)}
-                    className="w-full flex justify-between items-center px-4 py-3 text-dark font-medium rounded-lg no-select"
-                  >
-                    {item.label}
-                    <ChevronDown
-                      size={18}
-                      className={`transition-transform no-select ${mobileDropdowns[idx] ? "rotate-180" : ""}`}
-                    />
-                  </button>
-
-                  <div
-                    className={`pl-4 mt-1 space-y-1 transition-all overflow-hidden ${mobileDropdowns[idx] ? "max-h-96" : "max-h-0"
-                      }`}
-                  >
-                    {item.submenu.map((subitem, subidx) => {
-                      const nombreCompleto = `${subitem.ciudad}${subitem.pais ? ", " + subitem.pais : ""}`;
-                      const ciudadSola = subitem.ciudad;
-
-                      return (
-                        <Link
-                          onClick={handleMobileLinkClick}
-                          key={subidx}
-                          to={`/paquetes?destino=${encodeURIComponent(ciudadSola)}`}
-                          className="block px-4 py-2 text-sm text-light hover:text-primary-blue transition-colors no-select"
-                        >
-                          {nombreCompleto}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </>
-              ) : (
-                <Link
-                  onClick={handleMobileLinkClick}
-                  to={item.link}
-                  className="block px-4 py-3 text-dark hover:bg-background-light hover:text-primary-blue rounded-lg transition-colors font-medium no-select"
-                >
-                  {item.label}
-                </Link>
-              )}
-            </div>
-          ))}
-
-          <Link
-            onClick={handleMobileLinkClick}
-            to="/contacto"
-            className="w-full mt-4 px-6 py-3 rounded-full bg-primary-red text-white font-semibold hover:bg-opacity-90 transition-all no-select"
-          >
-            Cotizar viaje
-          </Link>
-        </div>
-      </div>
+      <MobileMenu 
+        isMobileMenuOpen={isMobileMenuOpen}
+        menuItems={menuItems}
+        mobileDropdowns={mobileDropdowns}
+        toggleMobileDropdown={toggleMobileDropdown}
+        handleMobileLinkClick={handleMobileLinkClick}
+        user={user}
+        loadingUser={loadingUser}
+      />
     </nav>
   );
 };
