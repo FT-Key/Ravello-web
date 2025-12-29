@@ -36,8 +36,11 @@ import ManagePackageDatesPage from "../pages/Admin/ManagePackageDatesPage";
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
 import ScrollToTop from "../utils/scrollToTop";
+
+// Páginas de Pago
 import PaymentSuccessPage from "../pages/Payment/PaymentSuccessPage";
 import PaymentFailurePage from "../pages/Payment/PaymentFailurePage";
+import PaymentPendingPage from "../pages/Payment/PaymentPendingPage";
 
 function PrivateRoute({ children }) {
   const { user, token, loadingUser } = useUserStore();
@@ -108,8 +111,13 @@ function AppRouterInner() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/unsubscribe" element={<UnsubscribePage />} />
+
+        {/* ========================================== */}
+        {/* RUTAS DE PAGO (Públicas - accesibles con número de reserva) */}
+        {/* ========================================== */}
         <Route path="/reservas/:numeroReserva/pago-exitoso" element={<PaymentSuccessPage />} />
         <Route path="/reservas/:numeroReserva/pago-fallido" element={<PaymentFailurePage />} />
+        <Route path="/reservas/:numeroReserva/pago-pendiente" element={<PaymentPendingPage />} />
 
         {/* ========================================== */}
         {/* RUTAS PRIVADAS DEL USUARIO */}
