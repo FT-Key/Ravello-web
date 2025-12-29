@@ -1,9 +1,8 @@
-// ===================================================================
 // components/packageDetail/PackageBookingSidebar.jsx
-// ===================================================================
 import React, { useState } from "react";
 import { MessageCircle, LogIn } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import PriceDisplay from "./sidebar/PriceDisplay";
 import PassengerSelector from "./sidebar/PassengerSelector";
 import DateSelector from "./sidebar/DateSelector";
@@ -29,10 +28,10 @@ export default function PackageBookingSidebar({
   const navigate = useNavigate();
   const [adultos, setAdultos] = useState(2);
   const [ninos, setNinos] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState(null); // 'checkout' | 'brick' | null
+  const [paymentMethod, setPaymentMethod] = useState(null);
   const [showBrickModal, setShowBrickModal] = useState(false);
-  const [reservaCreada, setReservaCreada] = useState(null); // ⬅️ NUEVO: Guardar reserva creada
-  const [isCreatingBooking, setIsCreatingBooking] = useState(false); // ⬅️ NUEVO: Loading state
+  const [reservaCreada, setReservaCreada] = useState(null);
+  const [isCreatingBooking, setIsCreatingBooking] = useState(false);
 
   // Calcular precio total
   const precioAdulto = selectedDate?.precioFinal || selectedDate?.precio || pkg.precioBase || 0;
@@ -42,14 +41,19 @@ export default function PackageBookingSidebar({
   const handleReservar = async (method) => {
     // Validar fecha seleccionada
     if (!selectedDate) {
-      alert("Por favor selecciona una fecha de salida");
+      toast.error("Selecciona una fecha de salida para continuar", {
+        icon: '📅'
+      });
       return;
     }
 
     // Validar cupos disponibles
     const totalPasajeros = adultos + ninos;
     if (totalPasajeros > selectedDate.cuposDisponibles) {
-      alert(`Solo hay ${selectedDate.cuposDisponibles} cupos disponibles`);
+      toast.error(`Solo hay ${selectedDate.cuposDisponibles} cupo${selectedDate.cuposDisponibles === 1 ? '' : 's'} disponible${selectedDate.cuposDisponibles === 1 ? '' : 's'}`, {
+        icon: '⚠️',
+        duration: 3000
+      });
       return;
     }
 
@@ -57,14 +61,16 @@ export default function PackageBookingSidebar({
     const bookingData = {
       paqueteId: pkg._id,
       fechaSalidaId: selectedDate._id,
-      cantidadPasajeros: { adultos, ninos } // ⬅️ CORREGIDO: usar "cantidadPasajeros"
+      cantidadPasajeros: { adultos, ninos }
     };
 
     if (method === 'checkout') {
       // Checkout Pro: usar el handler del padre (PackageDetailPage)
       onPayment({ ...bookingData, paymentMethod: 'checkout' });
     } else if (method === 'brick') {
-      // ⬅️ NUEVO FLUJO PARA BRICKS
+      // Flujo para Bricks
+      const toastId = toast.loading('Creando tu reserva...');
+      
       try {
         setIsCreatingBooking(true);
 
@@ -89,13 +95,25 @@ export default function PackageBookingSidebar({
 
         console.log("✅ Reserva creada:", reserva);
 
+        toast.success('Reserva creada exitosamente', { id: toastId });
+
         // 2. GUARDAR LA RESERVA Y MOSTRAR EL BRICK
         setReservaCreada(reserva);
         setShowBrickModal(true);
 
       } catch (error) {
         console.error("❌ Error al crear reserva:", error);
-        alert(error.message || "Error al crear la reserva");
+        
+        let errorMessage = "No pudimos crear tu reserva. Por favor, intenta nuevamente.";
+        
+        if (error.message && !error.message.includes('undefined') && !error.message.includes('null')) {
+          errorMessage = error.message;
+        }
+
+        toast.error(errorMessage, { 
+          id: toastId,
+          duration: 4000 
+        });
       } finally {
         setIsCreatingBooking(false);
       }
@@ -108,36 +126,79 @@ export default function PackageBookingSidebar({
     setReservaCreada(null);
     setPaymentMethod(null);
     
-    // Redirigir a confirmación o mis reservas
-    alert("¡Pago procesado exitosamente! Redirigiendo a tus reservas...");
-    navigate("/mis-reservas");
+    toast.success('¡Pago procesado exitosamente!', {
+      icon: '🎉',
+      duration: 3000
+    });
+
+    setTimeout(() => {
+      navigate("/mis-reservas");
+    }, 1000);
   };
 
   const handleBrickError = (error) => {
     console.error("❌ Error en pago:", error);
-    alert(error);
-    // No cerramos el modal para que pueda reintentar
+    
+    let errorMessage = "Hubo un problema al procesar el pago.";
+    
+    if (typeof error === 'string') {
+      errorMessage = error;
+    } else if (error?.message) {
+      errorMessage = error.message;
+    }
+
+    toast.error(errorMessage, {
+      duration: 4000,
+      icon: '💳'
+    });
   };
 
   const handleBrickCancel = () => {
-    const confirmar = window.confirm(
-      "¿Deseas cancelar el pago? La reserva quedará pendiente de pago."
-    );
-    
-    if (confirmar) {
-      setShowBrickModal(false);
-      setReservaCreada(null);
-      setPaymentMethod(null);
-    }
+    toast((t) => (
+      <div className="flex flex-col gap-3">
+        <span className="font-medium">¿Deseas cancelar el pago?</span>
+        <span className="text-sm text-gray-600">La reserva quedará pendiente de pago</span>
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              setShowBrickModal(false);
+              setReservaCreada(null);
+              setPaymentMethod(null);
+              toast.success('Operación cancelada', { icon: '✓' });
+            }}
+            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
+          >
+            Sí, cancelar
+          </button>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+          >
+            No, continuar
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: 10000,
+      icon: '⚠️'
+    });
   };
 
   const handleLoginRedirect = () => {
-    navigate('/login', {
-      state: {
-        from: window.location.pathname,
-        message: 'Inicia sesión para hacer tu reserva'
-      }
+    toast('Redirigiendo al inicio de sesión...', {
+      icon: '🔑',
+      duration: 2000
     });
+    
+    setTimeout(() => {
+      navigate('/login', {
+        state: {
+          from: window.location.pathname,
+          message: 'Inicia sesión para hacer tu reserva'
+        }
+      });
+    }, 500);
   };
 
   return (
@@ -215,7 +276,10 @@ export default function PackageBookingSidebar({
             </button>
             
             <button
-              onClick={() => setPaymentMethod(null)}
+              onClick={() => {
+                setPaymentMethod(null);
+                toast('Método de pago cancelado', { icon: 'ℹ️' });
+              }}
               disabled={isCreatingBooking}
               className="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors text-sm disabled:opacity-50"
             >
