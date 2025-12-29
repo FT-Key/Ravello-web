@@ -1,11 +1,21 @@
+// src/pages/Admin/DashboardPage.jsx
 import React, { useEffect, useState } from "react";
-import { useUserStore } from "../../stores/useUserStore";
-import toast from "react-hot-toast";
-import clientAxios from "../../api/axiosConfig";
 import { useNavigate } from "react-router-dom";
+import clientAxios from "../../api/axiosConfig";
+import toast from "react-hot-toast";
+import {
+  Package,
+  Calendar,
+  Star,
+  MessageSquare,
+  Users,
+  Mail,
+  Tag,
+  TrendingUp,
+  Activity
+} from "lucide-react";
 
 export default function DashboardPage() {
-  const { user } = useUserStore();
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     users: 0,
@@ -41,21 +51,15 @@ export default function DashboardPage() {
 
         const extractTotal = (response) => {
           if (!response || typeof response !== "object") return 0;
-
           const payload = response.data;
           if (!payload) return 0;
-
           if (typeof payload.total === "number") return payload.total;
-
           if (Array.isArray(payload.items)) return payload.items.length;
-
           if (Array.isArray(payload)) return payload.length;
-
           const keys = ["packages", "users", "data", "results"];
           for (const k of keys) {
             if (Array.isArray(payload[k])) return payload[k].length;
           }
-
           return 0;
         };
 
@@ -83,93 +87,169 @@ export default function DashboardPage() {
     fetchStats();
   }, []);
 
+  const cards = [
+    {
+      title: "Paquetes",
+      value: stats.packages,
+      icon: Package,
+      color: "bg-purple-500",
+      lightColor: "bg-purple-50",
+      textColor: "text-purple-600",
+      path: "/admin/paquetes"
+    },
+    {
+      title: "Fechas de Paquetes",
+      value: stats.packageDates,
+      icon: Calendar,
+      color: "bg-green-500",
+      lightColor: "bg-green-50",
+      textColor: "text-green-600",
+      path: "/admin/paquetes-fechas"
+    },
+    {
+      title: "Usuarios",
+      value: stats.users,
+      icon: Users,
+      color: "bg-indigo-500",
+      lightColor: "bg-indigo-50",
+      textColor: "text-indigo-600",
+      path: "/admin/usuarios"
+    },
+    {
+      title: "Reseñas",
+      value: stats.reviews,
+      icon: Star,
+      color: "bg-yellow-500",
+      lightColor: "bg-yellow-50",
+      textColor: "text-yellow-600",
+      path: "/admin/resenias"
+    },
+    {
+      title: "Contactos",
+      value: stats.contacts,
+      icon: MessageSquare,
+      color: "bg-pink-500",
+      lightColor: "bg-pink-50",
+      textColor: "text-pink-600",
+      path: "/admin/contactos"
+    },
+    {
+      title: "Newsletter",
+      value: stats.newsletter,
+      icon: Mail,
+      color: "bg-cyan-500",
+      lightColor: "bg-cyan-50",
+      textColor: "text-cyan-600",
+      path: "/admin/boletin"
+    },
+    {
+      title: "Ofertas Imperdibles",
+      value: stats.offers,
+      icon: Tag,
+      color: "bg-orange-500",
+      lightColor: "bg-orange-50",
+      textColor: "text-orange-600",
+      path: "/admin/ofertas-imperdibles"
+    }
+  ];
+
   if (loading) {
     return (
-      <div className="p-6 text-center text-gray-500">
-        Cargando estadísticas del dashboard...
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Cargando estadísticas...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-8 text-center sm:text-left">
-        Dashboard de Administración
-      </h1>
-
-      <div
-        className="
-        grid 
-        grid-cols-1 
-        sm:grid-cols-2 
-        md:grid-cols-3 
-        lg:grid-cols-4
-        xl:grid-cols-7
-        gap-6
-      "
-      >
-        <DashboardCard
-          label="Usuarios"
-          value={stats.users}
-          onClick={() => navigate("/admin/usuarios")}
-        />
-
-        <DashboardCard
-          label="Paquetes"
-          value={stats.packages}
-          onClick={() => navigate("/admin/paquetes")}
-        />
-
-        <DashboardCard
-          label="Fechas de Paquetes"
-          value={stats.packageDates}
-          onClick={() => navigate("/admin/paquetes-fechas")}
-        />
-
-        <DashboardCard
-          label="Ofertas imperdibles"
-          value={stats.offers}
-          onClick={() => navigate("/admin/ofertas-imperdibles")}
-        />
-
-        <DashboardCard
-          label="Reseñas"
-          value={stats.reviews}
-          onClick={() => navigate("/admin/resenias")}
-        />
-
-        <DashboardCard
-          label="Mensajes de contacto"
-          value={stats.contacts}
-          onClick={() => navigate("/admin/contactos")}
-        />
-
-        <DashboardCard
-          label="Newsletter"
-          value={stats.newsletter}
-          onClick={() => navigate("/admin/boletin")}
-        />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+            <Activity className="w-6 h-6 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Panel de Administración
+            </h1>
+            <p className="text-gray-500 text-sm">
+              Resumen general del sistema
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="mt-8 text-gray-500 text-sm text-center sm:text-left">
-        Última actualización: {new Date().toLocaleString()}
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {cards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <div
+              key={card.title}
+              onClick={() => navigate(card.path)}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all cursor-pointer group"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className={`${card.lightColor} p-3 rounded-lg group-hover:scale-110 transition-transform`}>
+                  <Icon className={`w-6 h-6 ${card.textColor}`} />
+                </div>
+                <div className={`${card.color} text-white px-2 py-1 rounded text-xs font-semibold`}>
+                  {card.value}
+                </div>
+              </div>
+              
+              <h3 className="text-gray-700 font-semibold mb-1">{card.title}</h3>
+              <p className="text-sm text-gray-500">
+                Ver todos
+              </p>
+            </div>
+          );
+        })}
       </div>
-    </div>
-  );
-}
 
-function DashboardCard({ label, value, onClick }) {
-  return (
-    <div className="bg-white rounded-lg shadow p-4 flex flex-col">
-      <span className="text-gray-500 text-center">{label}</span>
-      <div className="flex-1" />
-      <span className="text-2xl font-bold text-center mb-2">{value}</span>
-      <button
-        onClick={onClick}
-        className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-      >
-        Administrar
-      </button>
+      {/* Quick Actions */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="w-5 h-5 text-blue-600" />
+          <h2 className="text-lg font-bold text-gray-900">Acciones Rápidas</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <button
+            onClick={() => navigate("/admin/paquetes")}
+            className="px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all shadow-sm"
+          >
+            Crear Paquete
+          </button>
+          <button
+            onClick={() => navigate("/admin/paquetes-fechas")}
+            className="px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-sm"
+          >
+            Agregar Fecha
+          </button>
+          <button
+            onClick={() => navigate("/admin/resenias")}
+            className="px-4 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg hover:from-yellow-600 hover:to-yellow-700 transition-all shadow-sm"
+          >
+            Moderar Reseñas
+          </button>
+          <button
+            onClick={() => navigate("/admin/usuarios")}
+            className="px-4 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-sm"
+          >
+            Gestionar Usuarios
+          </button>
+        </div>
+      </div>
+
+      {/* Footer info */}
+      <div className="text-center text-gray-500 text-sm">
+        <p>Última actualización: {new Date().toLocaleString("es-AR")}</p>
+      </div>
     </div>
   );
 }

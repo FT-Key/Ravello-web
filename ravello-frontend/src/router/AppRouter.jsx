@@ -2,7 +2,10 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { useUserStore } from "../stores/useUserStore";
-import { useAdminShortcut } from "../hooks/useAdminShortcut"; // ⭐ Importar
+import { useAdminShortcut } from "../hooks/useAdminShortcut";
+
+// Layouts
+import AdminLayout from "../layouts/AdminLayout";
 
 // Páginas públicas
 import HomePage from "../pages/Home/HomePage";
@@ -15,6 +18,9 @@ import ReviewPage from "../pages/Reviews/ReviewPage";
 import AboutUsPage from "../pages/AboutUs/AboutUsPage";
 import UnsubscribePage from "../pages/Newsletter/Unsubscribe";
 import NotFoundPage from "../pages/NotFound/NotFound";
+
+// Páginas de Usuario
+import ProfilePage from "../pages/Auth/ProfilePage";
 
 // Páginas Admin
 import DashboardPage from "../pages/Admin/DashboardPage";
@@ -31,10 +37,14 @@ import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
 import ScrollToTop from "../utils/scrollToTop";
 
+// Páginas de Pago
+import PaymentSuccessPage from "../pages/Payment/PaymentSuccessPage";
+import PaymentFailurePage from "../pages/Payment/PaymentFailurePage";
+import PaymentPendingPage from "../pages/Payment/PaymentPendingPage";
+
 function PrivateRoute({ children }) {
   const { user, token, loadingUser } = useUserStore();
 
-  // Evita redirecciones mientras /auth/me está cargando
   if (loadingUser) return null;
 
   if (!user || !token) return <Navigate to="/login" replace />;
@@ -45,7 +55,6 @@ function PrivateRoute({ children }) {
 export function AdminRoute({ children }) {
   const { user, token, loadingUser } = useUserStore();
 
-  // Mientras carga, no redirigir
   if (loadingUser) return null;
 
   if (!token || !user) {
@@ -53,7 +62,7 @@ export function AdminRoute({ children }) {
   }
 
   if (user.rol !== "admin") {
-    return <Navigate to="/perfil" replace />;
+    return <Navigate to="/mi-perfil" replace />;
   }
 
   return children;
@@ -62,13 +71,12 @@ export function AdminRoute({ children }) {
 function AppRouterInner() {
   const location = useLocation();
   const isHome = location.pathname === "/";
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
-  useAdminShortcut(); // ⭐ Activar shortcut Ctrl + Shift + A AQUÍ
+  useAdminShortcut();
 
-  // ⭐ AGREGAR ESTO: Esperar a que termine de cargar el usuario
   const { loadingUser } = useUserStore();
 
-  // Mostrar un loading mientras se verifica la sesión
   if (loadingUser) {
     return (
       <div style={{
@@ -87,10 +95,13 @@ function AppRouterInner() {
 
   return (
     <>
-      <Navbar position={isHome ? "fixed" : "sticky"} />
+      {/* Mostrar Navbar y Footer solo si NO es ruta admin */}
+      {!isAdminRoute && <Navbar position={isHome ? "fixed" : "sticky"} />}
 
       <Routes>
-        {/* Páginas públicas */}
+        {/* ========================================== */}
+        {/* PÁGINAS PÚBLICAS */}
+        {/* ========================================== */}
         <Route path="/" element={<HomePage />} />
         <Route path="/paquetes" element={<PackagesListPage />} />
         <Route path="/paquetes/:id" element={<PackageDetailPage />} />
@@ -98,34 +109,73 @@ function AppRouterInner() {
         <Route path="/sobre-nosotros" element={<AboutUsPage />} />
         <Route path="/contacto" element={<ContactPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/registro" element={<RegisterPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/unsubscribe" element={<UnsubscribePage />} />
 
-        {/* Ruta privada del usuario */}
+        {/* ========================================== */}
+        {/* RUTAS DE PAGO (Públicas - accesibles con número de reserva) */}
+        {/* ========================================== */}
+        <Route path="/reservas/:numeroReserva/pago-exitoso" element={<PaymentSuccessPage />} />
+        <Route path="/reservas/:numeroReserva/pago-fallido" element={<PaymentFailurePage />} />
+        <Route path="/reservas/:numeroReserva/pago-pendiente" element={<PaymentPendingPage />} />
+
+        {/* ========================================== */}
+        {/* RUTAS PRIVADAS DEL USUARIO */}
+        {/* ========================================== */}
+        
         <Route
-          path="/perfil"
+          path="/mi-perfil"
           element={
             <PrivateRoute>
-              <h1>Perfil del usuario</h1>
+              <ProfilePage />
             </PrivateRoute>
           }
         />
 
-        {/* Rutas ADMIN */}
-        <Route path="/admin" element={<AdminRoute><DashboardPage /></AdminRoute>} />
-        <Route path="/admin/paquetes" element={<AdminRoute><ManagePackagesPage /></AdminRoute>} />
-        <Route path="/admin/paquetes-fechas" element={<AdminRoute><ManagePackageDatesPage /></AdminRoute>} />
-        <Route path="/admin/resenias" element={<AdminRoute><ManageReviewsPage /></AdminRoute>} />
-        <Route path="/admin/contactos" element={<AdminRoute><ManageContactsPage /></AdminRoute>} />
-        <Route path="/admin/usuarios" element={<AdminRoute><ManageUsersPage /></AdminRoute>} />
-        <Route path="/admin/boletin" element={<AdminRoute><ManageNewsletterPage /></AdminRoute>} />
-        <Route path="/admin/ofertas-imperdibles" element={<AdminRoute><ManageFeaturedPromotions /></AdminRoute>} />
+        <Route
+          path="/mis-reservas"
+          element={
+            <PrivateRoute>
+              <h1 className="p-8 text-center">Mis Reservas - Próximamente</h1>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/configuracion"
+          element={
+            <PrivateRoute>
+              <ProfilePage />
+            </PrivateRoute>
+          }
+        />
+
+        {/* ========================================== */}
+        {/* RUTAS ADMIN CON LAYOUT */}
+        {/* ========================================== */}
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }
+        >
+          <Route index element={<DashboardPage />} />
+          <Route path="paquetes" element={<ManagePackagesPage />} />
+          <Route path="paquetes-fechas" element={<ManagePackageDatesPage />} />
+          <Route path="ofertas-imperdibles" element={<ManageFeaturedPromotions />} />
+          <Route path="resenias" element={<ManageReviewsPage />} />
+          <Route path="contactos" element={<ManageContactsPage />} />
+          <Route path="usuarios" element={<ManageUsersPage />} />
+          <Route path="boletin" element={<ManageNewsletterPage />} />
+        </Route>
 
         {/* NotFound */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
 
-      <Footer />
+      {!isAdminRoute && <Footer />}
     </>
   );
 }
