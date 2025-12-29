@@ -4,6 +4,9 @@ import { useEffect } from "react";
 import { useUserStore } from "../stores/useUserStore";
 import { useAdminShortcut } from "../hooks/useAdminShortcut";
 
+// Layouts
+import AdminLayout from "../layouts/AdminLayout";
+
 // Páginas públicas
 import HomePage from "../pages/Home/HomePage";
 import PackagesListPage from "../pages/Packages/PackagesListPage";
@@ -39,7 +42,6 @@ import PaymentFailurePage from "../pages/Payment/PaymentFailurePage";
 function PrivateRoute({ children }) {
   const { user, token, loadingUser } = useUserStore();
 
-  // Evita redirecciones mientras /auth/me está cargando
   if (loadingUser) return null;
 
   if (!user || !token) return <Navigate to="/login" replace />;
@@ -50,7 +52,6 @@ function PrivateRoute({ children }) {
 export function AdminRoute({ children }) {
   const { user, token, loadingUser } = useUserStore();
 
-  // Mientras carga, no redirigir
   if (loadingUser) return null;
 
   if (!token || !user) {
@@ -67,12 +68,12 @@ export function AdminRoute({ children }) {
 function AppRouterInner() {
   const location = useLocation();
   const isHome = location.pathname === "/";
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
   useAdminShortcut();
 
   const { loadingUser } = useUserStore();
 
-  // Mostrar un loading mientras se verifica la sesión
   if (loadingUser) {
     return (
       <div style={{
@@ -91,10 +92,13 @@ function AppRouterInner() {
 
   return (
     <>
-      <Navbar position={isHome ? "fixed" : "sticky"} />
+      {/* Mostrar Navbar y Footer solo si NO es ruta admin */}
+      {!isAdminRoute && <Navbar position={isHome ? "fixed" : "sticky"} />}
 
       <Routes>
-        {/* Páginas públicas */}
+        {/* ========================================== */}
+        {/* PÁGINAS PÚBLICAS */}
+        {/* ========================================== */}
         <Route path="/" element={<HomePage />} />
         <Route path="/paquetes" element={<PackagesListPage />} />
         <Route path="/paquetes/:id" element={<PackageDetailPage />} />
@@ -111,7 +115,6 @@ function AppRouterInner() {
         {/* RUTAS PRIVADAS DEL USUARIO */}
         {/* ========================================== */}
         
-        {/* Mi Perfil */}
         <Route
           path="/mi-perfil"
           element={
@@ -121,7 +124,6 @@ function AppRouterInner() {
           }
         />
 
-        {/* Mis Reservas */}
         <Route
           path="/mis-reservas"
           element={
@@ -131,7 +133,6 @@ function AppRouterInner() {
           }
         />
 
-        {/* Configuración */}
         <Route
           path="/configuracion"
           element={
@@ -142,22 +143,31 @@ function AppRouterInner() {
         />
 
         {/* ========================================== */}
-        {/* RUTAS ADMIN */}
+        {/* RUTAS ADMIN CON LAYOUT */}
         {/* ========================================== */}
-        <Route path="/admin" element={<AdminRoute><DashboardPage /></AdminRoute>} />
-        <Route path="/admin/paquetes" element={<AdminRoute><ManagePackagesPage /></AdminRoute>} />
-        <Route path="/admin/paquetes-fechas" element={<AdminRoute><ManagePackageDatesPage /></AdminRoute>} />
-        <Route path="/admin/resenias" element={<AdminRoute><ManageReviewsPage /></AdminRoute>} />
-        <Route path="/admin/contactos" element={<AdminRoute><ManageContactsPage /></AdminRoute>} />
-        <Route path="/admin/usuarios" element={<AdminRoute><ManageUsersPage /></AdminRoute>} />
-        <Route path="/admin/boletin" element={<AdminRoute><ManageNewsletterPage /></AdminRoute>} />
-        <Route path="/admin/ofertas-imperdibles" element={<AdminRoute><ManageFeaturedPromotions /></AdminRoute>} />
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }
+        >
+          <Route index element={<DashboardPage />} />
+          <Route path="paquetes" element={<ManagePackagesPage />} />
+          <Route path="paquetes-fechas" element={<ManagePackageDatesPage />} />
+          <Route path="ofertas-imperdibles" element={<ManageFeaturedPromotions />} />
+          <Route path="resenias" element={<ManageReviewsPage />} />
+          <Route path="contactos" element={<ManageContactsPage />} />
+          <Route path="usuarios" element={<ManageUsersPage />} />
+          <Route path="boletin" element={<ManageNewsletterPage />} />
+        </Route>
 
         {/* NotFound */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
 
-      <Footer />
+      {!isAdminRoute && <Footer />}
     </>
   );
 }
