@@ -1,6 +1,7 @@
 // pages/PackageDetailPage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import clientAxios from "../../api/axiosConfig";
 import { useUserProfile } from "../../hooks/useUserProfile";
 import PackageHeader from "../../components/packageDetail/PackageHeader.jsx";
@@ -47,6 +48,7 @@ export default function PackageDetailPage() {
         setSelectedImage(0);
       } catch (err) {
         console.error("❌ Error al cargar el paquete:", err);
+        toast.error("No pudimos cargar el paquete. Por favor, intenta nuevamente.");
       } finally {
         setLoading(false);
       }
@@ -75,6 +77,7 @@ export default function PackageDetailPage() {
         }
       } catch (err) {
         console.error("❌ Error al cargar fechas:", err);
+        toast.error("No pudimos cargar las fechas disponibles.");
       } finally {
         setDatesLoading(false);
       }
@@ -107,6 +110,7 @@ export default function PackageDetailPage() {
         }
       } catch (err) {
         console.error("❌ Error al cargar reseñas:", err);
+        // No mostramos toast aquí porque las reseñas no son críticas
       } finally {
         setReviewsLoading(false);
       }
@@ -119,7 +123,10 @@ export default function PackageDetailPage() {
   const handleInitiateBooking = (bookingData) => {
     // 1. Verificar autenticación
     if (!isAuthenticated) {
-      alert('Debes iniciar sesión para hacer una reserva');
+      toast.error('Necesitas iniciar sesión para hacer una reserva', {
+        duration: 3000,
+        icon: '🔒'
+      });
       navigate('/login', {
         state: {
           from: `/paquetes/${id}`,
@@ -132,6 +139,10 @@ export default function PackageDetailPage() {
     // 2. Verificar perfil completo
     if (!canBook) {
       setShowCompleteProfileModal(true);
+      toast('Por favor completa tu perfil para continuar', {
+        icon: '📋',
+        duration: 3000
+      });
       return;
     }
 
@@ -142,14 +153,17 @@ export default function PackageDetailPage() {
   // Manejar proceso de pago (solo se ejecuta si el perfil está completo)
   const handlePayment = async (bookingData) => {
     if (!selectedDate) {
-      alert("Por favor selecciona una fecha de salida");
+      toast.error("Selecciona una fecha de salida para continuar", {
+        icon: '📅'
+      });
       return;
     }
+
+    const toastId = toast.loading('Procesando tu reserva...');
 
     try {
       setPaymentLoading(true);
 
-      // ⬅️ CORRECCIÓN: bookingData YA viene con la estructura correcta desde el Sidebar
       console.log("📦 Datos de reserva recibidos:", JSON.stringify(bookingData, null, 2));
 
       // 1. Crear la reserva
@@ -157,11 +171,13 @@ export default function PackageDetailPage() {
       const bookingResponse = await clientAxios.post("/bookings", {
         paqueteId: bookingData.paqueteId,
         fechaSalidaId: bookingData.fechaSalidaId,
-        cantidadPasajeros: bookingData.cantidadPasajeros  // ⬅️ Ya viene correcto del Sidebar
+        cantidadPasajeros: bookingData.cantidadPasajeros
       });
 
       const reserva = bookingResponse.data.data;
       console.log("✅ Reserva creada:", reserva);
+
+      toast.success('Reserva creada exitosamente', { id: toastId });
 
       // 2. Crear preferencia de pago en MercadoPago
       console.log("💳 Creando preferencia de pago...");
@@ -176,18 +192,44 @@ export default function PackageDetailPage() {
 
       // 3. Redirigir a MercadoPago
       console.log("🔄 Redirigiendo a MercadoPago...");
-      window.location.href = initPoint;
+      toast.success('Redirigiendo a MercadoPago...', { 
+        id: toastId,
+        duration: 2000 
+      });
+      
+      setTimeout(() => {
+        window.location.href = initPoint;
+      }, 500);
 
     } catch (error) {
       console.error("❌ Error completo:", error);
       console.error("❌ Respuesta del servidor:", error.response?.data);
       console.error("❌ Status:", error.response?.status);
 
-      const errorMessage = error.response?.data?.message ||
-        error.message ||
-        "Error al procesar el pago. Por favor intenta nuevamente.";
+      // Mensajes de error amigables según el tipo de error
+      let errorMessage = "Hubo un problema al procesar tu reserva. Por favor, intenta nuevamente.";
+      
+      if (error.response?.status === 401) {
+        errorMessage = "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.";
+      } else if (error.response?.status === 400) {
+        errorMessage = "Algunos datos de la reserva son incorrectos. Verifica e intenta nuevamente.";
+      } else if (error.response?.status === 404) {
+        errorMessage = "El paquete o la fecha seleccionada ya no está disponible.";
+      } else if (error.response?.status === 409) {
+        errorMessage = "No hay suficientes cupos disponibles para esta fecha.";
+      } else if (error.response?.data?.message) {
+        // Si el backend envía un mensaje específico y es legible, úsalo
+        const backendMsg = error.response.data.message;
+        if (!backendMsg.includes('undefined') && !backendMsg.includes('null')) {
+          errorMessage = backendMsg;
+        }
+      }
 
-      alert(errorMessage);
+      toast.error(errorMessage, { 
+        id: toastId,
+        duration: 4000,
+        icon: '❌'
+      });
     } finally {
       setPaymentLoading(false);
     }
@@ -198,7 +240,10 @@ export default function PackageDetailPage() {
     console.log('✅ Perfil completado:', updatedProfile);
     setShowCompleteProfileModal(false);
     refreshProfile();
-    alert('¡Perfil completado! Ahora puedes continuar con tu reserva.');
+    toast.success('¡Perfil completado! Ahora puedes continuar con tu reserva.', {
+      icon: '✅',
+      duration: 3000
+    });
   };
 
   // Redirigir a página de contacto
@@ -265,8 +310,8 @@ export default function PackageDetailPage() {
         isOpen={showCompleteProfileModal}
         onClose={() => setShowCompleteProfileModal(false)}
         onProfileCompleted={handleProfileCompleted}
-        camposFaltantes={camposFaltantes} // ⬅️ Pasar campos faltantes
-        userProfile={userProfile} // ⬅️ Pasar perfil completo
+        camposFaltantes={camposFaltantes}
+        userProfile={userProfile}
       />
     </div>
   );
