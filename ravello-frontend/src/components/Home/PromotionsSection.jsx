@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import clientAxios from "../../api/axiosConfig";
 import "./PromotionsSection.css";
@@ -7,9 +7,7 @@ export default function PromotionsSection() {
   const [promos, setPromos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hoveredIndex, setHoveredIndex] = useState(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const navigate = useNavigate();
-  const hoverTimeoutRef = useRef(null);
 
   useEffect(() => {
     const fetchPromotions = async () => {
@@ -51,31 +49,12 @@ export default function PromotionsSection() {
     fetchPromotions();
   }, []);
 
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, []);
-
   const handleMouseEnter = (index) => {
-    if (!isTransitioning) {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-      setHoveredIndex(index);
-      setIsTransitioning(true);
-    }
+    setHoveredIndex(index);
   };
 
   const handleMouseLeave = () => {
-    hoverTimeoutRef.current = setTimeout(() => {
-      setHoveredIndex(null);
-      setTimeout(() => {
-        setIsTransitioning(false);
-      }, 700);
-    }, 500);
+    setHoveredIndex(null);
   };
 
   if (loading) {
@@ -128,21 +107,6 @@ export default function PromotionsSection() {
         style={{ background: "var(--color-secondary-cyan)" }}
       ></div>
 
-      <div
-        className="absolute top-20 right-10 w-64 h-1 opacity-20 transform rotate-45"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent, var(--color-primary-red), transparent)"
-        }}
-      ></div>
-      <div
-        className="absolute bottom-40 left-20 w-80 h-1 opacity-20 transform -rotate-12"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent, var(--color-primary-blue), transparent)"
-        }}
-      ></div>
-
       <div className="max-w-7xl mx-auto px-4 relative z-10">
         <div className="text-center mb-16">
           <div
@@ -160,187 +124,108 @@ export default function PromotionsSection() {
             </span>
           </div>
 
-          <h2 className="text-5xl md:text-6xl font-bold mb-4 text-primary-blue no-select">
+          <h2 className="text-5xl md:text-6xl font-bold mb-4 no-select"
+            style={{ color: "var(--color-primary-blue)" }}>
             Ofertas imperdibles
           </h2>
 
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto no-select">
+          <p className="text-xl max-w-2xl mx-auto no-select"
+            style={{ color: "var(--color-text-light)" }}>
             Aprovechá los mejores precios de temporada y viví experiencias
             inolvidables
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:flex lg:gap-8 gap-6 items-stretch">
+        <div className="flex flex-col gap-16 relative">
           {promos.map((pkg, i) => {
             const badge = getBadgeInfo(pkg.etiquetas?.[0]);
             const isHovered = hoveredIndex === i;
-            const isOtherHovered = hoveredIndex !== null && hoveredIndex !== i;
+            const isLeft = i % 2 === 0;
 
             return (
               <div
                 key={pkg._id || pkg.id}
-                className="cursor-pointer transition-all duration-700 ease-in-out lg:flex-1"
-                style={{
-                  flex:
-                    window.innerWidth >= 1024
-                      ? isHovered
-                        ? "1"
-                        : isOtherHovered
-                          ? "0"
-                          : "1"
-                      : "none",
-                  opacity:
-                    window.innerWidth >= 1024
-                      ? isOtherHovered
-                        ? 0
-                        : 1
-                      : 1,
-                  transform:
-                    window.innerWidth >= 1024
-                      ? isOtherHovered
-                        ? "scale(0.8)"
-                        : "scale(1)"
-                      : "scale(1)",
-                  pointerEvents:
-                    window.innerWidth >= 1024 && isOtherHovered
-                      ? "none"
-                      : "auto"
-                }}
-                onMouseEnter={() =>
-                  window.innerWidth >= 1024 && handleMouseEnter(i)
-                }
-                onMouseLeave={() =>
-                  window.innerWidth >= 1024 && handleMouseLeave()
-                }
-                onClick={() =>
-                  navigate(`/paquetes/${pkg._id || pkg.id}`)
-                }
+                className="relative w-full"
+                style={{ zIndex: 10 }}
               >
+                {/* Figura decorativa de fondo - Sale desde el borde de la sección */}
                 <div
-                  className={`relative rounded-3xl overflow-hidden shadow-2xl transition-all duration-700 ease-in-out group ${isHovered && window.innerWidth >= 1024
-                    ? "shadow-[0_20px_80px_rgba(28,119,183,0.4)]"
-                    : ""
-                    }`}
+                  className="absolute pointer-events-none"
                   style={{
-                    height:
-                      window.innerWidth >= 1024
-                        ? isHovered
-                          ? "550px"
-                          : "380px"
-                        : "400px"
+                    top: 0,
+                    bottom: 0,
+                    [isLeft ? "left" : "right"]: "calc(-50vw + 50%)",
+                    width: "70%",
+                    background: i === 0
+                      ? "linear-gradient(90deg, rgba(28,119,183,0.5), rgba(28,119,183,0.3), rgba(28,119,183,0.1), transparent)"
+                      : "linear-gradient(270deg, rgba(227,61,53,0.5), rgba(227,61,53,0.3), rgba(227,61,53,0.1), transparent)",
+                    clipPath: isLeft
+                      ? "polygon(0 5%, 90% 12%, 85% 95%, 0 88%)"
+                      : "polygon(10% 5%, 100% 12%, 100% 88%, 15% 95%)",
+                    transition: "all 0.4s ease",
+                    opacity: isHovered ? 1 : 0.7,
+                    transform: isHovered ? "scale(1.03)" : "scale(1)",
+                    zIndex: -1
                   }}
+                />
+
+                {/* Card posicionada según el lado */}
+                <div
+                  className={`relative ${isLeft ? "ml-0 mr-auto" : "ml-auto mr-0"}`}
+                  style={{ maxWidth: "900px" }}
+                  onMouseEnter={() => handleMouseEnter(i)}
+                  onMouseLeave={() => handleMouseLeave()}
+                  onClick={() => navigate(`/paquetes/${pkg._id || pkg.id}`)}
                 >
                   <div
-                    className={`absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-in-out ${isHovered ? "scale-110" : "scale-100"
-                      }`}
-                    style={{
-                      backgroundImage: `url(${pkg.imagenPrincipal?.url})`
-                    }}
-                  />
-
-                  <div
-                    className={`absolute inset-0 transition-all duration-700 ease-in-out ${isHovered && window.innerWidth >= 1024
-                      ? "bg-gradient-to-r from-black/85 via-black/70 to-black/50"
-                      : "bg-gradient-to-t from-black/80 via-black/50 to-transparent"
-                      }`}
-                  />
-
-                  {isHovered && window.innerWidth >= 1024 && (
-                    <div
-                      className="absolute inset-0 opacity-40"
-                      style={{
-                        background:
-                          "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
-                        backgroundSize: "200% 100%",
-                        animation: "shimmer 2.5s infinite"
-                      }}
-                    />
-                  )}
-
-                  <div
-                    className={`relative z-10 h-full p-6 md:p-8 lg:p-10 text-white transition-all duration-700 ease-in-out ${isHovered && window.innerWidth >= 1024
-                      ? "flex flex-col lg:flex-row lg:items-center lg:justify-between"
-                      : "flex flex-col justify-end"
-                      }`}
+                    className={`relative rounded-3xl overflow-hidden shadow-lg transition-all duration-300 ease-out cursor-pointer ${
+                      isHovered ? "shadow-2xl" : ""
+                    }`}
+                    style={{ height: "450px" }}
                   >
                     <div
-                      className={`transition-all duration-700 ease-in-out ${isHovered && window.innerWidth >= 1024
-                        ? "lg:max-w-2xl"
-                        : "w-full"
-                        }`}
-                    >
-                      {badge && (
-                        <div
-                          className={`${badge.color} inline-flex items-center px-4 py-2 rounded-full text-sm font-bold mb-4 shadow-lg transition-all duration-500 no-select`}
-                        >
-                          {badge.label}
-                        </div>
-                      )}
+                      className={`absolute inset-0 bg-cover bg-center transition-transform duration-500 ease-out ${
+                        isHovered ? "scale-105" : "scale-100"
+                      }`}
+                      style={{
+                        backgroundImage: `url(${pkg.imagenPrincipal?.url})`
+                      }}
+                    />
 
-                      <h3
-                        className={`font-bold mb-3 transition-all duration-700 ease-in-out no-select break-words break-all ${isHovered && window.innerWidth >= 1024 ? "text-4xl lg:text-5xl" : "text-2xl md:text-3xl"}`}
-                        style={{
-                          display: "-webkit-box",
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden"
-                        }}
-                      >
-                        {pkg.nombre}
-                      </h3>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/20" />
 
-                      <p
-                        className={`text-base md:text-lg mb-4 transition-all duration-700 ease-in-out no-select ${isHovered && window.innerWidth >= 1024
-                          ? "lg:text-xl"
-                          : ""
-                          }`}
-                        style={{
-                          display: "-webkit-box",
-                          WebkitLineClamp:
-                            isHovered && window.innerWidth >= 1024 ? 2 : 2,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden"
-                        }}
-                      >
-                        {pkg.descripcionCorta}
-                      </p>
-
-                      {isHovered &&
-                        window.innerWidth >= 1024 &&
-                        pkg.descripcionDetallada && (
-                          <p
-                            className="text-sm md:text-base text-gray-200 mb-4 overflow-hidden no-select"
-                            style={{
-                              display: "-webkit-box",
-                              WebkitLineClamp: 3,
-                              WebkitBoxOrient: "vertical",
-                              animation: "fadeInUp 0.6s ease-out"
-                            }}
+                    <div className="relative z-10 h-full p-8 text-white flex flex-col justify-between">
+                      <div>
+                        {badge && (
+                          <div
+                            className={`${badge.color} inline-flex items-center px-4 py-2 rounded-full text-sm font-bold mb-4 shadow-lg no-select`}
                           >
-                            {pkg.descripcionDetallada}
-                          </p>
+                            {badge.label}
+                          </div>
                         )}
 
-                      {isHovered && window.innerWidth >= 1024 && (
-                        <div
-                          className="flex flex-wrap gap-3 md:gap-4 mb-6"
-                          style={{
-                            animation: "fadeInUp 0.6s ease-out 0.1s backwards"
-                          }}
-                        >
+                        <h3 className="text-4xl md:text-5xl font-bold mb-4 no-select">
+                          {pkg.nombre}
+                        </h3>
+
+                        <p className="text-lg md:text-xl mb-6 max-w-2xl no-select opacity-90">
+                          {pkg.descripcionCorta}
+                        </p>
+
+                        <div className="flex flex-wrap gap-4 mb-6">
                           {pkg.duracionTotal > 0 && (
-                            <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 md:px-4 py-2 rounded-full text-sm md:text-base no-select">
+                            <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full no-select">
                               <span>📅</span>
-                              <span className="font-semibold no-select">
+                              <span className="font-semibold">
                                 {pkg.duracionTotal} días
                               </span>
                             </div>
                           )}
 
                           {pkg.destinos && pkg.destinos.length > 0 && (
-                            <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 md:px-4 py-2 rounded-full text-sm md:text-base no-select">
+                            <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full no-select">
                               <span>📍</span>
-                              <span className="font-semibold no-select">
+                              <span className="font-semibold">
                                 {pkg.destinos
                                   .slice(0, 2)
                                   .map((d) => d.ciudad)
@@ -351,56 +236,31 @@ export default function PromotionsSection() {
                             </div>
                           )}
                         </div>
-                      )}
+                      </div>
 
-                      <button
-                        className={`rounded-full px-6 md:px-8 py-2 md:py-3 text-sm md:text-base font-bold border-2 transition-all duration-300 no-select ${isHovered && window.innerWidth >= 1024
-                          ? "bg-primary-red border-primary-red text-white hover:bg-red-700 hover:border-red-700 shadow-xl"
-                          : "border-white bg-transparent text-white hover:bg-white hover:text-blue-900"
+                      <div className="flex items-end justify-between flex-wrap gap-4">
+                        <button
+                          className={`rounded-full px-8 py-3 font-bold transition-all duration-300 no-select ${
+                            isHovered
+                              ? "text-white shadow-xl"
+                              : "bg-white/20 backdrop-blur-sm text-white hover:bg-white/30"
                           }`}
-                      >
-                        {isHovered && window.innerWidth >= 1024
-                          ? "Ver todos los detalles →"
-                          : "Ver detalle"}
-                      </button>
-                    </div>
+                          style={isHovered ? {
+                            backgroundColor: "var(--color-primary-red)"
+                          } : {}}
+                        >
+                          Ver detalles
+                        </button>
 
-                    {isHovered && window.innerWidth >= 1024 && (
-                      <div
-                        className="mt-6 lg:mt-0 lg:ml-8 flex-shrink-0"
-                        style={{
-                          animation: "fadeInUp 0.6s ease-out 0.2s backwards"
-                        }}
-                      >
-                        <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-4 md:p-6 border border-white/30 min-w-[180px] md:min-w-[200px] no-select">
-                          <p className="text-xs md:text-sm text-gray-300 mb-1 no-select">
-                            Desde
-                          </p>
-                          <p className="text-3xl md:text-4xl font-bold mb-2 no-select">
+                        <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-4 border border-white/30 min-w-[200px] text-right no-select">
+                          <p className="text-sm text-gray-300 mb-1">Desde</p>
+                          <p className="text-3xl md:text-4xl font-bold">
                             {pkg.moneda} ${pkg.precioBase?.toLocaleString()}
                           </p>
                         </div>
                       </div>
-                    )}
-                  </div>
-
-                  {!isHovered && window.innerWidth >= 1024 && (
-                    <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 no-select">
-                      <svg
-                        className="w-6 h-6 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
-                        />
-                      </svg>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             );
