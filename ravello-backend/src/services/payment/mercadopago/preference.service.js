@@ -49,7 +49,7 @@ export class PreferenceService {
         failure: `${frontendUrl}/reservas/${reserva.numeroReserva}/pago-fallido`,
         pending: `${frontendUrl}/reservas/${reserva.numeroReserva}/pago-pendiente`
       },
-      auto_return: 'approved',
+      //auto_return: 'approved',
       external_reference: numeroPago,
       statement_descriptor: process.env.MP_STATEMENT_DESCRIPTOR || 'RAVELLO VIAJES',
       expires: true,
