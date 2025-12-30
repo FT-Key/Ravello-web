@@ -10,6 +10,7 @@ import AuthAlerts from "./sidebar/AuthAlerts";
 import PaymentButtons from "./sidebar/PaymentButtons";
 import PackageDetails from "./sidebar/PackageDetails";
 import BrickPaymentForm from "./sidebar/BrickPaymentForm";
+import ExistingBookingAlert from "./sidebar/ExistingBookingAlert";
 import { getMercadoPagoPublicKey } from '../../config/mercadopago';
 
 export default function PackageBookingSidebar({
@@ -23,7 +24,9 @@ export default function PackageBookingSidebar({
   paymentLoading,
   isAuthenticated,
   canBook,
-  mercadoPagoPublicKey
+  mercadoPagoPublicKey,
+  existingBooking,
+  checkingBooking
 }) {
   const navigate = useNavigate();
   const [adultos, setAdultos] = useState(2);
@@ -201,6 +204,13 @@ export default function PackageBookingSidebar({
     }, 500);
   };
 
+  // Determinar si los botones deben estar deshabilitados
+  const isDisabled = paymentLoading || 
+                     !selectedDate || 
+                     isCreatingBooking || 
+                     !!existingBooking || 
+                     checkingBooking;
+
   return (
     <div className="lg:sticky lg:top-24 space-y-6">
       {/* Precio */}
@@ -236,6 +246,9 @@ export default function PackageBookingSidebar({
         canBook={canBook}
       />
 
+      {/* Alerta de reserva existente */}
+      <ExistingBookingAlert booking={existingBooking} />
+
       {/* Botones de acción */}
       <div className="space-y-3">
         {/* Botón principal: Login o Seleccionar método de pago */}
@@ -252,7 +265,7 @@ export default function PackageBookingSidebar({
           <PaymentButtons
             onSelectCheckout={() => setPaymentMethod('checkout')}
             onSelectBrick={() => setPaymentMethod('brick')}
-            disabled={paymentLoading || !selectedDate || isCreatingBooking}
+            disabled={isDisabled}
             canBook={canBook}
           />
         ) : (
@@ -260,13 +273,13 @@ export default function PackageBookingSidebar({
           <div className="space-y-3">
             <button
               onClick={() => handleReservar(paymentMethod)}
-              disabled={paymentLoading || !selectedDate || isCreatingBooking}
+              disabled={isDisabled}
               className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {(paymentLoading || isCreatingBooking) ? (
+              {(paymentLoading || isCreatingBooking || checkingBooking) ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  {isCreatingBooking ? 'Creando reserva...' : 'Procesando...'}
+                  {checkingBooking ? 'Verificando...' : isCreatingBooking ? 'Creando reserva...' : 'Procesando...'}
                 </>
               ) : (
                 <>
@@ -280,8 +293,8 @@ export default function PackageBookingSidebar({
                 setPaymentMethod(null);
                 toast('Método de pago cancelado', { icon: 'ℹ️' });
               }}
-              disabled={isCreatingBooking}
-              className="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors text-sm disabled:opacity-50"
+              disabled={isCreatingBooking || !!existingBooking}
+              className="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cambiar método de pago
             </button>

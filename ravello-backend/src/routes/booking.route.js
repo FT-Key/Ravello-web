@@ -1,8 +1,8 @@
 // routes/booking.route.js
 import express from 'express';
 import { bookingController } from '../controllers/index.js';
-import { 
-  authenticate, 
+import {
+  authenticate,
   authorize,
   paginationMiddleware,
   queryMiddleware,
@@ -21,6 +21,13 @@ router.get('/numero/:numeroReserva', bookingController.obtenerPorNumero);
 // ============================================
 // RUTAS PROTEGIDAS
 // ============================================
+
+// Verificar si el usuario tiene reserva pendiente para un paquete
+router.get(
+  '/verificar-existente/:paqueteId',
+  authenticate,
+  bookingController.verificarReservaExistente
+);
 
 // Crear nueva reserva
 router.post(
