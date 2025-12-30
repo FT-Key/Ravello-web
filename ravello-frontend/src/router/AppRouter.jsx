@@ -21,6 +21,8 @@ import NotFoundPage from "../pages/NotFound/NotFound";
 
 // Páginas de Usuario
 import ProfilePage from "../pages/Auth/ProfilePage";
+import MyBookingsPage from "../pages/Bookings/MyBookingsPage";
+import BookingDetailsPage from "../pages/Bookings/BookingDetailsPage";
 
 // Páginas Admin
 import DashboardPage from "../pages/Admin/DashboardPage";
@@ -132,11 +134,21 @@ function AppRouterInner() {
           }
         />
 
+        {/* Rutas de Reservas */}
         <Route
           path="/mis-reservas"
           element={
             <PrivateRoute>
-              <h1 className="p-8 text-center">Mis Reservas - Próximamente</h1>
+              <MyBookingsPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/mis-reservas/:id"
+          element={
+            <PrivateRoute>
+              <BookingDetailsPage />
             </PrivateRoute>
           }
         />

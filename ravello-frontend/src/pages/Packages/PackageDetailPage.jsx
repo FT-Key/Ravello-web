@@ -15,6 +15,7 @@ import PackageBookingSidebar from "../../components/packageDetail/PackageBooking
 import CompleteProfileModal from "../../components/packageDetail/CompleteProfileModal.jsx";
 import LoadingSpinner from "../../components/common/LoadingSpinner.jsx";
 import NotFound from "../../components/common/NotFound.jsx";
+import { useBookingValidation } from "../../hooks/useBookingValidation";
 
 export default function PackageDetailPage() {
   const { id } = useParams();
@@ -22,6 +23,9 @@ export default function PackageDetailPage() {
 
   // Hook de perfil de usuario
   const { userProfile, loading: profileLoading, isAuthenticated, canBook, camposFaltantes, refreshProfile } = useUserProfile();
+
+  // Hook de validación de reservas
+  const { checking: checkingBooking, existingBooking, checkExistingBooking, clearExistingBooking } = useBookingValidation();
 
   const [pkg, setPkg] = useState(null);
   const [packageDates, setPackageDates] = useState([]);
@@ -120,7 +124,7 @@ export default function PackageDetailPage() {
   }, [id]);
 
   // Manejar inicio del proceso de reserva
-  const handleInitiateBooking = (bookingData) => {
+  const handleInitiateBooking = async (bookingData) => {
     // 1. Verificar autenticación
     if (!isAuthenticated) {
       toast.error('Necesitas iniciar sesión para hacer una reserva', {
@@ -146,8 +150,45 @@ export default function PackageDetailPage() {
       return;
     }
 
-    // 3. Si todo está bien, proceder con el pago
-    handlePayment(bookingData);
+    // 3. Verificar si ya tiene una reserva activa para este paquete
+    const toastId = toast.loading('Verificando disponibilidad...');
+
+    try {
+      const reserva = await checkExistingBooking(id);
+
+      if (reserva) {
+        toast.error(
+          <div className="flex flex-col gap-2">
+            <p className="font-semibold">Ya tienes una reserva activa</p>
+            <p className="text-sm">Reserva: {reserva.numeroReserva}</p>
+            <p className="text-sm">Estado: {reserva.estado}</p>
+            <button
+              onClick={() => {
+                toast.dismiss(toastId);
+                navigate('/mis-reservas');
+              }}
+              className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors"
+            >
+              Ver mis reservas
+            </button>
+          </div>,
+          {
+            id: toastId,
+            duration: 6000,
+            icon: '⚠️'
+          }
+        );
+        return;
+      }
+
+      toast.dismiss(toastId);
+
+      // 4. Si todo está bien, proceder con el pago
+      handlePayment(bookingData);
+
+    } catch (error) {
+      toast.error('Error al verificar reservas', { id: toastId });
+    }
   };
 
   // Manejar proceso de pago (solo se ejecuta si el perfil está completo)
@@ -192,11 +233,11 @@ export default function PackageDetailPage() {
 
       // 3. Redirigir a MercadoPago
       console.log("🔄 Redirigiendo a MercadoPago...");
-      toast.success('Redirigiendo a MercadoPago...', { 
+      toast.success('Redirigiendo a MercadoPago...', {
         id: toastId,
-        duration: 2000 
+        duration: 2000
       });
-      
+
       setTimeout(() => {
         window.location.href = initPoint;
       }, 500);
@@ -208,7 +249,7 @@ export default function PackageDetailPage() {
 
       // Mensajes de error amigables según el tipo de error
       let errorMessage = "Hubo un problema al procesar tu reserva. Por favor, intenta nuevamente.";
-      
+
       if (error.response?.status === 401) {
         errorMessage = "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.";
       } else if (error.response?.status === 400) {
@@ -225,7 +266,7 @@ export default function PackageDetailPage() {
         }
       }
 
-      toast.error(errorMessage, { 
+      toast.error(errorMessage, {
         id: toastId,
         duration: 4000,
         icon: '❌'
@@ -300,6 +341,8 @@ export default function PackageDetailPage() {
               paymentLoading={paymentLoading}
               isAuthenticated={isAuthenticated}
               canBook={canBook}
+              existingBooking={existingBooking}
+              checkingBooking={checkingBooking}
             />
           </div>
         </div>
