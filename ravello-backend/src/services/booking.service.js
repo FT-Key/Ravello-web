@@ -4,10 +4,36 @@ import { Booking, Package, PackageDate, AuditLog, User } from '../models/index.j
 import { sendEmail } from './email.service.js';
 import { analizarRiesgo, extraerInfoDispositivo } from '../utils/security.utils.js';
 
+
+// ============================================
+// VERIFICAR RESERVA EXISTENTE
+// ============================================
+export async function verificarReservaExistente(userId, paqueteId) {
+  try {
+    // Buscar reserva activa del usuario para este paquete
+    const reserva = await Booking.findOne({
+      usuario: userId,
+      paquete: paqueteId,
+      estado: {
+        $in: ['pendiente', 'confirmada', 'en_proceso_pago', 'pagada']
+      }
+    })
+      .populate('paquete', 'nombre imagenPrincipal')
+      .populate('fechaSalida', 'salida regreso')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return reserva;
+
+  } catch (error) {
+    console.error('Error verificando reserva existente:', error);
+    throw error;
+  }
+}
+
 // ============================================
 // CREAR RESERVA CON TRANSACCIÓN
 // ============================================
-
 export async function crearReserva(data, usuario, metadata = {}) {
   const session = await mongoose.startSession();
 
@@ -46,6 +72,21 @@ export async function crearReserva(data, usuario, metadata = {}) {
 
     if (!usuario.puedeReservar()) {
       throw new Error('No puede realizar reservas en este momento');
+    }
+
+    // ============================================
+    // VALIDAR QUE NO TENGA RESERVA ACTIVA PARA ESTE PAQUETE
+    // ============================================
+    const reservaExistente = await Booking.findOne({
+      usuario: usuario._id,
+      paquete: paqueteId,
+      estado: {
+        $in: ['pendiente', 'confirmada', 'en_proceso_pago', 'pagada']
+      }
+    }).session(session);
+
+    if (reservaExistente) {
+      throw new Error(`Ya tienes una reserva activa para este paquete (${reservaExistente.numeroReserva}). No puedes crear otra hasta que completes o canceles la anterior.`);
     }
 
     // ============================================
@@ -553,9 +594,8 @@ export async function confirmarReserva(reservaId, userId) {
 // ============================================
 export async function cancelarReserva(reservaId, motivo, userId) {
   try {
-    const reserva = await Booking.findById(reservaId)
-      .populate('paquete', 'nombre')
-      .populate('fechaSalida');
+    // Obtener la reserva SIN populate primero
+    const reserva = await Booking.findById(reservaId);
 
     if (!reserva) {
       throw new Error('Reserva no encontrada');
@@ -572,14 +612,20 @@ export async function cancelarReserva(reservaId, motivo, userId) {
     // Liberar cupos
     const totalPasajeros = reserva.cantidadPasajeros.adultos + (reserva.cantidadPasajeros.ninos || 0);
 
-    const fechaSalida = await PackageDate.findById(reserva.fechaSalida._id);
-    if (fechaSalida) {
-      fechaSalida.cuposDisponibles += totalPasajeros;
-      if (fechaSalida.estado === 'agotado' && fechaSalida.cuposDisponibles > 0) {
-        fechaSalida.estado = 'disponible';
+    // reserva.fechaSalida es un ObjectId, usarlo directamente
+    if (reserva.fechaSalida) {
+      const fechaSalida = await PackageDate.findById(reserva.fechaSalida);
+      if (fechaSalida) {
+        fechaSalida.cuposDisponibles += totalPasajeros;
+        if (fechaSalida.estado === 'agotado' && fechaSalida.cuposDisponibles > 0) {
+          fechaSalida.estado = 'disponible';
+        }
+        await fechaSalida.save();
       }
-      await fechaSalida.save();
     }
+
+    // Obtener el paquete para el email
+    const paquete = await Package.findById(reserva.paquete);
 
     // Actualizar reserva
     reserva.estado = 'cancelada';
@@ -596,9 +642,11 @@ export async function cancelarReserva(reservaId, motivo, userId) {
       data: {
         nombreCliente: reserva.datosContacto.nombre,
         numeroReserva: reserva.numeroReserva,
-        paquete: reserva.paquete.nombre,
+        paquete: paquete?.nombre || 'Paquete',
         motivo
       }
+    }).catch(err => {
+      console.error('⚠️ Error enviando email:', err);
     });
 
     // Log de auditoría
@@ -609,6 +657,12 @@ export async function cancelarReserva(reservaId, motivo, userId) {
       descripcion: `Reserva cancelada: ${reserva.numeroReserva} - Motivo: ${motivo}`,
       nivel: 'warning'
     });
+
+    // Poblar para la respuesta
+    await reserva.populate([
+      { path: 'paquete', select: 'nombre imagenPrincipal destinos' },
+      { path: 'fechaSalida', select: 'salida regreso' }
+    ]);
 
     return reserva;
 

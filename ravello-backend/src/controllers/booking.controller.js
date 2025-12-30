@@ -25,6 +25,51 @@ function extraerMetadata(req) {
 }
 
 // ============================================
+// VERIFICAR RESERVA EXISTENTE
+// ============================================
+export async function verificarReservaExistenteController(req, res) {
+  try {
+    const { paqueteId } = req.params;
+    const userId = req.user._id;
+
+    // Verificar autenticación
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Debe iniciar sesión'
+      });
+    }
+
+    const reservaExistente = await bookingService.verificarReservaExistente(
+      userId,
+      paqueteId
+    );
+
+    if (reservaExistente) {
+      return res.json({
+        success: true,
+        tieneReserva: true,
+        data: reservaExistente
+      });
+    }
+
+    return res.json({
+      success: true,
+      tieneReserva: false,
+      data: null
+    });
+
+  } catch (error) {
+    console.error('Error en verificarReservaExistenteController:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Error al verificar reserva existente'
+    });
+  }
+}
+
+// ============================================
 // CREAR RESERVA
 // ============================================
 export async function crearReservaController(req, res) {
@@ -349,6 +394,7 @@ export default {
   obtenerReservaPorId: obtenerReservaPorIdController,
   obtenerTodasReservas: obtenerTodasReservasController,
   obtenerPorNumero: obtenerPorNumeroController,
+  verificarReservaExistente: verificarReservaExistenteController,
   actualizarReserva: actualizarReservaController,
   confirmarReserva: confirmarReservaController,
   cancelarReserva: cancelarReservaController,
