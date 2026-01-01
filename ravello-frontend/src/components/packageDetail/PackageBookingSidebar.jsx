@@ -12,6 +12,7 @@ import PackageDetails from "./sidebar/PackageDetails";
 import BrickPaymentForm from "./sidebar/BrickPaymentForm";
 import ExistingBookingAlert from "./sidebar/ExistingBookingAlert";
 import { getMercadoPagoPublicKey } from '../../config/mercadopago';
+import { useBookingApi } from '../../hooks/useApi';
 
 export default function PackageBookingSidebar({
   pkg,
@@ -29,12 +30,13 @@ export default function PackageBookingSidebar({
   checkingBooking
 }) {
   const navigate = useNavigate();
+  const { createBooking, loading: bookingLoading } = useBookingApi();
+  
   const [adultos, setAdultos] = useState(2);
   const [ninos, setNinos] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [showBrickModal, setShowBrickModal] = useState(false);
   const [reservaCreada, setReservaCreada] = useState(null);
-  const [isCreatingBooking, setIsCreatingBooking] = useState(false);
 
   // Calcular precio total
   const precioAdulto = selectedDate?.precioFinal || selectedDate?.precio || pkg.precioBase || 0;
@@ -71,54 +73,29 @@ export default function PackageBookingSidebar({
       // Checkout Pro: usar el handler del padre (PackageDetailPage)
       onPayment({ ...bookingData, paymentMethod: 'checkout' });
     } else if (method === 'brick') {
-      // Flujo para Bricks
+      // Flujo para Bricks con el hook
       const toastId = toast.loading('Creando tu reserva...');
       
       try {
-        setIsCreatingBooking(true);
-
-        // 1. CREAR LA RESERVA
         console.log("📝 Creando reserva...");
-        const response = await fetch("/api/bookings", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify(bookingData),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || "Error al crear la reserva");
-        }
-
-        const result = await response.json();
+        
+        // Usar el hook para crear la reserva
+        const result = await createBooking(bookingData);
         const reserva = result.data;
 
         console.log("✅ Reserva creada:", reserva);
-
         toast.success('Reserva creada exitosamente', { id: toastId });
 
-        // 2. GUARDAR LA RESERVA Y MOSTRAR EL BRICK
+        // Mostrar el modal de pago
         setReservaCreada(reserva);
         setShowBrickModal(true);
 
       } catch (error) {
-        console.error("❌ Error al crear reserva:", error);
-        
-        let errorMessage = "No pudimos crear tu reserva. Por favor, intenta nuevamente.";
-        
-        if (error.message && !error.message.includes('undefined') && !error.message.includes('null')) {
-          errorMessage = error.message;
-        }
-
-        toast.error(errorMessage, { 
+        // El hook ya maneja el error y proporciona un mensaje amigable
+        toast.error(error.message, { 
           id: toastId,
-          duration: 4000 
+          duration: 5000 
         });
-      } finally {
-        setIsCreatingBooking(false);
       }
     }
   };
@@ -207,7 +184,7 @@ export default function PackageBookingSidebar({
   // Determinar si los botones deben estar deshabilitados
   const isDisabled = paymentLoading || 
                      !selectedDate || 
-                     isCreatingBooking || 
+                     bookingLoading || 
                      !!existingBooking || 
                      checkingBooking;
 
@@ -276,10 +253,10 @@ export default function PackageBookingSidebar({
               disabled={isDisabled}
               className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {(paymentLoading || isCreatingBooking || checkingBooking) ? (
+              {(paymentLoading || bookingLoading || checkingBooking) ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  {checkingBooking ? 'Verificando...' : isCreatingBooking ? 'Creando reserva...' : 'Procesando...'}
+                  {checkingBooking ? 'Verificando...' : bookingLoading ? 'Creando reserva...' : 'Procesando...'}
                 </>
               ) : (
                 <>
@@ -293,7 +270,7 @@ export default function PackageBookingSidebar({
                 setPaymentMethod(null);
                 toast('Método de pago cancelado', { icon: 'ℹ️' });
               }}
-              disabled={isCreatingBooking || !!existingBooking}
+              disabled={bookingLoading || !!existingBooking}
               className="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cambiar método de pago
