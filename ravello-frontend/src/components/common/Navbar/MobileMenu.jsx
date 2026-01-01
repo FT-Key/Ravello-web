@@ -1,7 +1,7 @@
 // src/components/common/Navbar/MobileMenu.jsx
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronDown, LogIn, UserPlus, User, LogOut, Calendar, Settings } from "lucide-react";
+import { ChevronDown, LogIn, UserPlus, User, LogOut, Calendar, Settings, Shield } from "lucide-react";
 import { useUserStore } from "../../../stores/useUserStore";
 
 export default function MobileMenu({
@@ -108,11 +108,17 @@ export default function MobileMenu({
                   <div className="w-10 h-10 bg-gradient-to-r from-[var(--color-primary-blue)] to-[var(--color-primary-red)] rounded-full flex items-center justify-center text-white font-semibold">
                     {user?.nombre ? user.nombre.charAt(0).toUpperCase() : <User size={20} />}
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-semibold text-dark">
                       {user?.nombre} {user?.apellido}
                     </p>
                     <p className="text-xs text-light">{user?.email}</p>
+                    {user?.rol === "admin" && (
+                      <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                        <Shield size={10} />
+                        Admin
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -120,7 +126,7 @@ export default function MobileMenu({
               {/* Opciones de usuario */}
               <Link
                 onClick={handleMobileLinkClick}
-                to="/me/perfil"
+                to="/mi-perfil"
                 className="flex items-center gap-3 px-4 py-3 rounded-lg text-dark hover:bg-background-light font-medium"
               >
                 <User size={20} />
@@ -138,12 +144,23 @@ export default function MobileMenu({
 
               <Link
                 onClick={handleMobileLinkClick}
-                to="/me/configuracion"
+                to="/configuracion"
                 className="flex items-center gap-3 px-4 py-3 rounded-lg text-dark hover:bg-background-light font-medium"
               >
                 <Settings size={20} />
                 <span>Configuración</span>
               </Link>
+
+              {user?.rol === "admin" && (
+                <Link
+                  onClick={handleMobileLinkClick}
+                  to="/admin"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-blue-600 hover:bg-blue-50 font-medium border-t border-gray-200 mt-2 pt-3"
+                >
+                  <Shield size={20} />
+                  <span>Panel de Administración</span>
+                </Link>
+              )}
 
               <button
                 onClick={handleLogout}
