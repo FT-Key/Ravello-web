@@ -1,7 +1,7 @@
 // src/components/common/Navbar/AuthSection.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LogIn, UserPlus, User, LogOut, Calendar, Settings } from "lucide-react";
+import { LogIn, UserPlus, User, LogOut, Calendar, Settings, Shield } from "lucide-react";
 import { useUserStore } from "../../../stores/useUserStore";
 
 export default function AuthSection({ user, loadingUser, isScrolled }) {
@@ -82,6 +82,12 @@ export default function AuthSection({ user, loadingUser, isScrolled }) {
               {user?.nombre} {user?.apellido}
             </p>
             <p className="text-xs text-light mt-1">{user?.email}</p>
+            {user?.rol === "admin" && (
+              <span className="inline-flex items-center gap-1 mt-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                <Shield size={12} />
+                Administrador
+              </span>
+            )}
           </div>
 
           <div className="py-2">
@@ -111,6 +117,17 @@ export default function AuthSection({ user, loadingUser, isScrolled }) {
               <Settings size={18} />
               <span className="text-sm">Configuración</span>
             </Link>
+
+            {user?.rol === "admin" && (
+              <Link
+                to="/admin"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-blue-50 transition-colors text-blue-600"
+              >
+                <Shield size={18} />
+                <span className="text-sm font-medium">Panel Admin</span>
+              </Link>
+            )}
           </div>
 
           <div className="border-t border-gray-100 pt-2">
