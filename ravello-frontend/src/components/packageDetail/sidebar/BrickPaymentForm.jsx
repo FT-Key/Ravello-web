@@ -1,21 +1,21 @@
-// ===================================================================
 // components/packageDetail/sidebar/BrickPaymentForm.jsx
-// ===================================================================
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
+import { usePaymentApi } from '../../../hooks/useApi';
 
 const MP_SDK_URL = "https://sdk.mercadopago.com/js/v2";
 
 export default function BrickPaymentForm({
-  reservaId,      // ⬅️ NUEVO: ID de la reserva ya creada
-  reservaData,    // ⬅️ NUEVO: Datos completos de la reserva
+  reservaId,
+  reservaData,
   precioTotal,
   onSuccess,
   onError,
   onCancel,
   publicKey
 }) {
+  const { processBrickPayment } = usePaymentApi();
   const [isLoading, setIsLoading] = useState(true);
   const brickCreatedRef = useRef(false);
   const mpInstanceRef = useRef(null);
@@ -127,15 +127,13 @@ export default function BrickPaymentForm({
             console.log("📦 Datos del formulario:", formData);
 
             try {
-              // ⬅️ CORRECCIÓN: Los datos vienen en formData.formData
               const paymentDetails = formData.formData;
-              // ⬅️ AGREGAR ESTE LOG
               console.log("🔑 Token generado:", paymentDetails.token);
               console.log("🔑 Payment Method:", paymentDetails.payment_method_id);
               console.log("🔑 Issuer:", paymentDetails.issuer_id);
 
               if (!paymentDetails || !paymentDetails.token) {
-                throw new Error("Datos de pago incompletos");
+                throw new Error("Datos de pago incompletos. Por favor, verifica la información.");
               }
 
               const payloadToSend = {
@@ -161,16 +159,8 @@ export default function BrickPaymentForm({
 
               console.log("📦 Enviando pago al servidor...");
 
-              const response = await fetch("/api/payments/mercadopago/brick", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-                body: JSON.stringify(payloadToSend),
-              });
-
-              const result = await response.json();
+              // Usar el hook para procesar el pago
+              const result = await processBrickPayment(payloadToSend);
 
               console.log("📥 Respuesta del servidor:", result);
 
@@ -180,20 +170,21 @@ export default function BrickPaymentForm({
                 onError(result.message || "Error al procesar el pago");
               }
             } catch (error) {
+              // El hook ya proporciona mensajes de error amigables
               console.error("❌ Error en la petición:", error);
-              onError(error.message || "Error al procesar el pago. Por favor, intenta nuevamente.");
+              onError(error.message);
             }
           },
 
           onError: (error) => {
             console.error("❌ Error en el Brick:", error);
-            onError("Error en el formulario de pago");
+            onError("Error al procesar los datos del formulario. Por favor, verifica la información ingresada.");
           },
         },
       });
     } catch (error) {
       console.error("❌ Error inicializando Brick:", error);
-      onError("Error al cargar el formulario de pago");
+      onError("Error al cargar el formulario de pago. Por favor, recarga la página e intenta nuevamente.");
       setIsLoading(false);
     }
   };

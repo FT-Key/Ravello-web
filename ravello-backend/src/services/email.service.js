@@ -3,31 +3,135 @@ import transporter from "../config/email.js";
 
 /**
  * Servicio centralizado para envío de emails
+ * Respeta las variables de entorno para habilitar/deshabilitar envíos
  */
 
+/**
+ * Verifica si el envío de emails está habilitado
+ */
+function isEmailEnabled() {
+  // Si existe ENABLE_EMAILS, usarla (tiene prioridad)
+  if (process.env.ENABLE_EMAILS !== undefined) {
+    return process.env.ENABLE_EMAILS === 'true';
+  }
+  
+  // Si no existe, usar el entorno (solo en producción por defecto)
+  return process.env.NODE_ENV === 'production';
+}
+
+/**
+ * Registra el email en consola sin enviarlo (modo desarrollo/deshabilitado)
+ */
+function logEmailInConsole({ to, subject, template, data }) {
+  console.log('');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('📧 [EMAIL SIMULADO - NO ENVIADO]');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`📨 Para:      ${to}`);
+  console.log(`📝 Asunto:    ${subject}`);
+  console.log(`🎨 Template:  ${template}`);
+  console.log(`🌍 Entorno:   ${process.env.NODE_ENV}`);
+  console.log(`⚙️  Habilitado: ${isEmailEnabled()}`);
+  console.log('');
+  console.log('📦 Datos del email:');
+  console.log(JSON.stringify(data, null, 2));
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('');
+}
+
+/**
+ * Envía un email utilizando un template predefinido
+ * @param {Object} options - Opciones del email
+ * @param {string} options.to - Email del destinatario
+ * @param {string} options.subject - Asunto del email
+ * @param {string} options.template - Nombre del template a usar
+ * @param {Object} options.data - Datos para el template
+ * @param {string} [options.from] - Email del remitente (opcional)
+ */
 export async function sendEmail({ to, subject, template, data, from }) {
   try {
+    // Verificar si el envío de emails está habilitado
+    if (!isEmailEnabled()) {
+      logEmailInConsole({ to, subject, template, data });
+      console.log('ℹ️  Email NO enviado (emails deshabilitados)');
+      console.log('💡 Tip: Para habilitar emails, configura ENABLE_EMAILS=true en .env');
+      console.log('');
+      
+      // Retornar éxito simulado
+      return { 
+        success: true, 
+        message: "Email simulado (no enviado - emails deshabilitados)",
+        simulated: true 
+      };
+    }
+
+    // Generar el HTML del template
     const htmlContent = generarHTMLPorTemplate(template, data);
     
-    await transporter.sendMail({
+    // Enviar el email real
+    const info = await transporter.sendMail({
       from: from || `"${process.env.SITE_NAME || "Ravello Viajes"}" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html: htmlContent,
     });
 
-    console.log(`✅ Email enviado correctamente a ${to} - Template: ${template}`);
-    return { success: true, message: "Email enviado correctamente" };
+    console.log(`✅ Email enviado correctamente a ${to} - Template: ${template} - ID: ${info.messageId}`);
+    return { 
+      success: true, 
+      message: "Email enviado correctamente",
+      messageId: info.messageId,
+      simulated: false 
+    };
 
   } catch (error) {
     console.error(`❌ Error enviando email a ${to}:`, error.message);
+    
+    // No lanzar error si los emails están deshabilitados
+    if (!isEmailEnabled()) {
+      return { 
+        success: true, 
+        message: "Email simulado (error capturado pero emails deshabilitados)",
+        simulated: true,
+        error: error.message
+      };
+    }
+    
     throw new Error(`Error enviando email: ${error.message}`);
   }
 }
 
+/**
+ * Envía un email de notificación al administrador
+ * @param {Object} options - Opciones del email
+ * @param {string} options.subject - Asunto del email
+ * @param {string} options.message - Mensaje del email
+ * @param {Object} [options.data] - Datos adicionales (opcional)
+ */
 export async function sendAdminEmail({ subject, message, data }) {
   try {
-    await transporter.sendMail({
+    // Verificar si el envío de emails está habilitado
+    if (!isEmailEnabled()) {
+      console.log('');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📧 [EMAIL ADMIN SIMULADO - NO ENVIADO]');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`📨 Para:      Admin (${process.env.ADMIN_EMAIL || process.env.EMAIL_USER})`);
+      console.log(`📝 Asunto:    🔔 ${subject}`);
+      console.log(`💬 Mensaje:   ${message}`);
+      console.log('');
+      if (data) {
+        console.log('📦 Datos adicionales:');
+        console.log(JSON.stringify(data, null, 2));
+      }
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('');
+      
+      return { success: true, simulated: true };
+    }
+
+    // Enviar el email real al admin
+    const info = await transporter.sendMail({
       from: `"Sistema ${process.env.SITE_NAME || "Ravello Viajes"}" <${process.env.EMAIL_USER}>`,
       to: process.env.ADMIN_EMAIL || process.env.EMAIL_USER,
       subject: `🔔 ${subject}`,
@@ -53,18 +157,82 @@ export async function sendAdminEmail({ subject, message, data }) {
       `,
     });
 
-    console.log(`✅ Email de notificación enviado al administrador`);
-    return { success: true };
+    console.log(`✅ Email de notificación enviado al administrador - ID: ${info.messageId}`);
+    return { success: true, messageId: info.messageId, simulated: false };
 
   } catch (error) {
     console.error("❌ Error enviando email al admin:", error.message);
+    
+    // No lanzar error si los emails están deshabilitados
+    if (!isEmailEnabled()) {
+      return { 
+        success: true, 
+        simulated: true,
+        error: error.message
+      };
+    }
+    
     return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Envía un email personalizado (sin template)
+ * @param {Object} options - Opciones del email
+ */
+export async function sendCustomEmail({ to, subject, html, text, from }) {
+  try {
+    if (!isEmailEnabled()) {
+      console.log('');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📧 [EMAIL PERSONALIZADO SIMULADO - NO ENVIADO]');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`📨 Para:      ${to}`);
+      console.log(`📝 Asunto:    ${subject}`);
+      console.log(`📄 Contenido: ${text || 'HTML personalizado'}`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('');
+      
+      return { 
+        success: true, 
+        message: "Email simulado",
+        simulated: true 
+      };
+    }
+
+    const info = await transporter.sendMail({
+      from: from || `"${process.env.SITE_NAME || "Ravello Viajes"}" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      html,
+      text
+    });
+
+    console.log(`✅ Email personalizado enviado a ${to} - ID: ${info.messageId}`);
+    return { 
+      success: true, 
+      messageId: info.messageId,
+      simulated: false 
+    };
+
+  } catch (error) {
+    console.error(`❌ Error enviando email personalizado:`, error.message);
+    
+    if (!isEmailEnabled()) {
+      return { 
+        success: true, 
+        simulated: true,
+        error: error.message
+      };
+    }
+    
+    throw new Error(`Error enviando email: ${error.message}`);
   }
 }
 
 function generarHTMLPorTemplate(template, data) {
   const templates = {
-    // ⬇️ NUEVO TEMPLATE: Reserva creada
+    // ⬇️ TEMPLATE: Reserva creada
     'reserva-creada': `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9;">
         <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
@@ -144,7 +312,7 @@ function generarHTMLPorTemplate(template, data) {
       </div>
     `,
 
-    // ⬇️ NUEVO TEMPLATE: Reserva confirmada
+    // ⬇️ TEMPLATE: Reserva confirmada
     'reserva-confirmada': `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9;">
         <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
@@ -189,7 +357,7 @@ function generarHTMLPorTemplate(template, data) {
       </div>
     `,
 
-    // ⬇️ NUEVO TEMPLATE: Reserva cancelada
+    // ⬇️ TEMPLATE: Reserva cancelada
     'reserva-cancelada': `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9;">
         <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
@@ -234,7 +402,7 @@ function generarHTMLPorTemplate(template, data) {
       </div>
     `,
 
-    // ⬇️ NUEVO TEMPLATE: Cuota vencida
+    // ⬇️ TEMPLATE: Cuota vencida
     'cuota-vencida': `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9;">
         <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
@@ -270,19 +438,6 @@ function generarHTMLPorTemplate(template, data) {
           </p>
         </div>
       </div>
-    `,
-
-    // Templates de pago (los que ya tenías)
-    'pago-confirmado': `
-      <!-- Tu template existente -->
-    `,
-
-    'pago-rechazado': `
-      <!-- Tu template existente -->
-    `,
-
-    'reembolso-confirmado': `
-      <!-- Tu template existente -->
     `,
   };
 
