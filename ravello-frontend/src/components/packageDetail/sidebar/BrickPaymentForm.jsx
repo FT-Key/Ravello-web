@@ -21,6 +21,18 @@ export default function BrickPaymentForm({
   const mpInstanceRef = useRef(null);
   const [navbarHeight, setNavbarHeight] = useState(0);
 
+  // ⬅️ FIX: Extraer pasajeros correctamente de la reserva
+  const adultos = reservaData?.pasajeros?.adultos || reservaData?.cantidadPasajeros?.adultos || 0;
+  const ninos = reservaData?.pasajeros?.ninos || reservaData?.cantidadPasajeros?.ninos || 0;
+
+  console.log("👥 Datos de pasajeros en modal:", {
+    reservaData,
+    adultos,
+    ninos,
+    pasajerosObj: reservaData?.pasajeros,
+    cantidadPasajerosObj: reservaData?.cantidadPasajeros
+  });
+
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => {
@@ -220,9 +232,10 @@ export default function BrickPaymentForm({
               {reservaData?.paquete?.nombre && (
                 <p className="font-medium">{reservaData.paquete.nombre}</p>
               )}
-              <p>Adultos: {reservaData?.pasajeros?.adultos || 0}</p>
-              {reservaData?.pasajeros?.ninos > 0 && (
-                <p>Niños: {reservaData.pasajeros.ninos}</p>
+              {/* ⬅️ FIX: Usar las variables calculadas correctamente */}
+              <p>Adultos: {adultos}</p>
+              {ninos > 0 && (
+                <p>Niños: {ninos}</p>
               )}
               <p className="font-semibold text-lg mt-2 pt-2 border-t border-blue-200">
                 Total: ${precioTotal.toLocaleString('es-AR')}
