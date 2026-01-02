@@ -16,16 +16,19 @@ import {
   Phone,
   FileText,
   DollarSign,
-  AlertCircle
+  AlertCircle,
+  X
 } from "lucide-react";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import NotFound from "../../components/common/NotFound";
+import PaymentMethodSelector from "../../components/payments/PaymentMethodSelector";
 
 export default function BookingDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
     fetchBooking();
@@ -109,6 +112,27 @@ export default function BookingDetailsPage() {
     return configs[status] || configs.pendiente;
   };
 
+  // Handler cuando el pago se completa exitosamente
+  const handlePaymentSuccess = async (result) => {
+    console.log("✅ Pago completado:", result);
+    
+    // Recargar los datos de la reserva
+    await fetchBooking();
+    
+    // Cerrar modal
+    setShowPaymentModal(false);
+    
+    toast.success('¡Pago registrado exitosamente!', {
+      icon: '🎉',
+      duration: 4000
+    });
+  };
+
+  // Abrir modal de pago
+  const handleOpenPayment = () => {
+    setShowPaymentModal(true);
+  };
+
   if (loading) {
     return <LoadingSpinner message="Cargando detalles..." />;
   }
@@ -120,6 +144,10 @@ export default function BookingDetailsPage() {
   const statusConfig = getStatusConfig(booking.estado);
   const totalPassengers = booking.cantidadPasajeros.adultos + (booking.cantidadPasajeros.ninos || 0);
   const paymentPercentage = (booking.montoPagado / booking.montoTotal) * 100;
+  
+  // Determinar si se puede pagar
+  const canPay = booking.montoPendiente > 0 && 
+                 ["pendiente", "confirmada", "en_proceso_pago"].includes(booking.estado);
 
   return (
     <div className="min-h-screen bg-background-light py-8">
@@ -390,8 +418,11 @@ export default function BookingDetailsPage() {
                 )}
 
                 {/* Action Buttons */}
-                {booking.montoPendiente > 0 && ["pendiente", "confirmada", "en_proceso_pago"].includes(booking.estado) && (
-                  <button className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2">
+                {canPay && (
+                  <button 
+                    onClick={handleOpenPayment}
+                    className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2"
+                  >
                     <CreditCard className="w-5 h-5" />
                     Pagar Ahora
                   </button>
@@ -406,6 +437,51 @@ export default function BookingDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Pago */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between z-10">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Realizar Pago
+              </h2>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              {/* Resumen */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h3 className="font-medium text-blue-900 mb-2">Detalle del pago</h3>
+                <div className="space-y-1 text-sm text-blue-800">
+                  <p className="font-mono text-xs mb-2">Reserva #{booking.numeroReserva}</p>
+                  <p className="font-medium">{booking.paquete?.nombre}</p>
+                  <p className="font-semibold text-lg mt-2 pt-2 border-t border-blue-200">
+                    Monto a pagar: {formatCurrency(booking.montoPendiente, booking.moneda)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Selector de métodos de pago */}
+              <PaymentMethodSelector
+                reservaId={booking._id}
+                reservaData={booking}
+                montoPendiente={booking.montoPendiente}
+                onPaymentSuccess={handlePaymentSuccess}
+                onCancel={() => setShowPaymentModal(false)}
+                tipoPago="total"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -12,7 +12,7 @@ import PackageDetails from "./sidebar/PackageDetails";
 import BrickPaymentForm from "./sidebar/BrickPaymentForm";
 import ExistingBookingAlert from "./sidebar/ExistingBookingAlert";
 import { getMercadoPagoPublicKey } from '../../config/mercadopago';
-import { useBookingApi } from '../../hooks/useApi';
+import { usePaymentMethods } from '../../hooks/usePaymentMethods';
 
 export default function PackageBookingSidebar({
   pkg,
@@ -20,49 +20,62 @@ export default function PackageBookingSidebar({
   selectedDate,
   setSelectedDate,
   datesLoading,
-  onPayment,
+  onPayment, // Handler para Checkout Pro desde el padre
   onContact,
   paymentLoading,
   isAuthenticated,
   canBook,
-  mercadoPagoPublicKey,
   existingBooking,
   checkingBooking
 }) {
   const navigate = useNavigate();
-  const { createBooking, loading: bookingLoading } = useBookingApi();
+  
+  // ⬅️ USAR EL HOOK CENTRALIZADO
+  const {
+    showBrickModal,
+    reservaForPayment,
+    processingCheckout,
+    processCheckoutPro,
+    initiateBrickPayment,
+    handleBrickSuccess,
+    handleBrickError,
+    handleBrickCancel
+  } = usePaymentMethods();
   
   const [adultos, setAdultos] = useState(2);
   const [ninos, setNinos] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState(null);
-  const [showBrickModal, setShowBrickModal] = useState(false);
-  const [reservaCreada, setReservaCreada] = useState(null);
 
   // Calcular precio total
   const precioAdulto = selectedDate?.precioFinal || selectedDate?.precio || pkg.precioBase || 0;
   const precioNino = selectedDate?.precioNino || precioAdulto * 0.7;
   const precioTotal = (precioAdulto * adultos) + (precioNino * ninos);
 
-  const handleReservar = async (method) => {
-    // Validar fecha seleccionada
+  // Validar antes de procesar pago
+  const validateBeforePayment = () => {
     if (!selectedDate) {
       toast.error("Selecciona una fecha de salida para continuar", {
         icon: '📅'
       });
-      return;
+      return false;
     }
 
-    // Validar cupos disponibles
     const totalPasajeros = adultos + ninos;
     if (totalPasajeros > selectedDate.cuposDisponibles) {
       toast.error(`Solo hay ${selectedDate.cuposDisponibles} cupo${selectedDate.cuposDisponibles === 1 ? '' : 's'} disponible${selectedDate.cuposDisponibles === 1 ? '' : 's'}`, {
         icon: '⚠️',
         duration: 3000
       });
-      return;
+      return false;
     }
 
-    // Preparar datos para enviar
+    return true;
+  };
+
+  // Manejar reserva según método de pago
+  const handleReservar = async (method) => {
+    if (!validateBeforePayment()) return;
+
     const bookingData = {
       paqueteId: pkg._id,
       fechaSalidaId: selectedDate._id,
@@ -70,98 +83,27 @@ export default function PackageBookingSidebar({
     };
 
     if (method === 'checkout') {
-      // Checkout Pro: usar el handler del padre (PackageDetailPage)
+      // Checkout Pro: usar el handler del padre que crea la reserva y redirige
       onPayment({ ...bookingData, paymentMethod: 'checkout' });
     } else if (method === 'brick') {
-      // Flujo para Bricks con el hook
-      const toastId = toast.loading('Creando tu reserva...');
-      
-      try {
-        console.log("📝 Creando reserva...");
-        
-        // Usar el hook para crear la reserva
-        const result = await createBooking(bookingData);
-        const reserva = result.data;
-
-        console.log("✅ Reserva creada:", reserva);
-        toast.success('Reserva creada exitosamente', { id: toastId });
-
-        // Mostrar el modal de pago
-        setReservaCreada(reserva);
-        setShowBrickModal(true);
-
-      } catch (error) {
-        // El hook ya maneja el error y proporciona un mensaje amigable
-        toast.error(error.message, { 
-          id: toastId,
-          duration: 5000 
-        });
-      }
+      // Bricks: usar el hook que crea la reserva y abre el modal
+      await initiateBrickPayment({ bookingData });
     }
   };
 
-  const handleBrickSuccess = (result) => {
-    console.log("✅ Pago exitoso:", result);
-    setShowBrickModal(false);
-    setReservaCreada(null);
+  // Wrapper para el éxito del pago
+  const onBrickSuccess = (result) => {
+    handleBrickSuccess(result, {
+      redirectTo: '/mis-reservas'
+    });
+    // Resetear estado local
     setPaymentMethod(null);
-    
-    toast.success('¡Pago procesado exitosamente!', {
-      icon: '🎉',
-      duration: 3000
-    });
-
-    setTimeout(() => {
-      navigate("/mis-reservas");
-    }, 1000);
   };
 
-  const handleBrickError = (error) => {
-    console.error("❌ Error en pago:", error);
-    
-    let errorMessage = "Hubo un problema al procesar el pago.";
-    
-    if (typeof error === 'string') {
-      errorMessage = error;
-    } else if (error?.message) {
-      errorMessage = error.message;
-    }
-
-    toast.error(errorMessage, {
-      duration: 4000,
-      icon: '💳'
-    });
-  };
-
-  const handleBrickCancel = () => {
-    toast((t) => (
-      <div className="flex flex-col gap-3">
-        <span className="font-medium">¿Deseas cancelar el pago?</span>
-        <span className="text-sm text-gray-600">La reserva quedará pendiente de pago</span>
-        <div className="flex gap-2 mt-2">
-          <button
-            onClick={() => {
-              toast.dismiss(t.id);
-              setShowBrickModal(false);
-              setReservaCreada(null);
-              setPaymentMethod(null);
-              toast.success('Operación cancelada', { icon: '✓' });
-            }}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
-          >
-            Sí, cancelar
-          </button>
-          <button
-            onClick={() => toast.dismiss(t.id)}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
-          >
-            No, continuar
-          </button>
-        </div>
-      </div>
-    ), {
-      duration: 10000,
-      icon: '⚠️'
+  // Wrapper para la cancelación
+  const onBrickCancel = () => {
+    handleBrickCancel({
+      onCancel: () => setPaymentMethod(null)
     });
   };
 
@@ -184,7 +126,7 @@ export default function PackageBookingSidebar({
   // Determinar si los botones deben estar deshabilitados
   const isDisabled = paymentLoading || 
                      !selectedDate || 
-                     bookingLoading || 
+                     processingCheckout || 
                      !!existingBooking || 
                      checkingBooking;
 
@@ -228,7 +170,6 @@ export default function PackageBookingSidebar({
 
       {/* Botones de acción */}
       <div className="space-y-3">
-        {/* Botón principal: Login o Seleccionar método de pago */}
         {!isAuthenticated ? (
           <button
             onClick={handleLoginRedirect}
@@ -238,7 +179,6 @@ export default function PackageBookingSidebar({
             Iniciar Sesión para Reservar
           </button>
         ) : !paymentMethod ? (
-          // Mostrar opciones de pago
           <PaymentButtons
             onSelectCheckout={() => setPaymentMethod('checkout')}
             onSelectBrick={() => setPaymentMethod('brick')}
@@ -246,17 +186,16 @@ export default function PackageBookingSidebar({
             canBook={canBook}
           />
         ) : (
-          // Botón de confirmar según método seleccionado
           <div className="space-y-3">
             <button
               onClick={() => handleReservar(paymentMethod)}
               disabled={isDisabled}
               className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {(paymentLoading || bookingLoading || checkingBooking) ? (
+              {(paymentLoading || processingCheckout || checkingBooking) ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  {checkingBooking ? 'Verificando...' : bookingLoading ? 'Creando reserva...' : 'Procesando...'}
+                  {checkingBooking ? 'Verificando...' : processingCheckout ? 'Procesando...' : 'Cargando...'}
                 </>
               ) : (
                 <>
@@ -270,7 +209,7 @@ export default function PackageBookingSidebar({
                 setPaymentMethod(null);
                 toast('Método de pago cancelado', { icon: 'ℹ️' });
               }}
-              disabled={bookingLoading || !!existingBooking}
+              disabled={processingCheckout || !!existingBooking}
               className="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cambiar método de pago
@@ -306,14 +245,14 @@ export default function PackageBookingSidebar({
       <PackageDetails pkg={pkg} />
 
       {/* Modal de Brick Payment */}
-      {showBrickModal && reservaCreada && (
+      {showBrickModal && reservaForPayment && (
         <BrickPaymentForm
-          reservaId={reservaCreada._id}
-          reservaData={reservaCreada}
-          precioTotal={reservaCreada.montoTotal}
-          onSuccess={handleBrickSuccess}
+          reservaId={reservaForPayment._id}
+          reservaData={reservaForPayment}
+          precioTotal={reservaForPayment.montoTotal}
+          onSuccess={onBrickSuccess}
           onError={handleBrickError}
-          onCancel={handleBrickCancel}
+          onCancel={onBrickCancel}
           publicKey={getMercadoPagoPublicKey()}
         />
       )}
