@@ -5,7 +5,6 @@ import toast from "react-hot-toast";
 import clientAxios from "../../api/axiosConfig";
 import {
   Calendar,
-  MapPin,
   Users,
   CreditCard,
   Clock,
@@ -13,17 +12,34 @@ import {
   XCircle,
   AlertCircle,
   Eye,
-  Download,
   MessageCircle,
-  DollarSign
+  DollarSign,
+  ExternalLink
 } from "lucide-react";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+import BrickPaymentForm from "../../components/packageDetail/sidebar/BrickPaymentForm";
+import { getMercadoPagoPublicKey } from "../../config/mercadopago";
+import { usePaymentMethods } from "../../hooks/usePaymentMethods";
 
 export default function MyBookingsPage() {
   const navigate = useNavigate();
+  
+  // ⬅️ USAR EL HOOK CENTRALIZADO
+  const {
+    showBrickModal,
+    reservaForPayment,
+    processCheckoutPro,
+    initiateBrickPayment,
+    handleBrickSuccess,
+    handleBrickError,
+    handleBrickCancel
+  } = usePaymentMethods();
+
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("todas");
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
 
   useEffect(() => {
     fetchBookings();
@@ -35,7 +51,6 @@ export default function MyBookingsPage() {
       const response = await clientAxios.get("/bookings/mis-reservas");
       const bookingsData = response.data.data || [];
       
-      // Debug: ver qué datos estamos recibiendo
       console.log("📦 Bookings recibidas:", bookingsData);
       if (bookingsData.length > 0) {
         console.log("📅 Primera booking fechaSalida:", bookingsData[0].fechaSalida);
@@ -109,7 +124,6 @@ export default function MyBookingsPage() {
     if (!date) return "N/A";
     try {
       const dateObj = new Date(date);
-      // Verificar si la fecha es válida
       if (isNaN(dateObj.getTime())) return "N/A";
       
       return dateObj.toLocaleDateString("es-AR", {
@@ -143,9 +157,49 @@ export default function MyBookingsPage() {
     navigate(`/mis-reservas/${bookingId}`);
   };
 
-  const handlePay = (booking) => {
-    toast.success("Redirigiendo al sistema de pagos...");
-    // Payment logic here
+  // ⬅️ ABRIR MODAL DE SELECCIÓN DE MÉTODO DE PAGO
+  const handleOpenPaymentModal = (booking) => {
+    setSelectedBooking(booking);
+    setShowPaymentModal(true);
+  };
+
+  // ⬅️ PROCESAR PAGO CON CHECKOUT PRO
+  const handlePayWithCheckout = async () => {
+    if (!selectedBooking) return;
+    
+    setShowPaymentModal(false);
+
+    await processCheckoutPro({
+      reservaId: selectedBooking._id,
+      montoPago: selectedBooking.montoPendiente,
+      tipoPago: 'total'
+    });
+  };
+
+  // ⬅️ PROCESAR PAGO CON BRICKS
+  const handlePayWithBrick = async () => {
+    if (!selectedBooking) return;
+
+    setShowPaymentModal(false);
+
+    await initiateBrickPayment({
+      reservaId: selectedBooking._id,
+      reservaData: selectedBooking
+    });
+  };
+
+  // ⬅️ CALLBACK AL COMPLETAR PAGO
+  const onPaymentSuccess = async () => {
+    await fetchBookings();
+    setSelectedBooking(null);
+  };
+
+  // Wrapper para el éxito del pago
+  const onBrickSuccess = (result) => {
+    handleBrickSuccess(result, {
+      onSuccess: onPaymentSuccess,
+      redirectTo: '/mis-reservas'
+    });
   };
 
   const handleCancel = async (bookingId) => {
@@ -346,10 +400,11 @@ export default function MyBookingsPage() {
                         Ver Detalles
                       </button>
 
+                      {/* ⬅️ BOTÓN PAGAR */}
                       {booking.montoPendiente > 0 && 
                        ["pendiente", "confirmada", "en_proceso_pago"].includes(booking.estado) && (
                         <button
-                          onClick={() => handlePay(booking)}
+                          onClick={() => handleOpenPaymentModal(booking)}
                           className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
                         >
                           <CreditCard className="w-4 h-4" />
@@ -387,6 +442,87 @@ export default function MyBookingsPage() {
           </div>
         )}
       </div>
+
+      {/* ⬅️ MODAL DE SELECCIÓN DE MÉTODO DE PAGO */}
+      {showPaymentModal && selectedBooking && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              Selecciona método de pago
+            </h3>
+            
+            <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800 mb-1">
+                <span className="font-medium">Reserva:</span> {selectedBooking.numeroReserva}
+              </p>
+              <p className="text-lg font-bold text-blue-900">
+                Monto a pagar: {formatCurrency(selectedBooking.montoPendiente, selectedBooking.moneda)}
+              </p>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              <button
+                onClick={handlePayWithCheckout}
+                className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                      <ExternalLink className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">Checkout Pro</p>
+                      <p className="text-sm text-gray-600">Redirige a MercadoPago</p>
+                    </div>
+                  </div>
+                  <div className="text-gray-400 group-hover:text-blue-600 transition-colors">→</div>
+                </div>
+              </button>
+
+              <button
+                onClick={handlePayWithBrick}
+                className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all text-left group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                      <CreditCard className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">Pago con Tarjeta</p>
+                      <p className="text-sm text-gray-600">Paga directamente aquí</p>
+                    </div>
+                  </div>
+                  <div className="text-gray-400 group-hover:text-green-600 transition-colors">→</div>
+                </div>
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowPaymentModal(false);
+                setSelectedBooking(null);
+              }}
+              className="w-full py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm font-medium"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ⬅️ MODAL DE BRICK PAYMENT */}
+      {showBrickModal && reservaForPayment && (
+        <BrickPaymentForm
+          reservaId={reservaForPayment._id}
+          reservaData={reservaForPayment}
+          precioTotal={reservaForPayment.montoPendiente}
+          onSuccess={onBrickSuccess}
+          onError={handleBrickError}
+          onCancel={() => handleBrickCancel({ onCancel: () => {} })}
+          publicKey={getMercadoPagoPublicKey()}
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 // hooks/useApi.js
 import { useState, useCallback } from 'react';
+import clientAxios from '../api/axiosConfig';
 
 /**
  * Custom hook para manejar peticiones API con manejo de errores robusto
@@ -12,19 +13,15 @@ export function useApi() {
   /**
    * Función para manejar errores de manera amigable
    * @param {Error} error - Error capturado
-   * @param {Response} response - Respuesta del fetch (opcional)
+   * @param {Object} response - Respuesta de axios (opcional)
    * @returns {string} - Mensaje de error amigable
    */
   const getErrorMessage = (error, response = null) => {
     // Si hay un mensaje personalizado en el error
     if (error.message) {
       // Errores de red
-      if (error.message.includes("Failed to fetch")) {
+      if (error.message.includes("Network Error") || error.message.includes("Failed to fetch")) {
         return "No se pudo conectar con el servidor. Verifica tu conexión a internet.";
-      }
-      
-      if (error.message.includes("NetworkError") || error.message.includes("network")) {
-        return "Error de conexión. Por favor, verifica tu internet e intenta nuevamente.";
       }
       
       if (error.message.includes("timeout")) {
@@ -55,9 +52,11 @@ export function useApi() {
       }
     }
     
-    // Mensajes según código de estado HTTP
-    if (response) {
-      switch (response.status) {
+    // Mensajes según código de estado HTTP (desde axios response)
+    const status = response?.status || error.response?.status;
+    
+    if (status) {
+      switch (status) {
         case 400:
           return "Datos inválidos. Por favor, verifica la información ingresada.";
         case 401:
@@ -73,7 +72,7 @@ export function useApi() {
         case 503:
           return "Servicio no disponible. Por favor, intenta en unos minutos.";
         default:
-          if (response.status >= 500) {
+          if (status >= 500) {
             return "Error del servidor. Por favor, intenta más tarde.";
           }
       }
@@ -84,75 +83,31 @@ export function useApi() {
   };
 
   /**
-   * Realiza una petición fetch con manejo de errores robusto
-   * @param {string} url - URL del endpoint
-   * @param {Object} options - Opciones del fetch (method, headers, body, etc.)
-   * @param {Object} config - Configuración adicional
-   * @param {string} config.errorPrefix - Prefijo para el mensaje de error
-   * @param {boolean} config.requireAuth - Si requiere token de autenticación
+   * Realiza una petición con clientAxios y manejo de errores robusto
+   * @param {Function} apiCall - Función que realiza la llamada a la API
+   * @param {string} errorPrefix - Prefijo para el mensaje de error
    * @returns {Promise<Object>} - Datos de la respuesta
    */
-  const request = useCallback(async (url, options = {}, config = {}) => {
-    const {
-      errorPrefix = "Error",
-      requireAuth = true
-    } = config;
-
+  const request = useCallback(async (apiCall, errorPrefix = "Error") => {
     setLoading(true);
     setError(null);
 
     try {
-      // Configurar headers por defecto
-      const headers = {
-        'Content-Type': 'application/json',
-        ...options.headers
-      };
-
-      // Agregar token de autenticación si es necesario
-      if (requireAuth) {
-        const token = localStorage.getItem('token');
-        if (token) {
-          headers.Authorization = `Bearer ${token}`;
-        }
-      }
-
-      // Realizar la petición
-      const response = await fetch(url, {
-        ...options,
-        headers
-      });
-
-      // Verificar el tipo de contenido de la respuesta
-      const contentType = response.headers.get("content-type");
-      
-      let result;
-      
-      if (contentType && contentType.includes("application/json")) {
-        // Respuesta JSON válida
-        result = await response.json();
-      } else {
-        // Respuesta no JSON (probablemente HTML de error)
-        const textResponse = await response.text();
-        console.error("❌ Respuesta no JSON del servidor:", textResponse.substring(0, 200));
-        
-        throw new Error(
-          "El servidor no está respondiendo correctamente. Por favor, intenta más tarde o contacta con soporte."
-        );
-      }
-
-      // Si la respuesta no es OK, lanzar error
-      if (!response.ok) {
-        const errorMsg = result.message || result.error || getErrorMessage(new Error(), response);
-        throw new Error(errorMsg);
-      }
-
+      const response = await apiCall();
       setLoading(false);
-      return result;
-
+      return response.data;
     } catch (err) {
       console.error(`❌ ${errorPrefix}:`, err);
       
-      const errorMessage = getErrorMessage(err);
+      // Extraer mensaje de error
+      let errorMessage;
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else {
+        errorMessage = getErrorMessage(err, err.response);
+      }
+      
       setError(errorMessage);
       setLoading(false);
       
@@ -183,37 +138,22 @@ export function useBookingApi() {
 
   const createBooking = useCallback(async (bookingData) => {
     return await request(
-      '/api/bookings',
-      {
-        method: 'POST',
-        body: JSON.stringify(bookingData)
-      },
-      {
-        errorPrefix: 'Error al crear reserva',
-        requireAuth: true
-      }
+      () => clientAxios.post('/bookings', bookingData),
+      'Error al crear reserva'
     );
   }, [request]);
 
   const getBooking = useCallback(async (bookingId) => {
     return await request(
-      `/api/bookings/${bookingId}`,
-      { method: 'GET' },
-      {
-        errorPrefix: 'Error al obtener reserva',
-        requireAuth: true
-      }
+      () => clientAxios.get(`/bookings/${bookingId}`),
+      'Error al obtener reserva'
     );
   }, [request]);
 
   const checkExistingBooking = useCallback(async (packageId) => {
     return await request(
-      `/api/bookings/check/${packageId}`,
-      { method: 'GET' },
-      {
-        errorPrefix: 'Error al verificar reserva',
-        requireAuth: true
-      }
+      () => clientAxios.get(`/bookings/check/${packageId}`),
+      'Error al verificar reserva'
     );
   }, [request]);
 
@@ -233,32 +173,96 @@ export function useBookingApi() {
 export function usePaymentApi() {
   const { loading, error, request, clearError } = useApi();
 
+  /**
+   * Procesar pago con Bricks (inline payment)
+   */
   const processBrickPayment = useCallback(async (paymentData) => {
-    return await request(
-      '/api/payments/mercadopago/brick',
-      {
-        method: 'POST',
-        body: JSON.stringify(paymentData)
-      },
-      {
-        errorPrefix: 'Error al procesar pago',
-        requireAuth: true
-      }
-    );
+    try {
+      const response = await request(
+        () => clientAxios.post('/payments/mercadopago/brick', paymentData),
+        'Error al procesar pago con Brick'
+      );
+
+      return {
+        success: true,
+        data: response.data,
+        message: 'Pago procesado exitosamente'
+      };
+    } catch (err) {
+      return {
+        success: false,
+        error: err.message,
+        message: err.message
+      };
+    }
   }, [request]);
 
-  const createCheckoutPreference = useCallback(async (bookingData) => {
-    return await request(
-      '/api/payments/mercadopago/create-preference',
-      {
-        method: 'POST',
-        body: JSON.stringify(bookingData)
-      },
-      {
-        errorPrefix: 'Error al crear preferencia de pago',
-        requireAuth: true
-      }
-    );
+  /**
+   * Crear preferencia de MercadoPago (Checkout Pro)
+   */
+  const createPreference = useCallback(async (preferenceData) => {
+    try {
+      const response = await request(
+        () => clientAxios.post('/payments/mercadopago/preference', preferenceData),
+        'Error al crear preferencia de pago'
+      );
+
+      return {
+        success: true,
+        data: response.data,
+        message: 'Preferencia creada exitosamente'
+      };
+    } catch (err) {
+      return {
+        success: false,
+        error: err.message,
+        message: err.message
+      };
+    }
+  }, [request]);
+
+  /**
+   * Verificar estado de un pago
+   */
+  const verifyPaymentStatus = useCallback(async (numeroPago) => {
+    try {
+      const response = await request(
+        () => clientAxios.get(`/payments/verificar/${numeroPago}`),
+        'Error al verificar estado de pago'
+      );
+
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (err) {
+      return {
+        success: false,
+        error: err.message
+      };
+    }
+  }, [request]);
+
+  /**
+   * Obtener pagos de una reserva
+   */
+  const getBookingPayments = useCallback(async (reservaId) => {
+    try {
+      const response = await request(
+        () => clientAxios.get(`/payments/reserva/${reservaId}`),
+        'Error al obtener pagos'
+      );
+
+      return {
+        success: true,
+        data: response.data || response
+      };
+    } catch (err) {
+      return {
+        success: false,
+        error: err.message
+      };
+    }
   }, [request]);
 
   return {
@@ -266,6 +270,8 @@ export function usePaymentApi() {
     error,
     clearError,
     processBrickPayment,
-    createCheckoutPreference
+    createPreference,
+    verifyPaymentStatus,
+    getBookingPayments
   };
 }
