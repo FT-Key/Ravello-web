@@ -1,0 +1,393 @@
+/* src/components/common/LoadingScreen.css */
+
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1C77B7 0%, #34B0D9 100%);
+  z-index: 9999;
+  overflow: hidden;
+}
+
+/* ========================================== */
+/* FORMAS DE FONDO ANIMADAS */
+/* ========================================== */
+.loading-bg-shapes {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.shape {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.1;
+  animation: float 20s infinite ease-in-out;
+}
+
+.shape-1 {
+  width: 300px;
+  height: 300px;
+  background: #F5E0B3;
+  top: -100px;
+  left: -100px;
+  animation-delay: 0s;
+}
+
+.shape-2 {
+  width: 200px;
+  height: 200px;
+  background: #E33D35;
+  bottom: -50px;
+  right: -50px;
+  animation-delay: 3s;
+}
+
+.shape-3 {
+  width: 150px;
+  height: 150px;
+  background: #F5E0B3;
+  top: 50%;
+  right: 10%;
+  animation-delay: 6s;
+}
+
+.shape-4 {
+  width: 250px;
+  height: 250px;
+  background: white;
+  top: 20%;
+  left: 10%;
+  animation-delay: 9s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(20px, -20px) scale(1.1);
+  }
+  50% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  75% {
+    transform: translate(20px, 20px) scale(1.05);
+  }
+}
+
+/* ========================================== */
+/* CONTENIDO CENTRAL */
+/* ========================================== */
+.loading-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem;
+}
+
+/* ========================================== */
+/* LOGO */
+/* ========================================== */
+.loading-logo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  animation: fadeInDown 0.8s ease-out;
+}
+
+.logo-image {
+  width: 60px;
+  height: 60px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.logo-text {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.logo-accent {
+  color: #E33D35;
+  filter: drop-shadow(0 0 8px rgba(227, 61, 53, 0.5));
+}
+
+/* ========================================== */
+/* AVIÓN ANIMADO */
+/* ========================================== */
+.plane-container {
+  position: relative;
+  width: 300px;
+  height: 100px;
+  animation: fadeIn 1s ease-out 0.3s both;
+}
+
+.plane-icon {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  color: white;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  animation: flyPlane 3s ease-in-out infinite;
+}
+
+.plane-trail {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transform: translateY(-50%);
+  animation: drawTrail 3s ease-in-out infinite;
+}
+
+@keyframes flyPlane {
+  0% {
+    left: -50px;
+    top: 50%;
+    transform: translateY(-50%) rotate(80deg);
+  }
+  50% {
+    top: 30%;
+    transform: translateY(-50%) rotate(90deg);
+  }
+  100% {
+    left: calc(100% + 50px);
+    top: 50%;
+    transform: translateY(-50%) rotate(100deg);
+  }
+}
+
+@keyframes drawTrail {
+  0% {
+    left: 0;
+    width: 0;
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  50% {
+    left: 50%;
+    width: 100px;
+  }
+  80% {
+    opacity: 0.5;
+  }
+  100% {
+    left: 100%;
+    width: 0;
+    opacity: 0;
+  }
+}
+
+/* ========================================== */
+/* TEXTO DE CARGA */
+/* ========================================== */
+.loading-text {
+  text-align: center;
+  animation: fadeIn 1s ease-out 0.6s both;
+}
+
+.loading-message {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.loading-dots {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  height: 20px;
+}
+
+.loading-dots span {
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+  animation: bounce 1.4s ease-in-out infinite;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.loading-dots span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* ========================================== */
+/* BARRA DE PROGRESO */
+/* ========================================== */
+.progress-bar {
+  width: 300px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+  animation: fadeIn 1s ease-out 0.9s both;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #E33D35, #F5E0B3, #E33D35);
+  background-size: 200% 100%;
+  border-radius: 2px;
+  animation: progress 2s ease-in-out infinite;
+  box-shadow: 0 0 10px rgba(227, 61, 53, 0.5);
+}
+
+@keyframes progress {
+  0% {
+    width: 0%;
+    background-position: 0% 50%;
+  }
+  50% {
+    width: 70%;
+    background-position: 100% 50%;
+  }
+  100% {
+    width: 100%;
+    background-position: 0% 50%;
+  }
+}
+
+/* ========================================== */
+/* NUBES DECORATIVAS */
+/* ========================================== */
+.clouds {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cloud {
+  position: absolute;
+  font-size: 3rem;
+  opacity: 0.3;
+  filter: blur(1px);
+}
+
+.cloud-1 {
+  top: 15%;
+  left: 10%;
+  animation: floatCloud 25s linear infinite;
+}
+
+.cloud-2 {
+  top: 60%;
+  left: -10%;
+  animation: floatCloud 30s linear infinite 5s;
+}
+
+.cloud-3 {
+  top: 35%;
+  left: -15%;
+  animation: floatCloud 35s linear infinite 10s;
+}
+
+@keyframes floatCloud {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(100vw + 200px));
+  }
+}
+
+/* ========================================== */
+/* ANIMACIONES GENERALES */
+/* ========================================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* ========================================== */
+/* RESPONSIVE */
+/* ========================================== */
+@media (max-width: 640px) {
+  .logo-text {
+    font-size: 2rem;
+  }
+
+  .logo-image {
+    width: 50px;
+    height: 50px;
+  }
+
+  .plane-container {
+    width: 250px;
+  }
+
+  .plane-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .loading-message {
+    font-size: 1rem;
+  }
+
+  .progress-bar {
+    width: 250px;
+  }
+
+  .shape-1, .shape-2, .shape-3, .shape-4 {
+    transform: scale(0.7);
+  }
+}
