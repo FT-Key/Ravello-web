@@ -51,6 +51,40 @@ const Navbar = ({ position = "sticky" }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Bloquear scroll del body cuando el menú mobile está abierto
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      // Guardar la posición actual del scroll
+      const scrollY = window.scrollY;
+      
+      // Aplicar estilos para bloquear el scroll
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflowY = 'scroll'; // Mantiene el ancho de la scrollbar
+    } else {
+      // Restaurar el scroll cuando se cierra el menú
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflowY = '';
+      
+      // Restaurar la posición del scroll
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    }
+
+    // Cleanup al desmontar
+    return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflowY = '';
+    };
+  }, [isMobileMenuOpen]);
+
   const menuItems = [
     { label: "Destinos", submenu: destinos },
     { label: "Paquetes", link: "/paquetes" },
@@ -83,11 +117,11 @@ const Navbar = ({ position = "sticky" }) => {
   return (
     <nav
       id="main-navbar"
-      className={`${position} top-0 left-0 right-0 z-50 min-h-[115px] transition-all duration-500`}
+      className={`${position} top-0 left-0 right-0 z-50 min-h-[115px] transition-all duration-300`}
     >
       <div
         className={`
-        transition-all duration-500
+        transition-all duration-300
         ${getNavbarBackground()}
         ${!isScrolled && position !== "fixed" ? "bg-[url('/navbar/nav-bg.jpg')] bg-cover bg-bottom" : ""}
         ${isScrolled ? "w-full sm:w-[95%] mx-auto rounded-b-2xl shadow-xl backdrop-blur-md border border-black/10" : "w-full"}
@@ -100,7 +134,7 @@ const Navbar = ({ position = "sticky" }) => {
         />
 
         {/* NAVBAR PRINCIPAL */}
-        <div className={`max-w-7xl mx-auto px-4 ${isScrolled ? "py-2" : "py-4"} transition-all duration-500`}>
+        <div className={`max-w-7xl mx-auto px-4 ${isScrolled ? "py-2" : "py-4"} transition-all duration-300`}>
           <div className="flex items-center justify-between">
 
             {/* Logo */}
