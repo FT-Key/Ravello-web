@@ -3,6 +3,7 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, LogIn, UserPlus, User, LogOut, Calendar, Settings, Shield } from "lucide-react";
 import { useUserStore } from "../../../stores/useUserStore";
+import LoadingSpinner from "../LoadingSpinner";
 
 export default function MobileMenu({
   isMobileMenuOpen,
@@ -24,11 +25,10 @@ export default function MobileMenu({
 
   return (
     <div
-      className={`lg:hidden bg-white shadow-xl overflow-y-auto transition-all duration-300 ${
-        isMobileMenuOpen
+      className={`lg:hidden bg-white shadow-xl overflow-y-auto transition-all duration-300 ${isMobileMenuOpen
           ? "max-h-[80vh] opacity-100 pointer-events-auto"
           : "max-h-0 opacity-0 pointer-events-none"
-      }`}
+        }`}
     >
       <div className="px-4 py-6 space-y-2 no-select">
         {menuItems.map((item, idx) => (
@@ -42,21 +42,18 @@ export default function MobileMenu({
                   {item.label}
                   <ChevronDown
                     size={18}
-                    className={`transition-transform no-select ${
-                      mobileDropdowns[idx] ? "rotate-180" : ""
-                    }`}
+                    className={`transition-transform no-select ${mobileDropdowns[idx] ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
 
                 <div
-                  className={`pl-4 mt-1 space-y-1 transition-all overflow-hidden ${
-                    mobileDropdowns[idx] ? "max-h-96" : "max-h-0"
-                  }`}
+                  className={`pl-4 mt-1 space-y-1 transition-all overflow-hidden ${mobileDropdowns[idx] ? "max-h-96" : "max-h-0"
+                    }`}
                 >
                   {item.submenu.map((subitem, subidx) => {
-                    const nombreCompleto = `${subitem.ciudad}${
-                      subitem.pais ? ", " + subitem.pais : ""
-                    }`;
+                    const nombreCompleto = `${subitem.ciudad}${subitem.pais ? ", " + subitem.pais : ""
+                      }`;
                     const ciudadSola = subitem.ciudad;
 
                     return (
@@ -86,20 +83,18 @@ export default function MobileMenu({
           </div>
         ))}
 
-        <Link
+        {/*   <Link
           onClick={handleMobileLinkClick}
           to="/contacto"
           className="w-full mt-4 px-6 py-3 rounded-full bg-primary-red text-white font-semibold hover:bg-opacity-90 transition-all no-select block text-center"
         >
           Cotizar viaje
-        </Link>
+        </Link> */}
 
         {/* SECCIÓN DE AUTH EN MOBILE */}
         <div className="border-t border-gray-200 pt-4 mt-4">
           {loadingUser ? (
-            <div className="space-y-2">
-              <div className="h-12 bg-gray-200 animate-pulse rounded-lg"></div>
-            </div>
+            <LoadingSpinner />
           ) : user ? (
             <>
               {/* Info Usuario */}

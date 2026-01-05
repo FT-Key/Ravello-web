@@ -38,6 +38,7 @@ import ManagePackageDatesPage from "../pages/Admin/ManagePackageDatesPage";
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
 import ScrollToTop from "../utils/scrollToTop";
+import LoadingScreen from "../components/common/LoadingScreen";
 
 // Páginas de Pago
 import PaymentSuccessPage from "../pages/Payment/PaymentSuccessPage";
@@ -80,19 +81,7 @@ function AppRouterInner() {
   const { loadingUser } = useUserStore();
 
   if (loadingUser) {
-    return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        gap: '1rem'
-      }}>
-        <div className="spinner"></div>
-        <p>Verificando sesión...</p>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
@@ -124,7 +113,7 @@ function AppRouterInner() {
         {/* ========================================== */}
         {/* RUTAS PRIVADAS DEL USUARIO */}
         {/* ========================================== */}
-        
+
         <Route
           path="/mi-perfil"
           element={
